@@ -1,0 +1,13 @@
+---
+description: shadcn and radix composition patterns
+globs:
+  - components/**/*.tsx
+alwaysApply: false
+---
+
+# ui patterns
+
+- build interactive primitives in `components/ui/*.tsx` with `Radix` wrappers and `cn` from `lib/utils.ts`.
+- keep layout wrappers consistent with `components/ui/card.tsx`, `dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `tabs.tsx`, and `toast.tsx`.
+- reuse aliases from `components.json`: `@/components`, `@/lib`, and `@/hooks`.
+- mirror existing icon usage from `lucide-react` and state hooks from `react` in components like `components/dashboard/header.tsx` and `components/dashboard/mobile-nav.tsx`.

@@ -1,0 +1,14 @@
+---
+description: next.js app router page conventions
+globs:
+  - app/**/*.tsx
+alwaysApply: false
+---
+
+# app router conventions
+
+- keep route shells in `app/*/page.tsx` and shared chrome in `components/dashboard/*`.
+- use `Sidebar` and `Header` for screens that match `app/page.tsx` and `app/analytics/page.tsx`.
+- wire route actions with `next/navigation` only inside `use client` pages like `app/tasks/page.tsx` and `app/logout/page.tsx`.
+- keep page text in pt-br to match the rest of the app.
+- prefer `Button` from `components/ui/button.tsx` for page actions such as `+ Novo Caso` and `Exportar Relatório`.
