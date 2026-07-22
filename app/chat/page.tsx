@@ -1,127 +1,159 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatHistory } from "@/components/chat/chat-history"
+import { chatApi, type ConversacaoApi, type MensagemApi } from "@/lib/chat-api"
+import { useToast } from "@/hooks/use-toast"
+import { formatDatePt } from "@/lib/format"
 
-interface Message {
+type UiMessage = {
   id: string
   content: string
   isUser: boolean
   timestamp: string
 }
 
-interface Conversation {
+type UiConversation = {
   id: string
   title: string
   date: string
   preview: string
-  messages: Message[]
+  messages: UiMessage[]
+}
+
+function mapMessage(m: MensagemApi): UiMessage {
+  return {
+    id: m.id,
+    content: m.conteudo,
+    isUser: m.isUser,
+    timestamp: new Date(m.criadoEm).toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+  }
+}
+
+function mapConversation(c: ConversacaoApi): UiConversation {
+  const last = c.mensagens?.[0]
+  return {
+    id: c.id,
+    title: c.titulo,
+    date: formatDatePt(c.atualizadoEm),
+    preview: last?.conteudo?.slice(0, 40) || "Sem mensagens",
+    messages: (c.mensagens ?? []).map(mapMessage),
+  }
 }
 
 export default function ChatPage() {
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: "1",
-      title: "Dúvida sobre Contrato",
-      date: "Hoje",
-      preview: "Como validar um contrato comercial?",
-      messages: [
-        {
-          id: "1",
-          content: "Como validar um contrato comercial?",
-          isUser: true,
-          timestamp: "14:30",
-        },
-        {
-          id: "2",
-          content:
-            "Um contrato comercial é válido quando possui os elementos essenciais: partes capazes, objeto lícito e forma prescrita em lei. Recomendo revisar com um especialista em direito contratual.",
-          isUser: false,
-          timestamp: "14:31",
-        },
-      ],
-    },
-    {
-      id: "2",
-      title: "Processo Trabalhista",
-      date: "Ontem",
-      preview: "Qual é o prazo para contestação?",
-      messages: [],
-    },
-    {
-      id: "3",
-      title: "Direito Civil",
-      date: "2 dias atrás",
-      preview: "Como funciona a sucessão testamentária?",
-      messages: [],
-    },
-  ])
+  const { toast } = useToast()
+  const [conversations, setConversations] = useState<UiConversation[]>([])
+  const [activeConversationId, setActiveConversationId] = useState("")
+  const [messages, setMessages] = useState<UiMessage[]>([])
 
-  const [activeConversationId, setActiveConversationId] = useState("1")
+  const loadConversations = useCallback(async () => {
+    try {
+      const list = await chatApi.listarConversas()
+      const mapped = list.map(mapConversation)
+      setConversations(mapped)
+      if (!activeConversationId && mapped[0]) {
+        setActiveConversationId(mapped[0].id)
+        const full = await chatApi.obterConversa(mapped[0].id)
+        setMessages((full.mensagens ?? []).map(mapMessage))
+      }
+    } catch (error) {
+      toast({
+        title: "Erro ao carregar chat",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    }
+  }, [activeConversationId, toast])
 
-  const activeConversation = conversations.find((c) => c.id === activeConversationId)
-  const [messages, setMessages] = useState<Message[]>(activeConversation?.messages || [])
+  useEffect(() => {
+    void loadConversations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const handleSendMessage = (content: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      isUser: !messages[messages.length - 1]?.isUser || messages.length === 0,
-      timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+  const handleSendMessage = async (content: string) => {
+    let conversaId = activeConversationId
+    if (!conversaId) {
+      const created = await chatApi.criarConversa({ titulo: content.slice(0, 60) })
+      conversaId = created.id
+      setActiveConversationId(conversaId)
+      setConversations((prev) => [mapConversation(created), ...prev])
     }
 
-    const updatedMessages = [...messages, newMessage]
-    setMessages(updatedMessages)
-
-    // Atualizar conversa ativa
-    setConversations(
-      conversations.map((conv) =>
-        conv.id === activeConversationId
+    const { mensagemUsuario, mensagemIa } = await chatApi.enviarMensagem(conversaId, content)
+    const mapped = [mapMessage(mensagemUsuario), mapMessage(mensagemIa)]
+    setMessages((prev) => [...prev, ...mapped])
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversaId
           ? {
-              ...conv,
-              messages: updatedMessages,
-              preview: newMessage.content.slice(0, 40) + "...",
+              ...c,
+              title: c.title === "Nova conversa" ? content.slice(0, 60) : c.title,
+              preview: content.slice(0, 40),
+              date: "Agora",
             }
-          : conv
-      )
+          : c,
+      ),
     )
   }
 
-  const handleNewConversation = () => {
-    const newId = Date.now().toString()
-    const newConversation: Conversation = {
-      id: newId,
-      title: "Nova Conversa",
-      date: "Agora",
-      preview: "Comece digitando...",
-      messages: [],
+  const handleNewConversation = async () => {
+    try {
+      const created = await chatApi.criarConversa({ titulo: "Nova conversa" })
+      const mapped = mapConversation(created)
+      setConversations((prev) => [mapped, ...prev])
+      setActiveConversationId(created.id)
+      setMessages([])
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
     }
-    setConversations([newConversation, ...conversations])
-    setActiveConversationId(newId)
-    setMessages([])
   }
 
-  const handleSelectConversation = (id: string) => {
+  const handleSelectConversation = async (id: string) => {
     setActiveConversationId(id)
-    const conversation = conversations.find((c) => c.id === id)
-    setMessages(conversation?.messages || [])
+    try {
+      const full = await chatApi.obterConversa(id)
+      setMessages((full.mensagens ?? []).map(mapMessage))
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleDeleteConversation = (id: string) => {
-    const updatedConversations = conversations.filter((c) => c.id !== id)
-    setConversations(updatedConversations)
-
-    if (activeConversationId === id) {
-      const nextConversation = updatedConversations[0]
-      if (nextConversation) {
-        setActiveConversationId(nextConversation.id)
-        setMessages(nextConversation.messages)
-      } else {
-        setActiveConversationId("")
-        setMessages([])
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      await chatApi.remover(id)
+      const updated = conversations.filter((c) => c.id !== id)
+      setConversations(updated)
+      if (activeConversationId === id) {
+        const next = updated[0]
+        if (next) {
+          setActiveConversationId(next.id)
+          const full = await chatApi.obterConversa(next.id)
+          setMessages((full.mensagens ?? []).map(mapMessage))
+        } else {
+          setActiveConversationId("")
+          setMessages([])
+        }
       }
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
     }
   }
 
@@ -133,9 +165,9 @@ export default function ChatPage() {
         <ChatHistory
           conversations={conversations}
           activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-          onNewConversation={handleNewConversation}
-          onDeleteConversation={handleDeleteConversation}
+          onSelectConversation={(id) => void handleSelectConversation(id)}
+          onNewConversation={() => void handleNewConversation()}
+          onDeleteConversation={(id) => void handleDeleteConversation(id)}
         />
       </main>
     </div>

@@ -2,11 +2,16 @@
 
 import { Card } from "@/components/ui/card"
 import { useEffect, useState } from "react"
-import { getCompletionPercentage } from "@/lib/shared-data"
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 
 export function ProjectProgress() {
+  const { data } = useDashboardResumo()
+  const targetProgress = data?.percentualConclusao ?? 0
   const [progress, setProgress] = useState(0)
-  const targetProgress = getCompletionPercentage()
+
+  useEffect(() => {
+    setProgress(0)
+  }, [targetProgress])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,15 +34,7 @@ export function ProjectProgress() {
       <div className="flex flex-col items-center">
         <div className="relative w-40 h-40 mb-4">
           <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 160 160">
-            <circle
-              cx="80"
-              cy="80"
-              r="70"
-              stroke="currentColor"
-              strokeWidth="12"
-              fill="none"
-              className="text-muted/30"
-            />
+            <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="none" className="text-muted/30" />
             <circle
               cx="80"
               cy="80"
@@ -59,15 +56,11 @@ export function ProjectProgress() {
         <div className="flex flex-wrap justify-center gap-3 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">Concluído</span>
+            <span className="text-muted-foreground whitespace-nowrap">Concluído ({data?.processosConcluidos ?? 0})</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-foreground flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">Em Andamento</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground whitespace-nowrap">Pendente</span>
+            <span className="text-muted-foreground whitespace-nowrap">Em Andamento ({data?.processosAtivos ?? 0})</span>
           </div>
         </div>
       </div>

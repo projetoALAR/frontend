@@ -7,32 +7,93 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "@/components/theme-provider"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { preferenciasApi, type NotificacoesPrefs } from "@/lib/preferencias-api"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
+
+const defaultNotifications: NotificacoesPrefs = {
+  email: true,
+  push: true,
+  reminders: true,
+  teamUpdates: true,
+}
 
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
-  const [name, setName] = useState("Administrador Alar")
-  const [email, setEmail] = useState("admin@alar.com.br")
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    reminders: true,
-    teamUpdates: true,
-  })
+  const { toast } = useToast()
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [notifications, setNotifications] = useState<NotificacoesPrefs>(defaultNotifications)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const handleSaveProfile = () => {
-    alert(`Perfil salvo:\nNome: ${name}\nEmail: ${email}`)
+  useEffect(() => {
+    void preferenciasApi
+      .obter()
+      .then((prefs) => {
+        setName(prefs.nome || "")
+        setEmail(prefs.email || "")
+        const n = prefs.notificacoes as NotificacoesPrefs
+        setNotifications({
+          email: !!n?.email,
+          push: !!n?.push,
+          reminders: !!n?.reminders,
+          teamUpdates: !!n?.teamUpdates,
+        })
+        if (prefs.tema === "dark" || prefs.tema === "light") {
+          setTheme(prefs.tema)
+        }
+      })
+      .catch((error) => {
+        toast({
+          title: "Erro ao carregar preferências",
+          description: error instanceof Error ? error.message : "Falha na API",
+          variant: "destructive",
+        })
+      })
+      .finally(() => setLoading(false))
+  }, [setTheme, toast])
+
+  const persist = async (partial?: {
+    nome?: string
+    email?: string
+    notificacoes?: NotificacoesPrefs
+    tema?: string
+  }) => {
+    setSaving(true)
+    try {
+      await preferenciasApi.atualizar({
+        nome: partial?.nome ?? name,
+        email: partial?.email ?? email,
+        notificacoes: partial?.notificacoes ?? notifications,
+        tema: partial?.tema ?? theme,
+      })
+      toast({ title: "Preferências salvas" })
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleUploadPhoto = () => {
-    alert("Upload de foto - Funcionalidade em desenvolvimento")
+  const handleNotificationChange = (key: keyof NotificacoesPrefs) => {
+    const next = { ...notifications, [key]: !notifications[key] }
+    setNotifications(next)
+    void persist({ notificacoes: next })
   }
 
-  const handleNotificationChange = (key: string) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key as keyof typeof notifications],
-    }))
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12 gap-2 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Carregando configurações...
+      </div>
+    )
   }
 
   return (
@@ -46,7 +107,16 @@ export function SettingsContent() {
               <AvatarFallback className="bg-primary text-primary-foreground text-xl">AL</AvatarFallback>
             </Avatar>
             <div>
-              <Button variant="outline" className="bg-transparent" onClick={handleUploadPhoto}>
+              <Button
+                variant="outline"
+                className="bg-transparent"
+                onClick={() =>
+                  toast({
+                    title: "Em breve",
+                    description: "Upload de foto ainda não está disponível",
+                  })
+                }
+              >
                 Alterar Foto
               </Button>
               <p className="text-xs text-muted-foreground mt-2">JPG, PNG ou GIF. Tamanho máximo 2MB</p>
@@ -64,8 +134,8 @@ export function SettingsContent() {
             </div>
           </div>
 
-          <Button className="bg-primary hover:bg-primary/90" onClick={handleSaveProfile}>
-            Salvar Alterações
+          <Button className="bg-primary hover:bg-primary/90" disabled={saving} onClick={() => void persist()}>
+            {saving ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </Card>
@@ -74,37 +144,18 @@ export function SettingsContent() {
         <h3 className="font-semibold text-lg mb-6">Notificações</h3>
         <div className="space-y-4">
           {[
-            { 
-              label: "Notificações por e-mail", 
-              description: "Receba e-mails sobre a atividade da sua conta",
-              key: "email" as const
-            },
-            { 
-              label: "Notificações push", 
-              description: "Receba notificações push no seu navegador",
-              key: "push" as const
-            },
-            { 
-              label: "Lembretes de tarefas", 
-              description: "Seja lembrado sobre prazos de tarefas",
-              key: "reminders" as const
-            },
-            { 
-              label: "Atualizações da equipe", 
-              description: "Notificações sobre atividades dos membros",
-              key: "teamUpdates" as const
-            },
+            { label: "Notificações por e-mail", description: "Receba e-mails sobre a atividade da sua conta", key: "email" as const },
+            { label: "Notificações push", description: "Receba notificações push no seu navegador", key: "push" as const },
+            { label: "Lembretes de tarefas", description: "Seja lembrado sobre prazos de tarefas", key: "reminders" as const },
+            { label: "Atualizações da equipe", description: "Notificações sobre atividades dos membros", key: "teamUpdates" as const },
           ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between py-3 border-b border-border last:border-0"
-            >
+            <div key={item.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
               <div>
                 <p className="font-medium">{item.label}</p>
                 <p className="text-sm text-muted-foreground">{item.description}</p>
               </div>
-              <Switch 
-                checked={notifications[item.key]} 
+              <Switch
+                checked={notifications[item.key]}
                 onCheckedChange={() => handleNotificationChange(item.key)}
               />
             </div>
@@ -120,7 +171,14 @@ export function SettingsContent() {
               <p className="font-medium">Modo Escuro</p>
               <p className="text-sm text-muted-foreground">Ativar o tema escuro</p>
             </div>
-            <Switch checked={theme === "dark"} onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} />
+            <Switch
+              checked={theme === "dark"}
+              onCheckedChange={(checked) => {
+                const next = checked ? "dark" : "light"
+                setTheme(next)
+                void persist({ tema: next })
+              }}
+            />
           </div>
         </div>
       </Card>

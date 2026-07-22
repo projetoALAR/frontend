@@ -1,25 +1,17 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { TrendingUp } from "lucide-react"
-import { getTotalCases, getActiveCases, getCompletedCases, getCompletionPercentage } from "@/lib/shared-data"
-
-const topMembers = [
-  { name: "Alexandra D.", avatar: "AD", tasks: 3 },
-  { name: "Edwin A.", avatar: "EA", tasks: 2 },
-  { name: "Isaac O.", avatar: "IO", tasks: 2 },
-  { name: "David O.", avatar: "DO", tasks: 1 },
-]
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 
 export function TeamSummaryCard() {
+  const { data } = useDashboardResumo()
   const teamStats = [
-    { label: "Total de Casos", value: String(getTotalCases()) },
-    { label: "Em Andamento", value: String(getActiveCases()) },
-    { label: "Concluídos", value: String(getCompletedCases()) },
+    { label: "Total de Casos", value: String(data?.totalProcessos ?? 0) },
+    { label: "Em Andamento", value: String(data?.processosAtivos ?? 0) },
+    { label: "Concluídos", value: String(data?.processosConcluidos ?? 0) },
   ]
-
-  const productivity = getCompletionPercentage()
+  const productivity = data?.percentualConclusao ?? 0
 
   return (
     <Card
@@ -55,24 +47,9 @@ export function TeamSummaryCard() {
         </div>
       </div>
 
-      <div>
-        <p className="text-xs font-medium text-muted-foreground mb-2">Responsáveis ativos</p>
-        <div className="space-y-2">
-          {topMembers.map((member) => (
-            <div key={member.name} className="flex items-center gap-2.5">
-              <Avatar className="w-7 h-7 flex-shrink-0">
-                <AvatarFallback className="bg-primary text-primary-foreground text-[10px]">
-                  {member.avatar}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground truncate">{member.name}</p>
-              </div>
-              <span className="text-xs text-muted-foreground">{member.tasks} casos</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <p className="text-xs text-muted-foreground">
+        {data?.totalMembros ?? 0} membro(s) na equipe · {data?.totalClientes ?? 0} cliente(s)
+      </p>
     </Card>
   )
 }

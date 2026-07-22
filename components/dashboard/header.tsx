@@ -14,7 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { getUpcomingDeadlines } from "@/lib/shared-data"
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
+import { formatDatePt } from "@/lib/format"
 import type { ReactNode } from "react"
 
 interface HeaderProps {
@@ -26,7 +27,20 @@ interface HeaderProps {
 export function Header({ title, description, actions }: HeaderProps) {
   const router = useRouter()
   const [notifRead, setNotifRead] = useState(false)
-  const deadlines = getUpcomingDeadlines().slice(0, 3)
+  const { data } = useDashboardResumo()
+
+  const deadlines = [
+    ...(data?.proximosPrazos?.processos ?? []).map((p) => ({
+      id: `p-${p.id}`,
+      title: p.titulo || p.numero,
+      dueDate: formatDatePt(p.prazo),
+    })),
+    ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
+      id: `c-${c.id}`,
+      title: c.titulo,
+      dueDate: formatDatePt(c.dataHora),
+    })),
+  ].slice(0, 3)
 
   return (
     <header className="space-y-3 md:space-y-4 animate-slide-in-up">
@@ -55,7 +69,7 @@ export function Header({ title, description, actions }: HeaderProps) {
                 title="Notificações"
               >
                 <Bell className="w-4 h-4" />
-                {!notifRead && (
+                {!notifRead && deadlines.length > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
                 )}
               </Button>

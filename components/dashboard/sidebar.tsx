@@ -5,17 +5,7 @@ import { cn } from "@/lib/utils"
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { getTotalCases } from "@/lib/shared-data"
-
-const getMenuItems = () => [
-  { icon: LayoutDashboard, label: "Painel", href: "/" },
-  { icon: FolderKanban, label: "Casos", badge: String(getTotalCases()), href: "/tasks" },
-  { icon: Contact, label: "Clientes", href: "/clients" },
-  { icon: Calendar, label: "Calendário", href: "/calendar" },
-  { icon: BarChart3, label: "Relatórios", href: "/analytics" },
-  { icon: Users, label: "Equipe", href: "/team" },
-  { icon: MessageCircle, label: "Chat IA", href: "/chat", badge: "Beta" },
-]
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 
 const generalItems = [
   { icon: Settings, label: "Configurações", href: "/settings" },
@@ -26,7 +16,19 @@ const generalItems = [
 export function Sidebar() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
-  const menuItems = useMemo(() => getMenuItems(), [])
+  const { data } = useDashboardResumo()
+  const menuItems = useMemo(
+    () => [
+      { icon: LayoutDashboard, label: "Painel", href: "/" },
+      { icon: FolderKanban, label: "Casos", badge: String(data?.totalProcessos ?? 0), href: "/tasks" },
+      { icon: Contact, label: "Clientes", href: "/clients" },
+      { icon: Calendar, label: "Calendário", href: "/calendar" },
+      { icon: BarChart3, label: "Relatórios", href: "/analytics" },
+      { icon: Users, label: "Equipe", href: "/team" },
+      { icon: MessageCircle, label: "Chat IA", href: "/chat", badge: "Beta" },
+    ],
+    [data?.totalProcessos],
+  )
 
   return (
     <aside className="fixed top-0 left-0 w-64 bg-card border-r border-border p-4 h-screen overflow-y-auto lg:block">

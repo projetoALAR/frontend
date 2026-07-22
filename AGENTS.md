@@ -2,8 +2,8 @@
 
 ## project context
 - next.js 16 app router in `app/` with shared chrome in `components/dashboard/`.
-- ui primitives live in `components/ui/` and wrap radix, shadcn, `class-variance-authority`, and `cn` from `lib/utils.ts`.
-- shared dashboard data comes from `lib/shared-data.ts`; prefer updating it over duplicating mock arrays.
+- ui primitives live in `components/ui/` and wrap `radix`, `shadcn/ui`, `class-variance-authority`, and `cn` from `lib/utils.ts`.
+- shared dashboard data comes from `lib/shared-data.ts` and dashboard API helpers in `lib/dashboard-api.ts`; prefer updating them over duplicating mock arrays.
 - global styles and tokens live in `app/globals.css`; legacy copy in `styles/globals.css` should stay untouched unless the app imports it.
 - package metadata and scripts live in `package.json`; workspace and build settings live in `pnpm-workspace.yaml`, `next.config.mjs`, `postcss.config.mjs`, and `tsconfig.json`.
 - keep user-facing text in pt-br, matching the existing app copy and the project learning.
@@ -54,7 +54,7 @@ grep -q "caliber" .git/hooks/pre-commit 2>/dev/null && echo "hook-active" || ech
 - If **hook-active**: the hook handles sync automatically — just commit normally. Tell the user: "Caliber will sync your agent configs automatically via the pre-commit hook."
 - If **no-hook**: run Caliber manually before committing:
   1. Tell the user: "Caliber: Syncing agent configs with your latest changes..."
-  2. Run: `caliber refresh && git add CLAUDE.md .claude/ .cursor/ .cursorrules .github/copilot-instructions.md .github/instructions/ AGENTS.md CALIBER_LEARNINGS.md .agents/ .opencode/ 2>/dev/null`
+  2. Run: `caliber refresh && git add CALIBER_LEARNINGS.md .cursor/ .cursorrules AGENTS.md .agents/ 2>/dev/null`
   3. After it completes, briefly tell the user what Caliber updated. Then proceed with the commit.
 
 **Valid `caliber refresh` options:** `--quiet` (suppress output) and `--dry-run` (preview without writing). Do not pass any other flags — options like `--auto-approve`, `--debug`, or `--force` do not exist and will cause errors.

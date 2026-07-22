@@ -2,10 +2,28 @@
 
 import { Card } from "@/components/ui/card"
 import { Clock, AlertCircle } from "lucide-react"
-import { getUpcomingDeadlines } from "@/lib/shared-data"
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
+import { formatDatePt } from "@/lib/format"
 
 export function Reminders() {
-  const deadlines = getUpcomingDeadlines()
+  const { data } = useDashboardResumo()
+  const processos = data?.proximosPrazos?.processos ?? []
+  const compromissos = data?.proximosPrazos?.compromissos ?? []
+
+  const deadlines = [
+    ...processos.map((p) => ({
+      id: `p-${p.id}`,
+      title: p.titulo || p.numero,
+      project: p.status,
+      dueDate: formatDatePt(p.prazo),
+    })),
+    ...compromissos.map((c) => ({
+      id: `c-${c.id}`,
+      title: c.titulo,
+      project: c.processo?.numero ? `Proc. ${c.processo.numero}` : "Agenda",
+      dueDate: formatDatePt(c.dataHora),
+    })),
+  ].slice(0, 5)
 
   return (
     <Card

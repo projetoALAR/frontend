@@ -1,54 +1,58 @@
 "use client"
 
-import { ArrowUpRight, TrendingUp } from "lucide-react"
+import { ArrowUpRight, TrendingUp, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { getTotalCases, getCompletedCases, getActiveCases } from "@/lib/shared-data"
+import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 
 export function StatsCards() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const router = useRouter()
+  const { data, loading } = useDashboardResumo()
 
-  const stats = useMemo(
-    () => [
-      {
-        title: "Total de Casos",
-        value: String(getTotalCases()),
-        increase: "Aumento em relação ao mês anterior",
-        bgColor: "bg-primary",
-        textColor: "text-primary-foreground",
-        delay: "0ms",
-        filter: null,
-      },
-      {
-        title: "Casos Concluídos",
-        value: String(getCompletedCases()),
-        increase: "Aumento em relação ao mês anterior",
-        bgColor: "bg-card",
-        textColor: "text-foreground",
-        delay: "100ms",
-        filter: "concluidas",
-      },
-      {
-        title: "Em Andamento",
-        value: String(getActiveCases()),
-        increase: "Aumento em relação ao mês anterior",
-        bgColor: "bg-card",
-        textColor: "text-foreground",
-        delay: "200ms",
-        filter: "ativas",
-      },
-    ],
-    [],
-  )
+  const stats = [
+    {
+      title: "Total de Casos",
+      value: String(data?.totalProcessos ?? 0),
+      increase: `${data?.totalClientes ?? 0} clientes`,
+      bgColor: "bg-primary",
+      textColor: "text-primary-foreground",
+      delay: "0ms",
+      filter: null as string | null,
+    },
+    {
+      title: "Casos Concluídos",
+      value: String(data?.processosConcluidos ?? 0),
+      increase: `${data?.percentualConclusao ?? 0}% do total`,
+      bgColor: "bg-card",
+      textColor: "text-foreground",
+      delay: "100ms",
+      filter: "concluidas",
+    },
+    {
+      title: "Em Andamento",
+      value: String(data?.processosAtivos ?? 0),
+      increase: "Casos ativos",
+      bgColor: "bg-card",
+      textColor: "text-foreground",
+      delay: "200ms",
+      filter: "ativas",
+    },
+  ]
 
   const handleCardClick = (filter: string | null) => {
-    if (filter) {
-      router.push(`/tasks?filter=${filter}`)
-    } else {
-      router.push("/tasks")
-    }
+    if (filter) router.push(`/tasks?filter=${filter}`)
+    else router.push("/tasks")
+  }
+
+  if (loading && !data) {
+    return (
+      <div className="flex justify-center py-8 text-muted-foreground gap-2">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Carregando métricas...
+      </div>
+    )
   }
 
   return (
@@ -73,19 +77,13 @@ export function StatsCards() {
                 hoveredCard === index ? "rotate-45" : ""
               }`}
             >
-              <ArrowUpRight
-                className={`w-3 h-3 ${stat.bgColor === "bg-primary" ? "text-primary-foreground" : "text-primary-foreground"}`}
-              />
+              <ArrowUpRight className="w-3 h-3 text-primary-foreground" />
             </div>
           </div>
           <p className="text-3xl font-bold mb-2">{stat.value}</p>
           <div className="flex items-center gap-1.5 text-xs opacity-80">
-            {stat.increase && (
-              <>
-                <TrendingUp className="w-3 h-3" />
-                <span>{stat.increase}</span>
-              </>
-            )}
+            <TrendingUp className="w-3 h-3" />
+            <span>{stat.increase}</span>
           </div>
         </Card>
       ))}

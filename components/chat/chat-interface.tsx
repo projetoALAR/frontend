@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChatMessage } from "./chat-message"
 import { Send } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface Message {
   id: string
@@ -16,66 +15,38 @@ interface Message {
 
 interface ChatInterfaceProps {
   messages: Message[]
-  onSendMessage: (content: string) => void
+  onSendMessage: (content: string) => Promise<void>
   isLoading?: boolean
 }
-
-const IA_RESPONSES = [
-  "Essa é uma excelente pergunta sobre direito. Deixe-me analisar...",
-  "Em relação à sua questão, conforme a jurisprudência vigente...",
-  "De acordo com a legislação brasileira, especificamente o artigo 5º da Constituição...",
-  "Recomendo consultar a documentação relevante. Neste caso...",
-  "Segundo minha análise, os pontos principais são:",
-  "Essa questão envolve interpretação jurídica. Vou descrever os aspectos relevantes...",
-]
 
 export function ChatInterface({ messages, onSendMessage, isLoading = false }: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, isProcessing])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return
-
     setIsProcessing(true)
     const userMessage = inputValue
     setInputValue("")
-
-    // Enviar mensagem do usuário
-    onSendMessage(userMessage)
-
-    // Simular resposta da IA após 1 segundo
-    setTimeout(() => {
-      const randomResponse = IA_RESPONSES[Math.floor(Math.random() * IA_RESPONSES.length)]
-      onSendMessage(randomResponse)
+    try {
+      await onSendMessage(userMessage)
+    } finally {
       setIsProcessing(false)
-    }, 1000)
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing && !isProcessing) {
-      e.preventDefault()
-      handleSendMessage()
     }
   }
 
   return (
     <div className="flex-1 flex flex-col bg-background">
-      {/* Header */}
       <div className="border-b border-border p-4 bg-card">
         <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
         <p className="text-xs text-muted-foreground mt-1">Assistente especializado em questões jurídicas</p>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -97,7 +68,7 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
                 timestamp={message.timestamp}
               />
             ))}
-            {isProcessing && (
+            {(isProcessing || isLoading) && (
               <div className="flex gap-3 justify-start">
                 <div className="bg-secondary text-secondary-foreground px-4 py-3 rounded-lg">
                   <div className="flex gap-1">
@@ -113,21 +84,25 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
         )}
       </div>
 
-      {/* Input */}
       <div className="border-t border-border p-4 bg-card">
         <div className="flex gap-3">
           <Input
             placeholder="Digite sua pergunta jurídica..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.nativeEvent.isComposing && !isProcessing) {
+                e.preventDefault()
+                void handleSendMessage()
+              }
+            }}
             disabled={isProcessing}
             className="flex-1 bg-background"
           />
           <Button
-            onClick={handleSendMessage}
+            onClick={() => void handleSendMessage()}
             disabled={!inputValue.trim() || isProcessing}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Send className="w-4 h-4" />
           </Button>
