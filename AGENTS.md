@@ -24,10 +24,10 @@ pnpm lint
 ## ui conventions
 - compose inputs with `components/ui/input.tsx`, `components/ui/label.tsx`, `components/ui/dialog.tsx`, `components/ui/sheet.tsx`, and `components/ui/button.tsx`.
 - prefer `sonner` via `components/ui/sonner.tsx` and `useToast()` from `hooks/use-toast.ts` for transient feedback.
-- use `next/navigation` for client-side routing in `app/page.tsx`, `app/tasks/page.tsx`, and `components/dashboard/header.tsx`.
+- use `next/navigation` for client-side routing in `app/page.tsx`, `app/tasks/page.tsx`, `app/chat/page.tsx`, and `components/dashboard/header.tsx`.
 
 ## validation and state
-- keep form validation local and explicit, as in `components/tasks/case-modal.tsx` and `components/clients/client-modal.tsx`.
+- keep form validation local and explicit, as in `components/tasks/case-modal.tsx`, `components/clients/client-modal.tsx`, `components/team/team-member-modal.tsx`, and `components/calendar/event-modal.tsx`.
 - use `use client` only in interactive files that need hooks, browser APIs, or event handlers.
 - prefer `type` aliases and `interface` props near the component they describe; avoid `any` in new code.
 
