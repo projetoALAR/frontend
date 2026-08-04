@@ -3,29 +3,32 @@
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { TasksContent } from "@/components/tasks/tasks-content"
 import { Button } from "@/components/ui/button"
-import { useRef, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRef, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
 function TasksPageContent() {
-  const tasksContentRef = useRef<any>(null)
+  const tasksContentRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const [initialFilter] = useState<string>("all")
+  const searchParams = useSearchParams()
+  const initialFilter = searchParams.get("filter") || "all"
+  const caseId = searchParams.get("caseId")
 
   const handleFilterChange = useCallback(
     (newFilter: string) => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams(searchParams.toString())
       if (newFilter !== "all") {
         params.set("filter", newFilter)
+      } else {
+        params.delete("filter")
       }
       router.replace(`/tasks?${params.toString()}`, { scroll: false })
     },
-    [router],
+    [router, searchParams],
   )
 
   const handleNewCase = () => {
-    const event = new CustomEvent("openNewCaseModal")
-    window.dispatchEvent(event)
+    window.dispatchEvent(new CustomEvent("openNewCaseModal"))
   }
 
   return (
@@ -44,7 +47,12 @@ function TasksPageContent() {
       </header>
 
       <div className="mt-6">
-        <TasksContent ref={tasksContentRef} initialFilter={initialFilter} onFilterChange={handleFilterChange} />
+        <TasksContent
+          ref={tasksContentRef}
+          initialFilter={initialFilter}
+          initialCaseId={caseId}
+          onFilterChange={handleFilterChange}
+        />
       </div>
     </main>
   )

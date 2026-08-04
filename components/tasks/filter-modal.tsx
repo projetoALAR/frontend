@@ -34,7 +34,10 @@ export function FilterModal({ isOpen, onClose, onApply, currentFilters }: Filter
   const handleApply = () => {
     onApply({
       priorities: selectedPriorities,
-      dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined,
+      dateRange:
+        dateFrom || dateTo
+          ? { from: dateFrom, to: dateTo }
+          : undefined,
     })
     onClose()
   }

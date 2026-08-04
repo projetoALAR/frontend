@@ -3,10 +3,12 @@
 import { Card } from "@/components/ui/card"
 import { TrendingUp, Users, CheckCircle, Clock, Target, ArrowUpRight, Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 
 export function AnalyticsContent() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const router = useRouter()
   const { data, loading } = useDashboardResumo()
 
   const stats = useMemo(
@@ -17,6 +19,7 @@ export function AnalyticsContent() {
         change: `${data?.percentualConclusao ?? 0}%`,
         trend: "up" as const,
         icon: CheckCircle,
+        href: "/tasks?filter=concluidas",
       },
       {
         title: "Casos Ativos",
@@ -24,6 +27,7 @@ export function AnalyticsContent() {
         change: String(data?.totalProcessos ?? 0),
         trend: "up" as const,
         icon: Target,
+        href: "/tasks?filter=ativas",
       },
       {
         title: "Membros da Equipe",
@@ -31,6 +35,7 @@ export function AnalyticsContent() {
         change: "equipe",
         trend: "up" as const,
         icon: Users,
+        href: "/team",
       },
       {
         title: "Clientes",
@@ -38,6 +43,7 @@ export function AnalyticsContent() {
         change: "cadastrados",
         trend: "up" as const,
         icon: Clock,
+        href: "/clients",
       },
     ],
     [data],
@@ -66,6 +72,7 @@ export function AnalyticsContent() {
             key={stat.title}
             onMouseEnter={() => setHoveredCard(index)}
             onMouseLeave={() => setHoveredCard(null)}
+            onClick={() => router.push(stat.href)}
             style={{ animationDelay: `${index * 100}ms` }}
             className={`bg-card text-foreground p-4 transition-all duration-500 ease-out animate-slide-in-up cursor-pointer ${
               hoveredCard === index ? "scale-105 shadow-2xl" : "shadow-lg"

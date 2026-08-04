@@ -33,7 +33,7 @@ export function ProjectList() {
             <div
               key={project.id}
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-all duration-300 cursor-pointer group"
-              onClick={() => router.push("/tasks")}
+              onClick={() => router.push(`/tasks?caseId=${project.id}`)}
               style={{ animationDelay: `${800 + index * 100}ms` }}
             >
               <div

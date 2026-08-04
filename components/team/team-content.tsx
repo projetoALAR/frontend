@@ -38,6 +38,15 @@ export function TeamContent() {
     void load()
   }, [load])
 
+  useEffect(() => {
+    const handleOpen = () => {
+      setSelectedMember(null)
+      setIsModalOpen(true)
+    }
+    window.addEventListener("openNewTeamMemberModal", handleOpen)
+    return () => window.removeEventListener("openNewTeamMemberModal", handleOpen)
+  }, [])
+
   const handleSaveMember = async (data: MembroFormData) => {
     if (selectedMember) {
       const updated = await equipeApi.atualizar(selectedMember.id, data)
@@ -67,17 +76,6 @@ export function TeamContent() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-end">
-        <Button
-          onClick={() => {
-            setSelectedMember(null)
-            setIsModalOpen(true)
-          }}
-        >
-          + Novo Membro
-        </Button>
-      </div>
-
       {isLoading ? (
         <div className="flex justify-center py-12 gap-2 text-muted-foreground">
           <Loader2 className="w-5 h-5 animate-spin" />

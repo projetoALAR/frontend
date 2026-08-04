@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Search, Filter, Calendar, Tag, Eye, Loader2, Trash2 } from "lucide-react"
+import { Search, Filter, Calendar, Tag, Eye, Loader2, Trash2, Pencil } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef } from "react"
 import { CaseModal } from "./case-modal"
 import { FilterModal, type FilterOptions } from "./filter-modal"
@@ -23,11 +23,12 @@ const priorityVariant: Record<string, "destructive" | "default" | "secondary"> =
 
 interface TasksContentProps {
   initialFilter?: string
+  initialCaseId?: string | null
   onFilterChange?: (filter: string) => void
 }
 
 export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(function TasksContent(
-  { initialFilter = "all", onFilterChange },
+  { initialFilter = "all", initialCaseId = null, onFilterChange },
   ref,
 ) {
   const { toast } = useToast()
@@ -69,6 +70,15 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     setFilter(initialFilter)
   }, [initialFilter])
 
+  useEffect(() => {
+    if (!initialCaseId || allTasks.length === 0) return
+    const found = allTasks.find((t) => t.id === initialCaseId)
+    if (found) {
+      setPanelCase(found)
+      setIsPanelOpen(true)
+    }
+  }, [initialCaseId, allTasks])
+
   const handleSetFilter = (newFilter: string) => {
     setFilter(newFilter)
     onFilterChange?.(newFilter)
@@ -99,11 +109,14 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       filterMatch = filters.priorities.includes(task.priority)
     }
 
+    const modalDate = filters.dateRange
     let dateMatch = true
-    if ((dateRange.start || dateRange.end) && task.dueDateIso) {
+    const start = dateRange.start || modalDate?.from || ""
+    const end = dateRange.end || modalDate?.to || ""
+    if ((start || end) && task.dueDateIso) {
       const taskDate = new Date(task.dueDateIso)
-      if (dateRange.start) dateMatch = dateMatch && taskDate >= new Date(dateRange.start)
-      if (dateRange.end) dateMatch = dateMatch && taskDate <= new Date(`${dateRange.end}T23:59:59`)
+      if (start) dateMatch = dateMatch && taskDate >= new Date(start)
+      if (end) dateMatch = dateMatch && taskDate <= new Date(`${end}T23:59:59`)
     }
 
     return statusMatch && searchMatch && filterMatch && dateMatch
@@ -280,17 +293,32 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                     ))}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => {
-                    setPanelCase(task)
-                    setIsPanelOpen(true)
-                  }}
-                >
-                  <Eye className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Editar caso"
+                    onClick={() => {
+                      setSelectedCase(task)
+                      setIsCaseModalOpen(true)
+                    }}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Ver detalhes"
+                    onClick={() => {
+                      setPanelCase(task)
+                      setIsPanelOpen(true)
+                    }}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -314,7 +342,15 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       <FilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApply={(newFilters) => setFilters(newFilters)}
+        onApply={(newFilters) => {
+          setFilters(newFilters)
+          if (newFilters.dateRange) {
+            setDateRange({
+              start: newFilters.dateRange.from,
+              end: newFilters.dateRange.to,
+            })
+          }
+        }}
         currentFilters={filters}
       />
 

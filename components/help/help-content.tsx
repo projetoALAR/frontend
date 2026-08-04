@@ -2,58 +2,76 @@
 
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, BookOpen, Video, MessageCircle, Mail, ChevronDown } from "lucide-react"
+import { Search, BookOpen, MessageCircle, Mail, ChevronDown } from "lucide-react"
 import { useState } from "react"
+
+const FORUM_URL = process.env.NEXT_PUBLIC_FORUM_URL || "https://github.com/discussions"
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@alar.com.br"
 
 const helpCategories = [
   {
+    id: "docs",
     icon: BookOpen,
     title: "Documentação",
     description: "Acesse nossos guias e tutoriais completos",
     color: "bg-primary",
   },
-  { icon: Video, title: "Tutoriais em Vídeo", description: "Assista guias passo a passo em vídeo", color: "bg-blue-400" },
   {
+    id: "forum",
     icon: MessageCircle,
     title: "Fórum da Comunidade",
     description: "Conecte-se com outros usuários e obtenha respostas",
     color: "bg-indigo-500",
   },
-  { icon: Mail, title: "Suporte", description: "Obtenha ajuda direta da nossa equipe de suporte", color: "bg-sky-500" },
+  {
+    id: "support",
+    icon: Mail,
+    title: "Suporte",
+    description: "Obtenha ajuda direta da nossa equipe de suporte",
+    color: "bg-sky-500",
+  },
 ]
 
 const faqs = [
   {
     question: "Como criar um novo caso?",
-    answer: "Clique no botão '+ Casos' no painel para criar um novo caso. Preencha o título, área jurídica, prioridade e data de vencimento. Você também pode adicionar classificações (tags) para organizar melhor seus casos.",
+    answer:
+      "Clique no botão '+ Casos' no painel ou '+ Novo Caso' na página de Casos. Preencha título, cliente, prioridade, status e prazo. Você também pode adicionar tags para organizar melhor seus casos.",
   },
   {
     question: "Como adicionar um novo cliente?",
-    answer: "Acesse a página 'Clientes' no menu lateral ou clique em '+ Cliente' no dashboard. Preencha os dados do cliente como nome/razão social, email, telefone, CNPJ e endereço. Você pode gerenciar todos os clientes em um só lugar.",
+    answer:
+      "Acesse a página 'Clientes' no menu lateral ou clique em '+ Cliente' no dashboard. Preencha nome, CPF, e-mail e telefone. Os clientes ficam disponíveis ao criar casos.",
   },
   {
     question: "Como convidar membros da equipe?",
-    answer: "Acesse a página Equipe e clique em '+ Adicionar Membro'. Preencha o nome completo, email e selecione o cargo do membro. Os membros aparecerão na lista e você pode fazer chamadas ou enviar emails diretamente.",
+    answer:
+      "Acesse a página Equipe e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode enviar e-mail pelo ícone no card do membro.",
   },
   {
     question: "Como usar o filtro de datas nas tarefas?",
-    answer: "Na página de Casos, clique no botão 'Data' para abrir o seletor de período. Escolha uma data inicial e final para filtrar apenas os casos com vencimento nesse período. Clique em 'Limpar' para remover o filtro.",
+    answer:
+      "Na página de Casos, use o botão 'Data' ou o modal 'Filtrar' com datas de vencimento. Escolha início e fim para filtrar casos com prazo nesse período.",
   },
   {
     question: "Como fazer upload de documentos?",
-    answer: "Abra um caso clicando no ícone de olho. Na aba 'Documentos', clique na área tracejada ou arraste arquivos para enviar. Você pode baixar ou deletar documentos depois. Suporta PDF, Word, Excel e imagens.",
+    answer:
+      "Abra um caso pelo ícone de olho. Na aba 'Documentos', clique em Enviar e selecione o arquivo. Depois você pode baixar ou excluir. Suporta PDF, Word, Excel e imagens.",
   },
   {
     question: "Como editar um caso ou membro?",
-    answer: "Clique no ícone de lápis (Pencil) no card do caso ou membro. Faça as alterações desejadas e clique em 'Atualizar'. As alterações são salvas automaticamente.",
+    answer:
+      "Nos casos, use o lápis para o modal de edição ou o olho para o painel lateral. Nos membros, use o ícone de lápis no card.",
   },
   {
     question: "Posso deletar clientes ou membros?",
-    answer: "Sim, clique no ícone de lixeira (Trash) no card do cliente ou membro. Confirme a ação e o registro será removido. Esta ação não pode ser desfeita.",
+    answer:
+      "Sim. Use o ícone de lixeira no card do cliente ou membro e confirme. A remoção não pode ser desfeita.",
   },
   {
     question: "Como entrar em contato com o suporte?",
-    answer: "Você pode clicar nos botões de Email ou Ligar nos cards de clientes e membros para entrar em contato direto. Para questões gerais, acesse a seção de Suporte nesta página.",
+    answer:
+      "Clique no card Suporte nesta página para abrir seu cliente de e-mail, ou use o e-mail configurado da equipe.",
   },
 ]
 
@@ -64,8 +82,22 @@ export function HelpContent() {
   const filteredFaqs = faqs.filter(
     (faq) =>
       faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
+      faq.answer.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  const handleCategoryClick = (id: string) => {
+    if (id === "docs") {
+      document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })
+      return
+    }
+    if (id === "forum") {
+      window.open(FORUM_URL, "_blank", "noopener,noreferrer")
+      return
+    }
+    if (id === "support") {
+      window.location.href = `mailto:${SUPPORT_EMAIL}`
+    }
+  }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
@@ -79,10 +111,16 @@ export function HelpContent() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {helpCategories.map((category, index) => (
           <Card
             key={category.title}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleCategoryClick(category.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleCategoryClick(category.id)
+            }}
             className="p-6 hover:shadow-lg transition-all duration-300 cursor-pointer animate-slide-in-up"
             style={{ animationDelay: `${index * 100}ms` }}
           >
@@ -99,39 +137,32 @@ export function HelpContent() {
         ))}
       </div>
 
-      <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-6">Perguntas Frequentes</h3>
-        {searchTerm && filteredFaqs.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">Nenhuma pergunta encontrada para "{searchTerm}"</p>
+      <div id="faq-section" className="space-y-4 scroll-mt-6">
+        <h2 className="text-xl font-semibold">Perguntas Frequentes</h2>
+        {filteredFaqs.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum resultado para a busca.</p>
         ) : (
-          <div className="space-y-3">
-            {filteredFaqs.map((faq, index) => (
-              <div
-                key={faq.question}
-                className="border border-border rounded-lg overflow-hidden animate-slide-in-up transition-all duration-300"
-                style={{ animationDelay: `${index * 50}ms` }}
+          filteredFaqs.map((faq, index) => (
+            <Card key={faq.question} className="overflow-hidden">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/50 transition-colors"
+                onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
               >
-                <button
-                  onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-secondary transition-colors text-left"
-                >
-                  <h4 className="font-medium">{faq.question}</h4>
-                  <ChevronDown
-                    className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${
-                      expandedFaq === index ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                {expandedFaq === index && (
-                  <div className="px-4 py-3 bg-muted/50 border-t border-border animate-slide-in-up">
-                    <p className="text-sm text-muted-foreground">{faq.answer}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                <span className="font-medium pr-4">{faq.question}</span>
+                <ChevronDown
+                  className={`w-5 h-5 shrink-0 transition-transform ${
+                    expandedFaq === index ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {expandedFaq === index && (
+                <div className="px-4 pb-4 text-sm text-muted-foreground">{faq.answer}</div>
+              )}
+            </Card>
+          ))
         )}
-      </Card>
+      </div>
     </div>
   )
 }

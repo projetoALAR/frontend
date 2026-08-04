@@ -2,10 +2,12 @@
 
 import { Card } from "@/components/ui/card"
 import { Clock, AlertCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
 
 export function Reminders() {
+  const router = useRouter()
   const { data } = useDashboardResumo()
   const processos = data?.proximosPrazos?.processos ?? []
   const compromissos = data?.proximosPrazos?.compromissos ?? []
@@ -13,12 +15,16 @@ export function Reminders() {
   const deadlines = [
     ...processos.map((p) => ({
       id: `p-${p.id}`,
+      entityId: p.id,
+      tipo: "processo" as const,
       title: p.titulo || p.numero,
       project: p.status,
       dueDate: formatDatePt(p.prazo),
     })),
     ...compromissos.map((c) => ({
       id: `c-${c.id}`,
+      entityId: c.id,
+      tipo: "compromisso" as const,
       title: c.titulo,
       project: c.processo?.numero ? `Proc. ${c.processo.numero}` : "Agenda",
       dueDate: formatDatePt(c.dataHora),
@@ -36,9 +42,17 @@ export function Reminders() {
           <p className="text-sm text-muted-foreground text-center py-4">Nenhum prazo pendente.</p>
         ) : (
           deadlines.map((item) => (
-            <div
+            <button
+              type="button"
               key={item.id}
-              className="bg-secondary rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+              className="w-full text-left bg-secondary rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer"
+              onClick={() => {
+                if (item.tipo === "processo") {
+                  router.push(`/tasks?caseId=${item.entityId}`)
+                } else {
+                  router.push("/calendar")
+                }
+              }}
             >
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -53,7 +67,7 @@ export function Reminders() {
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           ))
         )}
       </div>

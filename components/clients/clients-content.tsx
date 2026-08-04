@@ -45,6 +45,15 @@ export function ClientsContent() {
     void loadClients()
   }, [loadClients])
 
+  useEffect(() => {
+    const handleOpenNewClient = () => {
+      setSelectedClient(null)
+      setIsModalOpen(true)
+    }
+    window.addEventListener("openNewClientModal", handleOpenNewClient)
+    return () => window.removeEventListener("openNewClientModal", handleOpenNewClient)
+  }, [])
+
   const filteredClients = clients.filter((client) => {
     const term = searchTerm.toLowerCase()
     return (

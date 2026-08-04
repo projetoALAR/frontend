@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileNav } from "./mobile-nav"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
+import { useAuth } from "@/components/auth/auth-provider"
+import { preferenciasApi } from "@/lib/preferencias-api"
 import type { ReactNode } from "react"
 
 interface HeaderProps {
@@ -26,21 +28,58 @@ interface HeaderProps {
 
 export function Header({ title, description, actions }: HeaderProps) {
   const router = useRouter()
-  const [notifRead, setNotifRead] = useState(false)
+  const { user, refresh } = useAuth()
   const { data } = useDashboardResumo()
+  const [lidas, setLidas] = useState<string[]>([])
 
-  const deadlines = [
-    ...(data?.proximosPrazos?.processos ?? []).map((p) => ({
-      id: `p-${p.id}`,
-      title: p.titulo || p.numero,
-      dueDate: formatDatePt(p.prazo),
-    })),
-    ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
-      id: `c-${c.id}`,
-      title: c.titulo,
-      dueDate: formatDatePt(c.dataHora),
-    })),
-  ].slice(0, 3)
+  useEffect(() => {
+    void preferenciasApi
+      .obter()
+      .then((prefs) => {
+        const list = Array.isArray(prefs.notificacoesLidas) ? prefs.notificacoesLidas : []
+        setLidas(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  const deadlines = useMemo(
+    () => [
+      ...(data?.proximosPrazos?.processos ?? []).map((p) => ({
+        id: `p-${p.id}`,
+        tipo: "processo" as const,
+        entityId: p.id,
+        title: p.titulo || p.numero,
+        dueDate: formatDatePt(p.prazo),
+      })),
+      ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
+        id: `c-${c.id}`,
+        tipo: "compromisso" as const,
+        entityId: c.id,
+        title: c.titulo,
+        dueDate: formatDatePt(c.dataHora),
+      })),
+    ].slice(0, 3),
+    [data],
+  )
+
+  const unreadCount = deadlines.filter((d) => !lidas.includes(d.id)).length
+
+  const marcarComoLidas = useCallback(async () => {
+    const ids = Array.from(new Set([...lidas, ...deadlines.map((d) => d.id)]))
+    setLidas(ids)
+    try {
+      await preferenciasApi.atualizar({ notificacoesLidas: ids })
+    } catch {
+      // estado local já atualizado
+    }
+  }, [deadlines, lidas])
+
+  const iniciais = (user?.nome || "U")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "U"
 
   return (
     <header className="space-y-3 md:space-y-4 animate-slide-in-up">
@@ -69,7 +108,7 @@ export function Header({ title, description, actions }: HeaderProps) {
                 title="Notificações"
               >
                 <Bell className="w-4 h-4" />
-                {!notifRead && deadlines.length > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
                 )}
               </Button>
@@ -79,7 +118,10 @@ export function Header({ title, description, actions }: HeaderProps) {
                 <span>Notificações</span>
                 <button
                   className="text-xs text-primary hover:underline flex items-center gap-1"
-                  onClick={() => setNotifRead(true)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    void marcarComoLidas()
+                  }}
                 >
                   <CheckCheck className="w-3 h-3" />
                   Marcar como lidas
@@ -92,8 +134,16 @@ export function Header({ title, description, actions }: HeaderProps) {
                 deadlines.map((item) => (
                   <DropdownMenuItem
                     key={item.id}
-                    className="flex flex-col items-start gap-0.5 cursor-pointer py-2.5"
-                    onClick={() => router.push("/tasks")}
+                    className={`flex flex-col items-start gap-0.5 cursor-pointer py-2.5 ${
+                      !lidas.includes(item.id) ? "bg-secondary/40" : ""
+                    }`}
+                    onClick={() => {
+                      if (item.tipo === "processo") {
+                        router.push(`/tasks?caseId=${item.entityId}`)
+                      } else {
+                        router.push("/calendar")
+                      }
+                    }}
                   >
                     <span className="text-sm font-medium leading-tight">{item.title}</span>
                     <span className="text-xs text-muted-foreground">Prazo: {item.dueDate}</span>
@@ -111,16 +161,21 @@ export function Header({ title, description, actions }: HeaderProps) {
           </DropdownMenu>
 
           <button
-            onClick={() => router.push("/settings")}
+            onClick={() => {
+              void refresh()
+              router.push("/settings")
+            }}
             className="flex items-center gap-2 pl-2 md:pl-3 border-l border-border hover:opacity-80 transition-opacity cursor-pointer"
           >
             <Avatar className="w-7 h-7 md:w-8 md:h-8 ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40">
-              <AvatarImage src="/avatar-alar.png" alt="Alar" />
-              <AvatarFallback className="text-xs bg-primary text-primary-foreground">AL</AvatarFallback>
+              <AvatarImage src={user?.fotoUrl || undefined} alt={user?.nome || "Conta"} />
+              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                {iniciais}
+              </AvatarFallback>
             </Avatar>
-            <div className="text-xs hidden sm:block">
-              <p className="font-semibold text-foreground">Minha Conta</p>
-              <p className="text-muted-foreground text-[10px]">admin@alar.com.br</p>
+            <div className="text-xs hidden sm:block text-left">
+              <p className="font-semibold text-foreground">{user?.nome || "Minha Conta"}</p>
+              <p className="text-muted-foreground text-[10px]">{user?.email || ""}</p>
             </div>
           </button>
         </div>

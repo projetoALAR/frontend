@@ -1,15 +1,18 @@
 "use client"
+
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LogOut, CheckCircle2 } from "lucide-react"
 import { Sidebar } from "@/components/dashboard/sidebar"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth/auth-provider"
 
 export default function LogoutPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLoggingOutComplete, setIsLoggingOutComplete] = useState(false)
 
@@ -20,10 +23,7 @@ export default function LogoutPage() {
       description: "Você está sendo desconectado",
     })
 
-    // Simular processo de logout com delay
     setTimeout(() => {
-      localStorage.removeItem("userSession")
-      sessionStorage.clear()
       setIsLoggingOut(false)
       setIsLoggingOutComplete(true)
 
@@ -32,11 +32,11 @@ export default function LogoutPage() {
         description: "Você saiu da sua conta com sucesso",
       })
 
-      // Redirecionar após 2 segundos
       setTimeout(() => {
-        router.push("/")
-      }, 2000)
-    }, 1500)
+        logout()
+        router.replace("/login")
+      }, 1200)
+    }, 600)
   }
 
   const handleCancel = () => {
@@ -65,7 +65,7 @@ export default function LogoutPage() {
               <h1 className="text-2xl font-bold text-foreground mb-2">Logout Realizado!</h1>
               <p className="text-muted-foreground">Você saiu com sucesso da sua conta</p>
             </div>
-            <p className="text-xs text-muted-foreground">Você será redirecionado em instantes...</p>
+            <p className="text-xs text-muted-foreground">Você será redirecionado para o login...</p>
           </Card>
         </main>
       </div>

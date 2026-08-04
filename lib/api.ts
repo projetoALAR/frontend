@@ -1,20 +1,41 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+const TOKEN_KEY = "alar_token"
 
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown
 }
 
+function getToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+function handleUnauthorized() {
+  if (typeof window === "undefined") return
+  localStorage.removeItem(TOKEN_KEY)
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login"
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options
+  const token = getToken()
 
   const response = await fetch(`${API_URL}${path}`, {
     ...rest,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
+
+  if (response.status === 401) {
+    handleUnauthorized()
+    throw new Error("Não autenticado")
+  }
 
   if (!response.ok) {
     const message = await response.text().catch(() => response.statusText)
@@ -29,10 +50,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
+  const token = getToken()
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: formData,
   })
+
+  if (response.status === 401) {
+    handleUnauthorized()
+    throw new Error("Não autenticado")
+  }
 
   if (!response.ok) {
     const message = await response.text().catch(() => response.statusText)

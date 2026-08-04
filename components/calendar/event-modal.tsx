@@ -8,6 +8,7 @@ import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { CompromissoFormData } from "@/lib/compromissos-api"
 import { formatDateTimeLocalInput } from "@/lib/format"
+import { processosApi } from "@/lib/processos-api"
 
 export type CalendarEventView = {
   id: string
@@ -30,17 +31,36 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
   const [titulo, setTitulo] = useState("")
   const [dataHora, setDataHora] = useState("")
   const [descricao, setDescricao] = useState("")
+  const [processoId, setProcessoId] = useState<string>("")
+  const [processos, setProcessos] = useState<{ id: string; label: string }[]>([])
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+    void processosApi
+      .listar()
+      .then((list) =>
+        setProcessos(
+          list.map((p) => ({
+            id: p.id,
+            label: `${p.numero}${p.titulo ? ` — ${p.titulo}` : ""}`,
+          })),
+        ),
+      )
+      .catch(() => setProcessos([]))
+  }, [isOpen])
 
   useEffect(() => {
     if (isOpen && event) {
       setTitulo(event.titulo || "")
       setDataHora(formatDateTimeLocalInput(event.dataHora))
       setDescricao(event.descricao || "")
+      setProcessoId(event.processoId || "")
     } else if (isOpen) {
       setTitulo("")
       setDataHora("")
       setDescricao("")
+      setProcessoId("")
     }
   }, [isOpen, event])
 
@@ -60,7 +80,7 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
         titulo: titulo.trim(),
         descricao: descricao.trim() || undefined,
         dataHora: new Date(dataHora).toISOString(),
-        processoId: event?.processoId ?? null,
+        processoId: processoId || null,
       })
       toast({
         title: "Sucesso!",
@@ -106,6 +126,23 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
               className="mt-1"
               disabled={isSaving}
             />
+          </div>
+          <div>
+            <Label htmlFor="event-processo">Processo vinculado</Label>
+            <select
+              id="event-processo"
+              value={processoId}
+              onChange={(e) => setProcessoId(e.target.value)}
+              disabled={isSaving}
+              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Nenhum</option>
+              {processos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <Label htmlFor="event-desc">Descrição</Label>

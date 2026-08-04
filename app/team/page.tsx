@@ -1,9 +1,15 @@
+"use client"
+
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { Header } from "@/components/dashboard/header"
 import { TeamContent } from "@/components/team/team-content"
 import { Button } from "@/components/ui/button"
 
 export default function TeamPage() {
+  const handleAddMember = () => {
+    window.dispatchEvent(new CustomEvent("openNewTeamMemberModal"))
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -13,7 +19,10 @@ export default function TeamPage() {
           title="Equipe"
           description="Gerencie os membros da sua equipe e suas funções."
           actions={
-            <Button className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105">
+            <Button
+              onClick={handleAddMember}
+              className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+            >
               + Adicionar Membro
             </Button>
           }

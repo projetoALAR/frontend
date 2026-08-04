@@ -24,6 +24,9 @@ export default function DashboardPage() {
 
   const handleNewClient = () => {
     router.push("/clients")
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("openNewClientModal"))
+    }, 100)
   }
 
   return (

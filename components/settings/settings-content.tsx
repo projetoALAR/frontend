@@ -7,9 +7,10 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "@/components/theme-provider"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { preferenciasApi, type NotificacoesPrefs } from "@/lib/preferencias-api"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth/auth-provider"
 import { Loader2 } from "lucide-react"
 
 const defaultNotifications: NotificacoesPrefs = {
@@ -22,11 +23,15 @@ const defaultNotifications: NotificacoesPrefs = {
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
+  const { refresh } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<NotificacoesPrefs>(defaultNotifications)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     void preferenciasApi
@@ -34,6 +39,7 @@ export function SettingsContent() {
       .then((prefs) => {
         setName(prefs.nome || "")
         setEmail(prefs.email || "")
+        setFotoUrl(prefs.fotoUrl || null)
         const n = prefs.notificacoes as NotificacoesPrefs
         setNotifications({
           email: !!n?.email,
@@ -69,6 +75,7 @@ export function SettingsContent() {
         notificacoes: partial?.notificacoes ?? notifications,
         tema: partial?.tema ?? theme,
       })
+      await refresh()
       toast({ title: "Preferências salvas" })
     } catch (error) {
       toast({
@@ -87,6 +94,41 @@ export function SettingsContent() {
     void persist({ notificacoes: next })
   }
 
+  const handleFotoChange = async (file: File | undefined) => {
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo é 2MB",
+        variant: "destructive",
+      })
+      return
+    }
+    setUploading(true)
+    try {
+      const prefs = await preferenciasApi.atualizarFoto(file)
+      setFotoUrl(prefs.fotoUrl || null)
+      await refresh()
+      toast({ title: "Foto atualizada" })
+    } catch (error) {
+      toast({
+        title: "Erro no upload",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  const iniciais = (name || "U")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("") || "U"
+
   if (loading) {
     return (
       <div className="flex justify-center py-12 gap-2 text-muted-foreground">
@@ -103,23 +145,28 @@ export function SettingsContent() {
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
-              <AvatarImage src="/avatar-alar.png" alt="Alar" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl">AL</AvatarFallback>
+              <AvatarImage src={fotoUrl || undefined} alt={name || "Perfil"} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                {iniciais}
+              </AvatarFallback>
             </Avatar>
             <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={(e) => void handleFotoChange(e.target.files?.[0])}
+              />
               <Button
                 variant="outline"
                 className="bg-transparent"
-                onClick={() =>
-                  toast({
-                    title: "Em breve",
-                    description: "Upload de foto ainda não está disponível",
-                  })
-                }
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
               >
-                Alterar Foto
+                {uploading ? "Enviando..." : "Alterar Foto"}
               </Button>
-              <p className="text-xs text-muted-foreground mt-2">JPG, PNG ou GIF. Tamanho máximo 2MB</p>
+              <p className="text-xs text-muted-foreground mt-2">JPG, PNG, WEBP ou GIF. Tamanho máximo 2MB</p>
             </div>
           </div>
 
@@ -141,13 +188,16 @@ export function SettingsContent() {
       </Card>
 
       <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-6">Notificações</h3>
+        <h3 className="font-semibold text-lg mb-2">Preferências de Notificação</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Controlam o que o sistema considera ativo nas suas preferências. Não enviam e-mail ou push automaticamente.
+        </p>
         <div className="space-y-4">
           {[
-            { label: "Notificações por e-mail", description: "Receba e-mails sobre a atividade da sua conta", key: "email" as const },
-            { label: "Notificações push", description: "Receba notificações push no seu navegador", key: "push" as const },
-            { label: "Lembretes de tarefas", description: "Seja lembrado sobre prazos de tarefas", key: "reminders" as const },
-            { label: "Atualizações da equipe", description: "Notificações sobre atividades dos membros", key: "teamUpdates" as const },
+            { label: "Notificações por e-mail", description: "Preferência para alertas por e-mail", key: "email" as const },
+            { label: "Notificações push", description: "Preferência para alertas no navegador", key: "push" as const },
+            { label: "Lembretes de tarefas", description: "Preferência para lembretes de prazos", key: "reminders" as const },
+            { label: "Atualizações da equipe", description: "Preferência para atividades da equipe", key: "teamUpdates" as const },
           ].map((item) => (
             <div key={item.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
               <div>
