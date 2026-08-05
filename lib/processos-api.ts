@@ -28,7 +28,7 @@ export type ProcessoFormData = {
   status: string
   clienteId: string
   titulo?: string
-  descricao?: string
+  descricao?: string | null
   prioridade?: string
   prazo?: string | null
   tags?: string[]

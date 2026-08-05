@@ -62,6 +62,8 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [headerData, setHeaderData] = useState({ title: "", priority: "", project: "", dueDate: "" })
   const [editingInfo, setEditingInfo] = useState(false)
   const [infoData, setInfoData] = useState({ project: "", priority: "", dueDate: "", completed: false })
+  const [editingDescricao, setEditingDescricao] = useState(false)
+  const [descricaoDraft, setDescricaoDraft] = useState("")
   const [editingTags, setEditingTags] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
@@ -107,9 +109,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
         dueDate: caseData.dueDateIso ? caseData.dueDateIso.slice(0, 10) : "",
         completed: caseData.completed || false,
       })
+      setDescricaoDraft(caseData.descricao || "")
       setTags(caseData.tags || [])
       setEditingHeader(false)
       setEditingInfo(false)
+      setEditingDescricao(false)
       setEditingTags(false)
       setChatInput("")
       void loadDocs(caseData.id)
@@ -124,6 +128,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
     prazo?: string | null
     tags?: string[]
     concluido?: boolean
+    descricao?: string | null
   }) => {
     if (!localCase) return
     try {
@@ -372,6 +377,68 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                     </dd>
                   </div>
                 </dl>
+              )}
+            </section>
+
+            <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-muted-foreground" />
+                  Descrição
+                </h4>
+                {!editingDescricao ? (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => {
+                      setDescricaoDraft(localCase.descricao || "")
+                      setEditingDescricao(true)
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                ) : (
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => {
+                        setDescricaoDraft(localCase.descricao || "")
+                        setEditingDescricao(false)
+                      }}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => {
+                        void persistCase({
+                          descricao: descricaoDraft.trim() || null,
+                        }).then(() => setEditingDescricao(false))
+                      }}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {editingDescricao ? (
+                <Textarea
+                  value={descricaoDraft}
+                  onChange={(e) => setDescricaoDraft(e.target.value)}
+                  placeholder="Sobre o que se trata este caso..."
+                  className="min-h-[100px] resize-y bg-background"
+                />
+              ) : localCase.descricao ? (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {localCase.descricao}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma descrição</p>
               )}
             </section>
 

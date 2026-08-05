@@ -79,6 +79,23 @@ export function CalendarContent() {
     return set
   }, [events, year, month])
 
+  const upcomingEvents = useMemo(() => {
+    const agora = Date.now()
+    return events
+      .filter((event) => new Date(event.dataHora).getTime() >= agora)
+      .sort(
+        (a, b) =>
+          new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime(),
+      )
+      .slice(0, 5)
+  }, [events])
+
+  const goToEventDate = (event: CalendarEventView) => {
+    const d = new Date(event.dataHora)
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1))
+    setSelectedDay(d.getDate())
+  }
+
   const handleSaveEvent = async (data: CompromissoFormData) => {
     if (editingEvent) {
       const updated = await compromissosApi.atualizar(editingEvent.id, data)
@@ -105,6 +122,10 @@ export function CalendarContent() {
   }
 
   const monthLabel = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+
+  const hoje = new Date()
+  const hojeNoMesVisivel =
+    hoje.getFullYear() === year && hoje.getMonth() === month ? hoje.getDate() : null
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -147,40 +168,93 @@ export function CalendarContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="p-4 lg:col-span-2">
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {weekDays.map((d) => (
-                <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">
-                  {d}
-                </div>
-              ))}
+          <div className="lg:col-span-2 space-y-3">
+            <Card className="p-4">
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {weekDays.map((d) => (
+                  <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">
+                    {d}
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                  <div key={`empty-${i}`} className="h-10" />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1
+                  const selected = day === selectedDay
+                  const isToday = hojeNoMesVisivel === day
+                  const hasEvents = daysWithEvents.has(day)
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => setSelectedDay(day)}
+                      title={isToday ? "Hoje" : undefined}
+                      className={`h-10 rounded-md text-sm relative transition-colors ${
+                        selected
+                          ? "bg-primary text-primary-foreground"
+                          : isToday
+                            ? "bg-sky-100 text-sky-900 font-semibold hover:bg-sky-200 dark:bg-sky-950/60 dark:text-sky-100 dark:hover:bg-sky-900/70"
+                            : "hover:bg-secondary"
+                      } ${selected && isToday ? "ring-2 ring-sky-300 ring-offset-1 ring-offset-background" : ""}`}
+                    >
+                      {day}
+                      {hasEvents && (
+                        <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selected ? "bg-primary-foreground" : isToday ? "bg-sky-600 dark:bg-sky-300" : "bg-primary"}`} />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </Card>
+
+            <div className="px-1">
+              <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                Próximos eventos
+              </p>
+              {upcomingEvents.length === 0 ? (
+                <p className="text-xs text-muted-foreground/80 py-1">
+                  Nenhum evento futuro
+                </p>
+              ) : (
+                <ul className="divide-y divide-border/60">
+                  {upcomingEvents.map((event) => {
+                    const d = new Date(event.dataHora)
+                    const isActive =
+                      d.getFullYear() === year &&
+                      d.getMonth() === month &&
+                      d.getDate() === selectedDay
+                    return (
+                      <li key={event.id}>
+                        <button
+                          type="button"
+                          onClick={() => goToEventDate(event)}
+                          className={`w-full flex items-baseline gap-3 py-2 text-left text-sm transition-colors hover:text-primary ${
+                            isActive ? "text-primary" : "text-foreground"
+                          }`}
+                        >
+                          <span className="shrink-0 w-[7.5rem] text-xs text-muted-foreground tabular-nums">
+                            {d.toLocaleDateString("pt-BR", {
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                            {" · "}
+                            {d.toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <span className="truncate font-medium">{event.titulo}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
-            <div className="grid grid-cols-7 gap-1">
-              {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-10" />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1
-                const selected = day === selectedDay
-                const hasEvents = daysWithEvents.has(day)
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => setSelectedDay(day)}
-                    className={`h-10 rounded-md text-sm relative transition-colors ${
-                      selected ? "bg-primary text-primary-foreground" : "hover:bg-secondary"
-                    }`}
-                  >
-                    {day}
-                    {hasEvents && (
-                      <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selected ? "bg-primary-foreground" : "bg-primary"}`} />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </Card>
+          </div>
 
           <Card className="p-4 space-y-3">
             <div className="flex items-center gap-2">

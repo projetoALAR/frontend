@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { CaseView } from "@/lib/processo-mapper"
@@ -21,6 +22,7 @@ interface CaseModalProps {
 export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: CaseModalProps) {
   const { toast } = useToast()
   const [title, setTitle] = useState("")
+  const [descricao, setDescricao] = useState("")
   const [numero, setNumero] = useState("")
   const [status, setStatus] = useState("Em andamento")
   const [priority, setPriority] = useState("Média")
@@ -38,6 +40,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
   useEffect(() => {
     if (isOpen && caseData) {
       setTitle(caseData.title || "")
+      setDescricao(caseData.descricao || "")
       setNumero(caseData.numero || "")
       setStatus(caseData.status || "Em andamento")
       setPriority(caseData.priority || "Média")
@@ -46,6 +49,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
       setErrors({})
     } else if (isOpen) {
       setTitle("")
+      setDescricao("")
       setNumero("")
       setStatus("Em andamento")
       setPriority("Média")
@@ -79,6 +83,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
         numero: numero.trim(),
         status: status.trim(),
         clienteId,
+        descricao: descricao.trim() || null,
         prioridade: priority,
         prazo: new Date(`${dueDate}T12:00:00`).toISOString(),
         concluido: caseData?.completed ?? false,
@@ -118,6 +123,17 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
               disabled={isSaving}
             />
             {errors.title && <p className="text-xs text-destructive mt-1">{errors.title}</p>}
+          </div>
+          <div>
+            <Label htmlFor="case-descricao">Descrição</Label>
+            <Textarea
+              id="case-descricao"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Resumo do que se trata o caso (opcional)"
+              className="mt-1 min-h-[88px] resize-y"
+              disabled={isSaving}
+            />
           </div>
           <div>
             <Label htmlFor="case-numero">Número do processo *</Label>
