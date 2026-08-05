@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   MessageCircle,
   FolderOpen,
@@ -219,8 +218,8 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col">
-        <SheetHeader className="p-4 border-b bg-secondary/30 space-y-2">
+      <SheetContent className="w-full sm:max-w-xl p-0 gap-0 flex flex-col h-full overflow-hidden">
+        <SheetHeader className="p-4 border-b bg-secondary/30 space-y-2 shrink-0">
           {editingHeader ? (
             <div className="space-y-2">
               <Input value={headerData.title} onChange={(e) => setHeaderData({ ...headerData, title: e.target.value })} />
@@ -277,14 +276,14 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           )}
         </SheetHeader>
 
-        <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-4 mt-3 grid grid-cols-3">
+        <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0">
+          <TabsList className="mx-4 mt-3 grid grid-cols-3 shrink-0">
             <TabsTrigger value="info"><Briefcase className="w-4 h-4 mr-1" />Info</TabsTrigger>
             <TabsTrigger value="docs"><FolderOpen className="w-4 h-4 mr-1" />Docs</TabsTrigger>
             <TabsTrigger value="chat"><MessageCircle className="w-4 h-4 mr-1" />Chat</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="info" className="flex-1 overflow-auto p-4 space-y-3 m-0">
+          <TabsContent value="info" className="flex-1 overflow-auto p-4 space-y-3 m-0 min-h-0 data-[state=inactive]:hidden">
             <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -459,7 +458,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             </section>
           </TabsContent>
 
-          <TabsContent value="docs" className="flex-1 overflow-auto p-4 space-y-4 m-0">
+          <TabsContent value="docs" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Documentos</h4>
               <div>
@@ -525,21 +524,25 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             )}
           </TabsContent>
 
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 m-0 p-0">
-            <ScrollArea className="flex-1 p-4">
+          <TabsContent
+            value="chat"
+            className="flex-1 flex flex-col min-h-0 m-0 p-0 overflow-hidden data-[state=inactive]:hidden"
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="flex gap-2">
                     <Bot className="w-5 h-5 text-primary shrink-0" />
                     <p className="text-sm bg-secondary p-3 rounded-lg">
-                      Olá! Sou o assistente do processo. Como posso ajudar?
+                      Olá! Sou o assistente exclusivo deste caso. Posso resumir o processo,
+                      analisar arquivos anexados e tirar dúvidas gerais. Como posso ajudar?
                     </p>
                   </div>
                 )}
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex gap-2 ${msg.isUser ? "justify-end" : ""}`}>
                     {!msg.isUser && <Bot className="w-5 h-5 text-primary shrink-0" />}
-                    <div className={`text-sm p-3 rounded-lg max-w-[85%] ${msg.isUser ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                    <div className={`text-sm p-3 rounded-lg max-w-[85%] whitespace-pre-wrap ${msg.isUser ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
                       {msg.conteudo}
                     </div>
                     {msg.isUser && <User className="w-5 h-5 shrink-0" />}
@@ -548,13 +551,14 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 {isTyping && <p className="text-xs text-muted-foreground">Assistente digitando...</p>}
                 <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
-            <div className="p-3 border-t flex gap-2">
+            </div>
+            <div className="shrink-0 p-3 border-t bg-background flex gap-2">
               <Textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Pergunte sobre o caso..."
-                className="min-h-[44px] max-h-28"
+                placeholder="Pergunte sobre o caso ou os arquivos..."
+                className="min-h-[44px] max-h-28 resize-none"
+                rows={2}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault()
@@ -562,7 +566,12 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   }
                 }}
               />
-              <Button size="icon" onClick={() => void handleSendMessage()} disabled={isTyping || !chatInput.trim()}>
+              <Button
+                size="icon"
+                className="shrink-0"
+                onClick={() => void handleSendMessage()}
+                disabled={isTyping || !chatInput.trim() || !conversacaoId}
+              >
                 <Send className="w-4 h-4" />
               </Button>
             </div>

@@ -28,7 +28,10 @@ export function ChatHistory({
 }: ChatHistoryProps) {
   return (
     <div className="w-64 bg-card border-l border-border flex flex-col h-full">
-      <div className="p-4 border-b border-border">
+      <div className="p-4 border-b border-border space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Chat geral do workspace — sem detalhes internos dos casos
+        </p>
         <Button
           onClick={onNewConversation}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg"

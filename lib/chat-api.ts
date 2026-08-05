@@ -19,10 +19,12 @@ export type ConversacaoApi = {
 }
 
 export const chatApi = {
+  /** Conversas do chat geral (sem vínculo com processo). */
   listarConversas: () => api.get<ConversacaoApi[]>("/chat/conversas"),
-  criarConversa: (dados?: { titulo?: string; processoId?: string }) =>
+  criarConversa: (dados?: { titulo?: string }) =>
     api.post<ConversacaoApi>("/chat/conversas", dados ?? {}),
   obterConversa: (id: string) => api.get<ConversacaoApi>(`/chat/conversas/${id}`),
+  /** Chat exclusivo de um caso. */
   porProcesso: (processoId: string) =>
     api.get<ConversacaoApi>(`/chat/conversas/processo/${processoId}`),
   enviarMensagem: (conversacaoId: string, conteudo: string) =>
