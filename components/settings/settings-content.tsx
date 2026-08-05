@@ -92,6 +92,9 @@ export function SettingsContent() {
     const next = { ...notifications, [key]: !notifications[key] }
     setNotifications(next)
     void persist({ notificacoes: next })
+    if (key === "push" && next.push && typeof window !== "undefined" && "Notification" in window) {
+      void Notification.requestPermission()
+    }
   }
 
   const handleFotoChange = async (file: File | undefined) => {
@@ -190,7 +193,7 @@ export function SettingsContent() {
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-2">Preferências de Notificação</h3>
         <p className="text-sm text-muted-foreground mb-6">
-          Controlam o que o sistema considera ativo nas suas preferências. Não enviam e-mail ou push automaticamente.
+          E-mail exige SMTP no backend. Push usa notificações do navegador quando permitido.
         </p>
         <div className="space-y-4">
           {[

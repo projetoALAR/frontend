@@ -18,6 +18,8 @@ import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
 import { useAuth } from "@/components/auth/auth-provider"
 import { preferenciasApi } from "@/lib/preferencias-api"
+import { inboxApi } from "@/lib/inbox-api"
+import { usePushNotifications } from "@/hooks/use-push-notifications"
 import type { ReactNode } from "react"
 
 interface HeaderProps {
@@ -31,6 +33,8 @@ export function Header({ title, description, actions }: HeaderProps) {
   const { user, refresh } = useAuth()
   const { data } = useDashboardResumo()
   const [lidas, setLidas] = useState<string[]>([])
+  const [inboxUnread, setInboxUnread] = useState(0)
+  usePushNotifications()
 
   useEffect(() => {
     void preferenciasApi
@@ -39,6 +43,11 @@ export function Header({ title, description, actions }: HeaderProps) {
         const list = Array.isArray(prefs.notificacoesLidas) ? prefs.notificacoesLidas : []
         setLidas(list)
       })
+      .catch(() => {})
+
+    void inboxApi
+      .listar(true)
+      .then((items) => setInboxUnread(items.length))
       .catch(() => {})
   }, [])
 
@@ -94,9 +103,12 @@ export function Header({ title, description, actions }: HeaderProps) {
             size="icon"
             className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 h-8 w-8"
             title="Mensagens"
-            onClick={() => router.push("/chat")}
+            onClick={() => router.push("/messages")}
           >
             <Mail className="w-4 h-4" />
+            {inboxUnread > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+            )}
           </Button>
 
           <DropdownMenu>

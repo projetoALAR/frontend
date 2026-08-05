@@ -23,6 +23,24 @@ export function clearAuthToken() {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 
+async function authErrorMessage(response: Response): Promise<string> {
+  const fallback = `Erro na autenticação (${response.status})`
+  try {
+    const text = await response.text()
+    if (!text) return fallback
+    try {
+      const json = JSON.parse(text) as { message?: string | string[] }
+      if (Array.isArray(json.message)) return json.message.join(", ")
+      if (typeof json.message === "string" && json.message.trim()) return json.message
+    } catch {
+      return text
+    }
+    return text
+  } catch {
+    return response.statusText || fallback
+  }
+}
+
 async function authRequest<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -31,8 +49,7 @@ async function authRequest<T>(path: string, body: unknown): Promise<T> {
   })
 
   if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText)
-    throw new Error(message || `Erro na autenticação (${response.status})`)
+    throw new Error(await authErrorMessage(response))
   }
 
   return response.json() as Promise<T>

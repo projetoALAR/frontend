@@ -2,11 +2,14 @@
 
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, BookOpen, MessageCircle, Mail, ChevronDown } from "lucide-react"
+import { Search, BookOpen, Video, MessageCircle, Mail, ChevronDown } from "lucide-react"
 import { useState } from "react"
 
 const FORUM_URL = process.env.NEXT_PUBLIC_FORUM_URL || "https://github.com/discussions"
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@alar.com.br"
+const VIDEOS_URL =
+  process.env.NEXT_PUBLIC_VIDEOS_URL ||
+  "https://www.youtube.com/results?search_query=gest%C3%A3o+jur%C3%ADdica+escrit%C3%B3rio"
 
 const helpCategories = [
   {
@@ -15,6 +18,13 @@ const helpCategories = [
     title: "Documentação",
     description: "Acesse nossos guias e tutoriais completos",
     color: "bg-primary",
+  },
+  {
+    id: "videos",
+    icon: Video,
+    title: "Tutoriais em Vídeo",
+    description: "Assista guias passo a passo em vídeo",
+    color: "bg-blue-400",
   },
   {
     id: "forum",
@@ -46,7 +56,7 @@ const faqs = [
   {
     question: "Como convidar membros da equipe?",
     answer:
-      "Acesse a página Equipe e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode enviar e-mail pelo ícone no card do membro.",
+      "Acesse a página Equipe e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode registrar e enviar e-mail pelo botão no card do membro.",
   },
   {
     question: "Como usar o filtro de datas nas tarefas?",
@@ -56,7 +66,7 @@ const faqs = [
   {
     question: "Como fazer upload de documentos?",
     answer:
-      "Abra um caso pelo ícone de olho. Na aba 'Documentos', clique em Enviar e selecione o arquivo. Depois você pode baixar ou excluir. Suporta PDF, Word, Excel e imagens.",
+      "Abra um caso pelo ícone de olho. Na aba 'Documentos', arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",
   },
   {
     question: "Como editar um caso ou membro?",
@@ -90,6 +100,10 @@ export function HelpContent() {
       document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })
       return
     }
+    if (id === "videos") {
+      window.open(VIDEOS_URL, "_blank", "noopener,noreferrer")
+      return
+    }
     if (id === "forum") {
       window.open(FORUM_URL, "_blank", "noopener,noreferrer")
       return
@@ -111,7 +125,7 @@ export function HelpContent() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {helpCategories.map((category, index) => (
           <Card
             key={category.title}

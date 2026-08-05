@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Mail, Trash2, Pencil, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { TeamMemberModal } from "./team-member-modal"
+import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { equipeApi, type MembroEquipeApi, type MembroFormData } from "@/lib/equipe-api"
 import { initialsFromName } from "@/lib/format"
@@ -18,6 +19,7 @@ export function TeamContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<MembroEquipeApi | null>(null)
+  const [contactMember, setContactMember] = useState<MembroEquipeApi | null>(null)
 
   const load = useCallback(async () => {
     setIsLoading(true)
@@ -126,7 +128,7 @@ export function TeamContent() {
                   variant="outline"
                   size="sm"
                   className="bg-transparent"
-                  onClick={() => (window.location.href = `mailto:${member.email}`)}
+                  onClick={() => setContactMember(member)}
                 >
                   <Mail className="w-4 h-4 mr-1" />
                   {member.email}
@@ -150,6 +152,18 @@ export function TeamContent() {
         memberData={selectedMember}
         isEditing={!!selectedMember}
       />
+
+      {contactMember && (
+        <ContactDialog
+          open={!!contactMember}
+          onOpenChange={(open) => !open && setContactMember(null)}
+          alvoTipo="membro"
+          alvoId={contactMember.id}
+          alvoNome={contactMember.nome}
+          canal="email"
+          destino={contactMember.email}
+        />
+      )}
     </div>
   )
 }

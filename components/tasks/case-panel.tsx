@@ -54,6 +54,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [isTyping, setIsTyping] = useState(false)
   const [documents, setDocuments] = useState<DocumentoApi[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const [loadingDocs, setLoadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -163,10 +164,16 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || !localCase) return
+    await uploadFiles(Array.from(files))
+    e.target.value = ""
+  }
+
+  const uploadFiles = async (files: File[]) => {
+    if (!localCase || files.length === 0) return
     setIsUploading(true)
     try {
       const uploaded = await Promise.all(
-        Array.from(files).map((file) => documentosApi.upload(localCase.id, file)),
+        files.map((file) => documentosApi.upload(localCase.id, file)),
       )
       setDocuments((prev) => [...uploaded, ...prev])
       toast({
@@ -181,8 +188,15 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       })
     } finally {
       setIsUploading(false)
-      e.target.value = ""
     }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const files = Array.from(e.dataTransfer.files || [])
+    await uploadFiles(files)
   }
 
   const handleDeleteDoc = async (docId: string) => {
@@ -456,10 +470,37 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 </Button>
               </div>
             </div>
+            <button
+              type="button"
+              className={`w-full rounded-lg border-2 border-dashed p-6 text-center text-sm transition-colors ${
+                isDragging
+                  ? "border-primary bg-primary/5 text-primary"
+                  : "border-muted-foreground/30 text-muted-foreground hover:border-primary/50"
+              }`}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragging(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setIsDragging(false)
+              }}
+              onDrop={(e) => void handleDrop(e)}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              {isUploading
+                ? "Enviando arquivos..."
+                : "Arraste arquivos aqui ou clique para selecionar"}
+            </button>
             {loadingDocs ? (
               <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
             ) : documents.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum documento</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum documento</p>
             ) : (
               <div className="space-y-2">
                 {documents.map((doc) => (

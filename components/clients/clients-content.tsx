@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Mail, Phone, Trash2, Pencil, Search, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { ClientModal } from "./client-modal"
+import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
   clientesApi,
@@ -24,6 +25,10 @@ export function ClientsContent() {
   const [selectedClient, setSelectedClient] = useState<ClienteCard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [contact, setContact] = useState<{
+    canal: "email" | "telefone"
+    client: ClienteCard
+  } | null>(null)
 
   const loadClients = useCallback(async () => {
     setIsLoading(true)
@@ -206,7 +211,7 @@ export function ClientsContent() {
                     size="sm"
                     className="flex-1 bg-transparent"
                     disabled={!client.email}
-                    onClick={() => (window.location.href = `mailto:${client.email}`)}
+                    onClick={() => setContact({ canal: "email", client })}
                   >
                     <Mail className="w-4 h-4 mr-1" />
                     Email
@@ -216,7 +221,7 @@ export function ClientsContent() {
                     size="sm"
                     className="flex-1 bg-transparent"
                     disabled={!client.phone}
-                    onClick={() => (window.location.href = `tel:${client.phone}`)}
+                    onClick={() => setContact({ canal: "telefone", client })}
                   >
                     <Phone className="w-4 h-4 mr-1" />
                     Ligar
@@ -253,6 +258,18 @@ export function ClientsContent() {
         clientData={selectedClient}
         isEditing={!!selectedClient}
       />
+
+      {contact && (
+        <ContactDialog
+          open={!!contact}
+          onOpenChange={(open) => !open && setContact(null)}
+          alvoTipo="cliente"
+          alvoId={contact.client.id}
+          alvoNome={contact.client.name}
+          canal={contact.canal}
+          destino={contact.canal === "email" ? contact.client.email : contact.client.phone}
+        />
+      )}
     </div>
   )
 }
