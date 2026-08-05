@@ -1,12 +1,16 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { History } from "lucide-react"
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatHistory } from "@/components/chat/chat-history"
 import { chatApi, type ConversacaoApi, type MensagemApi } from "@/lib/chat-api"
 import { useToast } from "@/hooks/use-toast"
 import { formatDatePt } from "@/lib/format"
+import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
 type UiMessage = {
   id: string
@@ -157,18 +161,38 @@ export default function ChatPage() {
     }
   }
 
+  const historyProps = {
+    conversations,
+    activeConversationId,
+    onSelectConversation: (id: string) => void handleSelectConversation(id),
+    onNewConversation: () => void handleNewConversation(),
+    onDeleteConversation: (id: string) => void handleDeleteConversation(id),
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 flex lg:ml-64 h-screen min-h-0 overflow-hidden">
+      <main className="flex-1 flex flex-col lg:flex-row lg:ml-64 h-[100dvh] min-h-0 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 lg:hidden">
+          <MobileNav />
+          <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
+                <History className="w-4 h-4" />
+                Conversas
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="p-0 w-80 max-w-[90vw]">
+              <SheetTitle className="sr-only">Histórico de conversas</SheetTitle>
+              <ChatHistory {...historyProps} className="border-l-0" />
+            </SheetContent>
+          </Sheet>
+        </div>
         <ChatInterface messages={messages} onSendMessage={handleSendMessage} />
-        <ChatHistory
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelectConversation={(id) => void handleSelectConversation(id)}
-          onNewConversation={() => void handleNewConversation()}
-          onDeleteConversation={(id) => void handleDeleteConversation(id)}
-        />
+        <div className="hidden lg:flex h-full min-h-0 shrink-0">
+          <ChatHistory {...historyProps} />
+        </div>
       </main>
     </div>
   )

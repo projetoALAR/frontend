@@ -185,9 +185,9 @@ export function Header({ title, description, actions }: HeaderProps) {
                 {iniciais}
               </AvatarFallback>
             </Avatar>
-            <div className="text-xs hidden sm:block text-left">
-              <p className="font-semibold text-foreground">{user?.nome || "Minha Conta"}</p>
-              <p className="text-muted-foreground text-[10px]">
+            <div className="text-xs hidden md:block text-left max-w-[10rem] lg:max-w-[14rem]">
+              <p className="font-semibold text-foreground truncate">{user?.nome || "Minha Conta"}</p>
+              <p className="text-muted-foreground text-[10px] truncate">
                 {user?.role
                   ? `${user.role === "ADMIN" ? "Administrador" : user.role === "ADVOGADO" ? "Advogado" : "Assistente"} · ${user.email}`
                   : user?.email || ""}

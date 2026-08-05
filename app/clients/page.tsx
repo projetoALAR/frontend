@@ -5,11 +5,9 @@ import { ClientsContent } from "@/components/clients/clients-content"
 export default function ClientsPage() {
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
-      <main className="flex-1 p-3 md:p-4 lg:p-5 lg:ml-64">
+      <main className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 lg:ml-64 overflow-x-hidden">
         <Header
           title="Clientes"
           description="Gerencie seus clientes e seus respectivos casos."

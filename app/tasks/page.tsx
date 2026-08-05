@@ -1,6 +1,7 @@
 "use client"
 
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { TasksContent } from "@/components/tasks/tasks-content"
 import { Button } from "@/components/ui/button"
 import { useRef, useCallback } from "react"
@@ -36,11 +37,14 @@ function TasksPageContent() {
   }
 
   return (
-    <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+    <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 overflow-x-hidden">
       <header className="space-y-3 md:space-y-4 mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mb-1">Casos</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">Gerencie e organize os casos da sua equipe com eficiência.</p>
+        <div className="flex items-start gap-2 min-w-0">
+          <MobileNav />
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mb-1">Casos</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Gerencie e organize os casos da sua equipe com eficiência.</p>
+          </div>
         </div>
         {canWrite && (
           <Button 

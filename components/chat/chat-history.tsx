@@ -17,6 +17,7 @@ interface ChatHistoryProps {
   onSelectConversation: (id: string) => void
   onNewConversation: () => void
   onDeleteConversation: (id: string) => void
+  className?: string
 }
 
 export function ChatHistory({
@@ -25,9 +26,15 @@ export function ChatHistory({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
+  className,
 }: ChatHistoryProps) {
   return (
-    <div className="w-64 bg-card border-l border-border flex flex-col h-full min-h-0 shrink-0">
+    <div
+      className={cn(
+        "w-full lg:w-64 bg-card border-l border-border flex flex-col h-full min-h-0 shrink-0",
+        className,
+      )}
+    >
       <div className="p-4 border-b border-border space-y-2 shrink-0">
         <p className="text-xs text-muted-foreground">
           Chat geral do workspace — sem detalhes internos dos casos

@@ -139,7 +139,7 @@ export function CalendarContent() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" onClick={() => setIsMonthPickerOpen(true)} className="capitalize min-w-[160px]">
+          <Button variant="ghost" onClick={() => setIsMonthPickerOpen(true)} className="capitalize min-w-0 flex-1 sm:flex-none sm:min-w-[160px]">
             {monthLabel}
           </Button>
           <Button
@@ -169,15 +169,15 @@ export function CalendarContent() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-3">
-            <Card className="p-4">
-              <div className="grid grid-cols-7 gap-1 mb-2">
+            <Card className="p-2 sm:p-4 overflow-x-auto">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 min-w-[280px]">
                 {weekDays.map((d) => (
                   <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">
                     {d}
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-1">
+              <div className="grid grid-cols-7 gap-0.5 sm:gap-1 min-w-[280px]">
                 {Array.from({ length: firstDayOfWeek }).map((_, i) => (
                   <div key={`empty-${i}`} className="h-10" />
                 ))}

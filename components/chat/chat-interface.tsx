@@ -60,8 +60,8 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background min-h-0 h-full">
-      <div className="border-b border-border p-4 bg-card shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0 min-w-0 h-full">
+      <div className="border-b border-border p-3 sm:p-4 bg-card shrink-0 hidden lg:block">
         <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
         <p className="text-xs text-muted-foreground mt-1">Assistente especializado em questões jurídicas</p>
       </div>

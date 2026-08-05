@@ -260,37 +260,39 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
           {filteredTasks.map((task, index) => (
             <Card
               key={task.id}
-              className="p-4 hover:shadow-lg transition-all duration-300 animate-slide-in-up group"
+              className="p-3 sm:p-4 hover:shadow-lg transition-all duration-300 animate-slide-in-up group overflow-hidden"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
                 {canWrite && (
                   <Checkbox
                     checked={checkedCases.includes(task.id)}
                     onCheckedChange={() => toggleCaseCheck(task.id)}
-                    className="mt-1"
+                    className="mt-1 shrink-0"
                   />
                 )}
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className={`font-semibold text-foreground ${task.completed ? "line-through opacity-60" : ""}`}>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3
+                      className={`font-semibold text-foreground break-words ${task.completed ? "line-through opacity-60" : ""}`}
+                    >
                       {task.title}
                     </h3>
                     <Badge variant={priorityVariant[task.priority] ?? "secondary"} className="shrink-0">
                       {task.priority}
                     </Badge>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Tag className="w-4 h-4" />
-                      {task.project}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <Tag className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{task.project}</span>
                     </span>
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-4 h-4 shrink-0" />
                       {task.dueDate}
                     </span>
-                    <span>{task.numero}</span>
-                    {task.cliente?.nome && <span>{task.cliente.nome}</span>}
+                    <span className="break-all">{task.numero}</span>
+                    {task.cliente?.nome && <span className="truncate max-w-full">{task.cliente.nome}</span>}
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {task.tags.map((tag) => (
@@ -299,8 +301,36 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                       </Badge>
                     ))}
                   </div>
+                  <div className="flex items-center gap-1 pt-1 sm:hidden">
+                    {canWrite && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-transparent"
+                        onClick={() => {
+                          setSelectedCase(task)
+                          setIsCaseModalOpen(true)
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-transparent"
+                      onClick={() => {
+                        setPanelCase(task)
+                        setIsPanelOpen(true)
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Ver
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="hidden sm:flex items-center gap-1 shrink-0">
                   {canWrite && (
                     <Button
                       size="sm"

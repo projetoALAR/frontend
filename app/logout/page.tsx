@@ -50,12 +50,10 @@ export default function LogoutPage() {
   if (isLoggingOutComplete) {
     return (
       <div className="flex min-h-screen bg-background">
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
+        <Sidebar />
 
-        <main className="flex-1 p-4 lg:p-6 lg:ml-64 flex items-center justify-center">
-          <Card className="p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up">
+        <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 flex items-center justify-center overflow-x-hidden">
+          <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
             <div className="flex justify-center">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-bounce">
                 <CheckCircle2 className="w-8 h-8 text-primary" />
@@ -74,12 +72,10 @@ export default function LogoutPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64 flex items-center justify-center">
-        <Card className="p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up">
+      <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 flex items-center justify-center overflow-x-hidden">
+        <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
           <div className="flex justify-center">
             <div className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}>
               <LogOut className="w-8 h-8 text-primary" />
@@ -91,7 +87,7 @@ export default function LogoutPage() {
               {isLoggingOut ? "Saindo da sua conta..." : "Tem certeza que deseja sair?"}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               className="flex-1 bg-transparent"

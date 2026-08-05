@@ -19,7 +19,7 @@ export default function TeamPage() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+      <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 overflow-x-hidden">
         <Header
           title="Equipe"
           description="Gerencie os membros da sua equipe e suas funções."

@@ -31,11 +31,9 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
+      <Sidebar />
 
-      <main className="flex-1 p-3 md:p-4 lg:p-5 lg:ml-64">
+      <main className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 lg:ml-64 overflow-x-hidden">
         <Header
           title="Advocacia Alar"
           description="Acompanhe seus casos, clientes e documentações em um só lugar."
@@ -61,12 +59,12 @@ export default function DashboardPage() {
           <StatsCards />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
-            <div className="lg:col-span-2 space-y-3 md:space-y-4">
+            <div className="lg:col-span-2 space-y-3 md:space-y-4 min-w-0">
               <ProjectAnalytics />
               <ProjectList />
             </div>
 
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-3 md:space-y-4 min-w-0">
               <Reminders />
               <ProjectProgress />
               <TeamSummaryCard />

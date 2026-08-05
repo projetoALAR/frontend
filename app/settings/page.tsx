@@ -7,7 +7,7 @@ export default function SettingsPage() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 lg:p-6 lg:ml-64">
+      <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 overflow-x-hidden">
         <Header title="Configurações" description="Gerencie as preferências da sua conta e as configurações do sistema." />
 
         <div className="mt-6">
