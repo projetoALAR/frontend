@@ -28,7 +28,7 @@ import {
   Flag,
   CircleDot,
 } from "lucide-react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
@@ -36,6 +36,8 @@ import { processosApi } from "@/lib/processos-api"
 import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -46,6 +48,9 @@ interface CasePanelProps {
 
 export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const canWrite = canWriteClientesProcessos(user?.role)
+  const canDeleteDocs = canDeleteDocumentos(user?.role)
   const [localCase, setLocalCase] = useState<CaseView | null>(caseData)
   const [messages, setMessages] = useState<MensagemApi[]>([])
   const [conversacaoId, setConversacaoId] = useState<string | null>(null)
@@ -57,6 +62,8 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [loadingDocs, setLoadingDocs] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const [activeTab, setActiveTab] = useState("info")
 
   const [editingHeader, setEditingHeader] = useState(false)
   const [headerData, setHeaderData] = useState({ title: "", priority: "", project: "", dueDate: "" })
@@ -67,6 +74,19 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [editingTags, setEditingTags] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
+
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
+    const container = chatScrollRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight
+        messagesEndRef.current?.scrollIntoView({ behavior, block: "end" })
+      })
+      return
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" })
+  }, [])
 
   const loadDocs = useCallback(async (processoId: string) => {
     setLoadingDocs(true)
@@ -90,13 +110,22 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
     }
   }, [])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isTyping])
+  // Scroll só funciona com a aba Chat visível (antes falhava com a aba Info aberta)
+  useLayoutEffect(() => {
+    if (activeTab !== "chat") return
+    scrollChatToBottom("auto")
+    const t1 = window.setTimeout(() => scrollChatToBottom("auto"), 50)
+    const t2 = window.setTimeout(() => scrollChatToBottom("auto"), 200)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [activeTab, messages, isTyping, scrollChatToBottom])
 
   useEffect(() => {
     if (isOpen && caseData) {
       setLocalCase(caseData)
+      setActiveTab("info")
       setHeaderData({
         title: caseData.title || "",
         priority: caseData.priority || "Média",
@@ -274,14 +303,20 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   </Badge>
                 </div>
               </div>
-              <Button size="icon" variant="ghost" className="shrink-0" onClick={() => setEditingHeader(true)}>
-                <Pencil className="w-4 h-4" />
-              </Button>
+              {canWrite && (
+                <Button size="icon" variant="ghost" className="shrink-0" onClick={() => setEditingHeader(true)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           )}
         </SheetHeader>
 
-        <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0"
+        >
           <TabsList className="mx-4 mt-3 grid grid-cols-3 shrink-0">
             <TabsTrigger value="info"><Briefcase className="w-4 h-4 mr-1" />Info</TabsTrigger>
             <TabsTrigger value="docs"><FolderOpen className="w-4 h-4 mr-1" />Docs</TabsTrigger>
@@ -296,9 +331,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   Informações
                 </h4>
                 {!editingInfo ? (
-                  <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingInfo(true)}>
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  canWrite ? (
+                    <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingInfo(true)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : null
                 ) : (
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingInfo(false)}><X className="w-3.5 h-3.5" /></Button>
@@ -387,6 +424,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   Descrição
                 </h4>
                 {!editingDescricao ? (
+                  canWrite ? (
                   <Button
                     size="icon"
                     variant="ghost"
@@ -398,6 +436,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
+                  ) : null
                 ) : (
                   <div className="flex gap-1">
                     <Button
@@ -449,9 +488,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   Tags
                 </h4>
                 {!editingTags ? (
-                  <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingTags(true)}>
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
+                  canWrite ? (
+                    <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingTags(true)}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : null
                 ) : (
                   <Button
                     size="sm"
@@ -581,9 +622,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                       <Button size="icon" variant="ghost" onClick={() => window.open(doc.urlArquivo, "_blank")}>
                         <Download className="w-4 h-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void handleDeleteDoc(doc.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {canDeleteDocs && (
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void handleDeleteDoc(doc.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -595,7 +638,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             value="chat"
             className="flex-1 flex flex-col min-h-0 m-0 p-0 overflow-hidden data-[state=inactive]:hidden"
           >
-            <div className="flex-1 min-h-0 overflow-y-auto p-4">
+            <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto p-4">
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="flex gap-2">

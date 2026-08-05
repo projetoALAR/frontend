@@ -27,8 +27,8 @@ export function ChatHistory({
   onDeleteConversation,
 }: ChatHistoryProps) {
   return (
-    <div className="w-64 bg-card border-l border-border flex flex-col h-full">
-      <div className="p-4 border-b border-border space-y-2">
+    <div className="w-64 bg-card border-l border-border flex flex-col h-full min-h-0 shrink-0">
+      <div className="p-4 border-b border-border space-y-2 shrink-0">
         <p className="text-xs text-muted-foreground">
           Chat geral do workspace — sem detalhes internos dos casos
         </p>
@@ -41,7 +41,7 @@ export function ChatHistory({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
         {conversations.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Nenhuma conversa ainda</p>
         ) : (

@@ -187,7 +187,11 @@ export function Header({ title, description, actions }: HeaderProps) {
             </Avatar>
             <div className="text-xs hidden sm:block text-left">
               <p className="font-semibold text-foreground">{user?.nome || "Minha Conta"}</p>
-              <p className="text-muted-foreground text-[10px]">{user?.email || ""}</p>
+              <p className="text-muted-foreground text-[10px]">
+                {user?.role
+                  ? `${user.role === "ADMIN" ? "Administrador" : user.role === "ADVOGADO" ? "Advogado" : "Assistente"} · ${user.email}`
+                  : user?.email || ""}
+              </p>
             </div>
           </button>
         </div>

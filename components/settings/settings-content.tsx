@@ -12,6 +12,9 @@ import { preferenciasApi, type NotificacoesPrefs } from "@/lib/preferencias-api"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Loader2 } from "lucide-react"
+import { canCreateUsers } from "@/lib/roles"
+import { AdminUsersPanel } from "@/components/settings/admin-users-panel"
+import { ROLE_LABELS } from "@/lib/roles"
 
 const defaultNotifications: NotificacoesPrefs = {
   email: true,
@@ -23,7 +26,7 @@ const defaultNotifications: NotificacoesPrefs = {
 export function SettingsContent() {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
-  const { refresh } = useAuth()
+  const { user, refresh } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -182,6 +185,12 @@ export function SettingsContent() {
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
+            {user?.role && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Papel</Label>
+                <p className="text-sm text-muted-foreground">{ROLE_LABELS[user.role]}</p>
+              </div>
+            )}
           </div>
 
           <Button className="bg-primary hover:bg-primary/90" disabled={saving} onClick={() => void persist()}>
@@ -235,6 +244,8 @@ export function SettingsContent() {
           </div>
         </div>
       </Card>
+
+      {canCreateUsers(user?.role) && <AdminUsersPanel />}
     </div>
   )
 }

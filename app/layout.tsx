@@ -12,9 +12,8 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Alar - Gestão de Projetos e Equipes",
-  description: "Gerencie projetos, equipes e entregas com eficiência",
-  generator: "v0.app",
+  title: "Alar - Gestão Jurídica",
+  description: "Gerencie clientes, casos, equipe e prazos com o Alar",
   icons: {
     icon: [
       {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useLayoutEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChatMessage } from "./chat-message"
@@ -23,10 +23,29 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const prevCountRef = useRef(0)
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isProcessing])
+  const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+    const container = scrollContainerRef.current
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior })
+      return
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" })
+  }
+
+  // Sempre leva ao final: instantâneo ao abrir/trocar; suave ao receber mensagem nova
+  useLayoutEffect(() => {
+    const grew = messages.length > prevCountRef.current
+    const behavior: ScrollBehavior =
+      grew && prevCountRef.current > 0 ? "smooth" : "auto"
+    scrollToBottom(behavior)
+    // segunda passagem após layout assíncrono
+    const t = window.setTimeout(() => scrollToBottom(behavior), 50)
+    prevCountRef.current = messages.length
+    return () => window.clearTimeout(t)
+  }, [messages, isProcessing, isLoading])
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isProcessing) return
@@ -41,13 +60,13 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
-      <div className="border-b border-border p-4 bg-card">
+    <div className="flex-1 flex flex-col bg-background min-h-0 h-full">
+      <div className="border-b border-border p-4 bg-card shrink-0">
         <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
         <p className="text-xs text-muted-foreground mt-1">Assistente especializado em questões jurídicas</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -84,7 +103,7 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
         )}
       </div>
 
-      <div className="border-t border-border p-4 bg-card">
+      <div className="border-t border-border p-4 bg-card shrink-0">
         <div className="flex gap-3">
           <Input
             placeholder="Digite sua pergunta jurídica..."

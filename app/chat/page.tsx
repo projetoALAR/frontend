@@ -160,7 +160,7 @@ export default function ChatPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 flex lg:ml-64">
+      <main className="flex-1 flex lg:ml-64 h-screen min-h-0 overflow-hidden">
         <ChatInterface messages={messages} onSendMessage={handleSendMessage} />
         <ChatHistory
           conversations={conversations}

@@ -1,9 +1,12 @@
 const TOKEN_KEY = "alar_token"
 
+export type Role = "ADMIN" | "ADVOGADO" | "ASSISTENTE"
+
 export type AuthUser = {
   id: string
   nome: string
   email: string
+  role: Role
   fotoUrl: string | null
   criadoEm: string
 }
@@ -65,6 +68,44 @@ export const authApi = {
     authRequest<AuthResponse>("/auth/login", { email, senha }),
   register: (nome: string, email: string, senha: string) =>
     authRequest<AuthResponse>("/auth/register", { nome, email, senha }),
+  createUser: async (dados: {
+    nome: string
+    email: string
+    senha: string
+    role?: Role
+  }): Promise<{ user: AuthUser }> => {
+    const token = getAuthToken()
+    if (!token) throw new Error("Não autenticado")
+
+    const response = await fetch(`${API_URL}/auth/usuarios`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dados),
+    })
+
+    if (!response.ok) {
+      throw new Error(await authErrorMessage(response))
+    }
+
+    return response.json() as Promise<{ user: AuthUser }>
+  },
+  listUsers: async (): Promise<AuthUser[]> => {
+    const token = getAuthToken()
+    if (!token) throw new Error("Não autenticado")
+
+    const response = await fetch(`${API_URL}/auth/usuarios`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!response.ok) {
+      throw new Error(await authErrorMessage(response))
+    }
+
+    return response.json() as Promise<AuthUser[]>
+  },
   me: async (): Promise<AuthUser> => {
     const token = getAuthToken()
     if (!token) throw new Error("Não autenticado")

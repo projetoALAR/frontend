@@ -14,6 +14,8 @@ import { CasePanel } from "./case-panel"
 import { processosApi, type ProcessoFormData } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canWriteClientesProcessos } from "@/lib/roles"
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
   Alta: "destructive",
@@ -32,6 +34,8 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   ref,
 ) {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const canWrite = canWriteClientesProcessos(user?.role)
   const [allTasks, setAllTasks] = useState<CaseView[]>([])
   const [filter, setFilter] = useState(initialFilter)
   const [searchTerm, setSearchTerm] = useState("")
@@ -85,13 +89,14 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   }
 
   useEffect(() => {
+    if (!canWrite) return
     const handleOpenNewCase = () => {
       setSelectedCase(null)
       setIsCaseModalOpen(true)
     }
     window.addEventListener("openNewCaseModal", handleOpenNewCase)
     return () => window.removeEventListener("openNewCaseModal", handleOpenNewCase)
-  }, [])
+  }, [canWrite])
 
   const filteredTasks = allTasks.filter((task) => {
     let statusMatch = true
@@ -175,7 +180,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {checkedCases.length > 0 && (
+          {canWrite && checkedCases.length > 0 && (
             <Button variant="destructive" className="gap-2" onClick={() => void handleDeleteChecked()}>
               <Trash2 className="w-4 h-4" />
               Excluir ({checkedCases.length})
@@ -259,11 +264,13 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start gap-4">
-                <Checkbox
-                  checked={checkedCases.includes(task.id)}
-                  onCheckedChange={() => toggleCaseCheck(task.id)}
-                  className="mt-1"
-                />
+                {canWrite && (
+                  <Checkbox
+                    checked={checkedCases.includes(task.id)}
+                    onCheckedChange={() => toggleCaseCheck(task.id)}
+                    className="mt-1"
+                  />
+                )}
                 <div className="flex-1 space-y-2">
                   <div className="flex items-start justify-between gap-4">
                     <h3 className={`font-semibold text-foreground ${task.completed ? "line-through opacity-60" : ""}`}>
@@ -294,18 +301,20 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Editar caso"
-                    onClick={() => {
-                      setSelectedCase(task)
-                      setIsCaseModalOpen(true)
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
+                  {canWrite && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Editar caso"
+                      onClick={() => {
+                        setSelectedCase(task)
+                        setIsCaseModalOpen(true)
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"

@@ -16,9 +16,13 @@ import {
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canWriteClientesProcessos } from "@/lib/roles"
 
 export function ClientsContent() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const canWrite = canWriteClientesProcessos(user?.role)
   const [clients, setClients] = useState<ClienteCard[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -51,13 +55,14 @@ export function ClientsContent() {
   }, [loadClients])
 
   useEffect(() => {
+    if (!canWrite) return
     const handleOpenNewClient = () => {
       setSelectedClient(null)
       setIsModalOpen(true)
     }
     window.addEventListener("openNewClientModal", handleOpenNewClient)
     return () => window.removeEventListener("openNewClientModal", handleOpenNewClient)
-  }, [])
+  }, [canWrite])
 
   const filteredClients = clients.filter((client) => {
     const term = searchTerm.toLowerCase()
@@ -134,12 +139,14 @@ export function ClientsContent() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button
-          onClick={handleNewClient}
-          className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
-        >
-          + Novo Cliente
-        </Button>
+        {canWrite && (
+          <Button
+            onClick={handleNewClient}
+            className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+          >
+            + Novo Cliente
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -161,29 +168,31 @@ export function ClientsContent() {
                     {getInitials(client.name)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditClient(client)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void handleDeleteClient(client.id)}
-                    disabled={deletingId === client.id}
-                    className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                  >
-                    {deletingId === client.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
+                {canWrite && (
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditClient(client)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleDeleteClient(client.id)}
+                      disabled={deletingId === client.id}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      {deletingId === client.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">

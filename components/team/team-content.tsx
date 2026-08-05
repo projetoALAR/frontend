@@ -12,9 +12,13 @@ import { useToast } from "@/hooks/use-toast"
 import { equipeApi, type MembroEquipeApi, type MembroFormData } from "@/lib/equipe-api"
 import { initialsFromName } from "@/lib/format"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canManageEquipe } from "@/lib/roles"
 
 export function TeamContent() {
   const { toast } = useToast()
+  const { user } = useAuth()
+  const canManage = canManageEquipe(user?.role)
   const [teamMembers, setTeamMembers] = useState<MembroEquipeApi[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -41,13 +45,14 @@ export function TeamContent() {
   }, [load])
 
   useEffect(() => {
+    if (!canManage) return
     const handleOpen = () => {
       setSelectedMember(null)
       setIsModalOpen(true)
     }
     window.addEventListener("openNewTeamMemberModal", handleOpen)
     return () => window.removeEventListener("openNewTeamMemberModal", handleOpen)
-  }, [])
+  }, [canManage])
 
   const handleSaveMember = async (data: MembroFormData) => {
     if (selectedMember) {
@@ -99,26 +104,28 @@ export function TeamContent() {
                     <p className="text-sm text-muted-foreground">{member.cargo}</p>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      setSelectedMember(member)
-                      setIsModalOpen(true)
-                    }}
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-destructive"
-                    onClick={() => void handleDeleteMember(member.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {canManage && (
+                  <div className="flex gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedMember(member)
+                        setIsModalOpen(true)
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-destructive"
+                      onClick={() => void handleDeleteMember(member.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center justify-between">
                 <Badge variant={member.status === "active" ? "default" : "secondary"}>
