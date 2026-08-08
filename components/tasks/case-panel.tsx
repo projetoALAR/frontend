@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -27,6 +28,8 @@ import {
   Phone,
   Flag,
   CircleDot,
+  History,
+  RefreshCw,
 } from "lucide-react"
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -34,10 +37,23 @@ import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
 import { processosApi } from "@/lib/processos-api"
 import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
+import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
+import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import {
+  isProcessoStatusConcluido,
+  processoStatusOptionsFor,
+} from "@/lib/processo-status"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -57,9 +73,14 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [documents, setDocuments] = useState<DocumentoApi[]>([])
+  const [andamentos, setAndamentos] = useState<AndamentoApi[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [loadingDocs, setLoadingDocs] = useState(false)
+  const [loadingAndamentos, setLoadingAndamentos] = useState(false)
+  const [syncingAndamentos, setSyncingAndamentos] = useState(false)
+  const [cnjDraft, setCnjDraft] = useState("")
+  const [savingCnj, setSavingCnj] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
@@ -110,6 +131,79 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
     }
   }, [])
 
+  const loadAndamentos = useCallback(async (processoId: string) => {
+    setLoadingAndamentos(true)
+    try {
+      setAndamentos(await andamentosApi.listarPorProcesso(processoId))
+    } catch {
+      setAndamentos([])
+    } finally {
+      setLoadingAndamentos(false)
+    }
+  }, [])
+
+  const handleSaveCnj = async () => {
+    if (!localCase) return
+    const numero = cnjDraft.trim()
+    if (!numero) {
+      toast({
+        title: "Número CNJ obrigatório",
+        description: "Informe o número do processo no formato CNJ.",
+        variant: "destructive",
+      })
+      return
+    }
+    setSavingCnj(true)
+    try {
+      await persistCase({ numero })
+      setCnjDraft(numero)
+    } finally {
+      setSavingCnj(false)
+    }
+  }
+
+  const handleSyncAndamentos = async () => {
+    if (!localCase) return
+    const numeroAtual = cnjDraft.trim()
+    if (numeroAtual && numeroAtual !== localCase.numero) {
+      toast({
+        title: "Salve o número CNJ",
+        description: "Há alterações não salvas no número do processo.",
+        variant: "destructive",
+      })
+      return
+    }
+    setSyncingAndamentos(true)
+    try {
+      const resultado = await andamentosApi.sincronizar(localCase.id)
+      await loadAndamentos(localCase.id)
+      if (resultado.inseridos > 0) {
+        toast({
+          title: "Andamentos sincronizados",
+          description: `${resultado.inseridos} novo(s) andamento(s) encontrado(s).`,
+        })
+      } else if (resultado.motivo) {
+        toast({
+          title: "Nenhum andamento novo",
+          description: resultado.motivo,
+        })
+      } else {
+        toast({
+          title: "Sincronização concluída",
+          description: "Nenhum andamento novo desde a última consulta.",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Falha ao sincronizar",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setSyncingAndamentos(false)
+    }
+  }
+
   // Scroll só funciona com a aba Chat visível (antes falhava com a aba Info aberta)
   useLayoutEffect(() => {
     if (activeTab !== "chat") return
@@ -139,6 +233,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
         completed: caseData.completed || false,
       })
       setDescricaoDraft(caseData.descricao || "")
+      setCnjDraft(caseData.numero || "")
       setTags(caseData.tags || [])
       setEditingHeader(false)
       setEditingInfo(false)
@@ -147,8 +242,9 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       setChatInput("")
       void loadDocs(caseData.id)
       void loadChat(caseData.id)
+      void loadAndamentos(caseData.id)
     }
-  }, [isOpen, caseData, loadDocs, loadChat])
+  }, [isOpen, caseData, loadDocs, loadChat, loadAndamentos])
 
   const persistCase = async (partial: {
     titulo?: string
@@ -158,6 +254,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
     tags?: string[]
     concluido?: boolean
     descricao?: string | null
+    numero?: string
   }) => {
     if (!localCase) return
     try {
@@ -165,6 +262,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       const mapped = mapProcessoToCase(updated)
       setLocalCase(mapped)
       onUpdated?.(mapped)
+      invalidateDashboardCache()
       toast({ title: "Salvo", description: "Caso atualizado com sucesso" })
     } catch (error) {
       toast({
@@ -184,6 +282,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       const { mensagemUsuario, mensagemIa } = await chatApi.enviarMensagem(conversacaoId, text)
       setMessages((prev) => [...prev, mensagemUsuario, mensagemIa])
     } catch (error) {
+      setChatInput(text)
       toast({
         title: "Erro no chat",
         description: error instanceof Error ? error.message : "Falha na API",
@@ -258,16 +357,34 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             <div className="space-y-2">
               <Input value={headerData.title} onChange={(e) => setHeaderData({ ...headerData, title: e.target.value })} />
               <div className="flex gap-2">
-                <Input value={headerData.project} onChange={(e) => setHeaderData({ ...headerData, project: e.target.value })} placeholder="Status" />
-                <select
-                  value={headerData.priority}
-                  onChange={(e) => setHeaderData({ ...headerData, priority: e.target.value })}
-                  className="px-2 rounded-md border border-input bg-transparent"
+                <Select
+                  value={headerData.project || undefined}
+                  onValueChange={(value) => setHeaderData({ ...headerData, project: value })}
                 >
-                  <option>Baixa</option>
-                  <option>Média</option>
-                  <option>Alta</option>
-                </select>
+                  <SelectTrigger className="flex-1" size="sm" aria-label="Status do caso">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {processoStatusOptionsFor(headerData.project).map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={headerData.priority || undefined}
+                  onValueChange={(value) => setHeaderData({ ...headerData, priority: value })}
+                >
+                  <SelectTrigger className="w-[110px]" size="sm" aria-label="Prioridade">
+                    <SelectValue placeholder="Prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Baixa">Baixa</SelectItem>
+                    <SelectItem value="Média">Média</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Input type="date" value={headerData.dueDate} onChange={(e) => setHeaderData({ ...headerData, dueDate: e.target.value })} />
               <div className="flex gap-2">
@@ -280,6 +397,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                       status: headerData.project,
                       prioridade: headerData.priority,
                       prazo: headerData.dueDate ? new Date(`${headerData.dueDate}T12:00:00`).toISOString() : null,
+                      concluido: isProcessoStatusConcluido(headerData.project) || localCase.completed,
                     }).then(() => setEditingHeader(false))
                   }}
                 >
@@ -317,9 +435,10 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0"
         >
-          <TabsList className="mx-4 mt-3 grid grid-cols-3 shrink-0">
+          <TabsList className="mx-4 mt-3 grid grid-cols-4 shrink-0">
             <TabsTrigger value="info"><Briefcase className="w-4 h-4 mr-1" />Info</TabsTrigger>
             <TabsTrigger value="docs"><FolderOpen className="w-4 h-4 mr-1" />Docs</TabsTrigger>
+            <TabsTrigger value="andamentos"><History className="w-4 h-4 mr-1" />Andamentos</TabsTrigger>
             <TabsTrigger value="chat"><MessageCircle className="w-4 h-4 mr-1" />Chat</TabsTrigger>
           </TabsList>
 
@@ -359,16 +478,40 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
               </div>
               {editingInfo ? (
                 <div className="space-y-2.5">
-                  <Input value={infoData.project} onChange={(e) => setInfoData({ ...infoData, project: e.target.value })} placeholder="Status" />
-                  <select
-                    value={infoData.priority}
-                    onChange={(e) => setInfoData({ ...infoData, priority: e.target.value })}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-transparent text-sm"
+                  <Select
+                    value={infoData.project || undefined}
+                    onValueChange={(next) => {
+                      setInfoData({
+                        ...infoData,
+                        project: next,
+                        completed: isProcessoStatusConcluido(next) ? true : infoData.completed,
+                      })
+                    }}
                   >
-                    <option>Baixa</option>
-                    <option>Média</option>
-                    <option>Alta</option>
-                  </select>
+                    <SelectTrigger className="w-full" aria-label="Status do caso">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {processoStatusOptionsFor(infoData.project).map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={infoData.priority || undefined}
+                    onValueChange={(value) => setInfoData({ ...infoData, priority: value })}
+                  >
+                    <SelectTrigger className="w-full" aria-label="Prioridade">
+                      <SelectValue placeholder="Prioridade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Baixa">Baixa</SelectItem>
+                      <SelectItem value="Média">Média</SelectItem>
+                      <SelectItem value="Alta">Alta</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Input type="date" value={infoData.dueDate} onChange={(e) => setInfoData({ ...infoData, dueDate: e.target.value })} />
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -631,6 +774,83 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                   </div>
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="andamentos" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <History className="w-4 h-4 text-muted-foreground" />
+                Andamentos
+              </h4>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={syncingAndamentos || savingCnj || !localCase}
+                onClick={() => void handleSyncAndamentos()}
+              >
+                {syncingAndamentos ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                )}
+                Sincronizar
+              </Button>
+            </div>
+
+            <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="cnj-numero">Número CNJ</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="cnj-numero"
+                    value={cnjDraft}
+                    onChange={(e) => setCnjDraft(e.target.value)}
+                    placeholder="0001234-56.2024.8.26.0100"
+                    className="font-mono text-sm"
+                    disabled={!canWrite || savingCnj}
+                  />
+                  {canWrite && (
+                    <Button
+                      size="sm"
+                      className="shrink-0"
+                      disabled={savingCnj || cnjDraft.trim() === (localCase?.numero || "")}
+                      onClick={() => void handleSaveCnj()}
+                    >
+                      {savingCnj ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Salvar"
+                      )}
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formato: NNNNNNN-DD.AAAA.J.TR.OOOO — usado na consulta DataJud
+                </p>
+              </div>
+            </section>
+
+            {loadingAndamentos ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
+            ) : andamentos.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum andamento sincronizado ainda
+              </p>
+            ) : (
+              <ol className="relative space-y-0 border-l border-border ml-2">
+                {andamentos.map((item) => (
+                  <li key={item.id} className="relative pl-6 pb-4 last:pb-0">
+                    <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+                    <div className="rounded-lg border border-border bg-secondary/40 p-3 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {formatDatePt(item.data)}
+                      </p>
+                      <p className="text-sm">{item.descricao}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             )}
           </TabsContent>
 
