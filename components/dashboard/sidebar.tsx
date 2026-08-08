@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, FolderKanban, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, MessageCircle, Contact } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, MessageCircle, Contact, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useMemo } from "react"
 import Link from "next/link"
@@ -30,10 +30,11 @@ export function Sidebar({ mobile = false }: SidebarProps) {
       { icon: LayoutDashboard, label: "Painel", href: "/" },
       { icon: FolderKanban, label: "Casos", badge: String(data?.totalProcessos ?? 0), href: "/tasks" },
       { icon: Contact, label: "Clientes", href: "/clients" },
+      { icon: FileText, label: "Modelos", href: "/templates" },
       { icon: Calendar, label: "Calendário", href: "/calendar" },
       { icon: BarChart3, label: "Relatórios", href: "/analytics" },
       { icon: Users, label: "Equipe", href: "/team" },
-      { icon: MessageCircle, label: "Chat IA", href: "/chat", badge: "Beta" },
+      { icon: MessageCircle, label: "Chat IA", href: "/chat" },
     ]
     return all.filter((item) => canAccessMenuHref(item.href, user?.role))
   }, [data?.totalProcessos, user?.role])

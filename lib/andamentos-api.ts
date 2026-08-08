@@ -6,6 +6,8 @@ export type AndamentoApi = {
   data: string
   descricao: string
   codigoMovimento: number | null
+  /** Explicação amigável do código TPU (quando mapeado no glossário). */
+  explicacao?: string | null
   origem: unknown
   criadoEm: string
 }

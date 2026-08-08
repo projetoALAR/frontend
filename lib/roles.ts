@@ -8,9 +8,9 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 /** Rotas do menu principal acessíveis por cada papel. */
 const MENU_HREFS_BY_ROLE: Record<Role, readonly string[]> = {
-  ADMIN: ["/", "/tasks", "/clients", "/calendar", "/analytics", "/team", "/chat"],
-  ADVOGADO: ["/", "/tasks", "/clients", "/calendar", "/chat"],
-  ASSISTENTE: ["/", "/tasks", "/clients", "/calendar", "/chat"],
+  ADMIN: ["/", "/tasks", "/clients", "/calendar", "/analytics", "/team", "/chat", "/templates"],
+  ADVOGADO: ["/", "/tasks", "/clients", "/calendar", "/chat", "/templates"],
+  ASSISTENTE: ["/", "/tasks", "/clients", "/calendar", "/chat", "/templates"],
 }
 
 export function canManageEquipe(role?: Role | null): boolean {
