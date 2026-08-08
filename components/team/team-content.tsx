@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Mail, Trash2, Pencil, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
@@ -13,7 +13,7 @@ import { equipeApi, type MembroEquipeApi, type MembroFormData } from "@/lib/equi
 import { initialsFromName } from "@/lib/format"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { useAuth } from "@/components/auth/auth-provider"
-import { canManageEquipe } from "@/lib/roles"
+import { canManageEquipe, ROLE_LABELS } from "@/lib/roles"
 
 export function TeamContent() {
   const { toast } = useToast()
@@ -95,6 +95,7 @@ export function TeamContent() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <Avatar>
+                    <AvatarImage src={member.usuario?.fotoUrl || undefined} alt={member.nome} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {initialsFromName(member.nome)}
                     </AvatarFallback>
@@ -127,10 +128,17 @@ export function TeamContent() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between">
-                <Badge variant={member.status === "active" ? "default" : "secondary"}>
-                  {member.status === "active" ? "Ativo" : member.status}
-                </Badge>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex gap-1.5 flex-wrap">
+                  <Badge variant={member.status === "active" ? "default" : "secondary"}>
+                    {member.status === "active" ? "Ativo" : member.status}
+                  </Badge>
+                  {member.usuario?.role ? (
+                    <Badge variant="outline">{ROLE_LABELS[member.usuario.role]}</Badge>
+                  ) : (
+                    <Badge variant="secondary">Sem login</Badge>
+                  )}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"

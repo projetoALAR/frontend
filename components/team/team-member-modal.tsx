@@ -7,6 +7,15 @@ import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { MembroEquipeApi, MembroFormData } from "@/lib/equipe-api"
+import type { Role } from "@/lib/auth-api"
+import { ROLE_LABELS } from "@/lib/roles"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface TeamMemberModalProps {
   isOpen: boolean
@@ -21,6 +30,8 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [cargo, setCargo] = useState("")
+  const [senha, setSenha] = useState("")
+  const [role, setRole] = useState<Role>("ASSISTENTE")
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -28,10 +39,14 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
       setNome(memberData.nome || "")
       setEmail(memberData.email || "")
       setCargo(memberData.cargo || "")
+      setRole(memberData.usuario?.role || "ASSISTENTE")
+      setSenha("")
     } else if (isOpen) {
       setNome("")
       setEmail("")
       setCargo("")
+      setSenha("")
+      setRole("ASSISTENTE")
     }
   }, [isOpen, memberData])
 
@@ -45,6 +60,15 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
       return
     }
 
+    if (!isEditing && senha && senha.length < 8) {
+      toast({
+        title: "Senha fraca",
+        description: "A senha deve ter pelo menos 8 caracteres",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSaving(true)
     try {
       await onSave({
@@ -52,6 +76,12 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
         email: email.trim(),
         cargo: cargo.trim(),
         status: memberData?.status || "active",
+        ...(isEditing
+          ? { role }
+          : {
+              role,
+              ...(senha ? { senha } : {}),
+            }),
       })
       toast({
         title: "Sucesso!",
@@ -88,6 +118,43 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
             <Label htmlFor="member-role">Cargo *</Label>
             <Input id="member-role" value={cargo} onChange={(e) => setCargo(e.target.value)} className="mt-1" disabled={isSaving} />
           </div>
+          <div>
+            <Label htmlFor="member-papel">Papel de acesso</Label>
+            <Select
+              value={role}
+              onValueChange={(value) => setRole(value as Role)}
+              disabled={isSaving || (isEditing && !memberData?.usuarioId)}
+            >
+              <SelectTrigger id="member-papel" className="mt-1 w-full">
+                <SelectValue placeholder="Selecione o papel" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(ROLE_LABELS) as Role[]).map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {!isEditing && (
+            <div>
+              <Label htmlFor="member-senha">Senha de acesso</Label>
+              <Input
+                id="member-senha"
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                className="mt-1"
+                disabled={isSaving}
+                placeholder="Obrigatória se o e-mail ainda não tiver login"
+                minLength={8}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Se o e-mail já for de um usuário, o membro é vinculado. Caso contrário, informe a senha para criar a conta.
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancelar</Button>

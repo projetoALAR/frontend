@@ -1,4 +1,5 @@
 import { api } from "@/lib/api"
+import type { Role } from "@/lib/auth-api"
 
 export type MembroEquipeApi = {
   id: string
@@ -7,6 +8,12 @@ export type MembroEquipeApi = {
   cargo: string
   status: string
   criadoEm: string
+  usuarioId?: string | null
+  usuario?: {
+    id: string
+    role: Role
+    fotoUrl: string | null
+  } | null
 }
 
 export type MembroFormData = {
@@ -14,6 +21,8 @@ export type MembroFormData = {
   email: string
   cargo: string
   status?: string
+  senha?: string
+  role?: Role
 }
 
 export const equipeApi = {
