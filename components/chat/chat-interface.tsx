@@ -25,6 +25,7 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef(0)
+  const loadingListEmpty = isLoading && messages.length === 0 && !isProcessing
 
   const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
     const container = scrollContainerRef.current
@@ -54,6 +55,9 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
     setInputValue("")
     try {
       await onSendMessage(userMessage)
+    } catch {
+      // Restaura o texto se o envio falhar (ex.: IA indisponível)
+      setInputValue(userMessage)
     } finally {
       setIsProcessing(false)
     }
@@ -67,7 +71,16 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
       </div>
 
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
+        {loadingListEmpty ? (
+          <div className="flex flex-col items-center justify-center h-full text-center gap-2 text-muted-foreground">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
+              <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-100" />
+              <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-200" />
+            </div>
+            <p className="text-sm">Carregando conversas...</p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
               <Send className="w-8 h-8 text-primary opacity-50" />
@@ -119,8 +132,10 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
             className="flex-1 bg-background"
           />
           <Button
+            type="button"
             onClick={() => void handleSendMessage()}
             disabled={!inputValue.trim() || isProcessing}
+            aria-label="Enviar mensagem"
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Send className="w-4 h-4" />
