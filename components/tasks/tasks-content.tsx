@@ -5,17 +5,18 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Search, Filter, Calendar, Tag, Eye, Loader2, Trash2, Pencil } from "lucide-react"
-import { useState, useEffect, useCallback, forwardRef } from "react"
+import { Search, Filter, Tag, Eye, Loader2, Trash2, Pencil, X, Calendar } from "lucide-react"
+import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
 import { CaseModal } from "./case-modal"
-import { FilterModal, type FilterOptions } from "./filter-modal"
+import { FilterModal, countActiveFilters, EMPTY_FILTERS, type FilterOptions } from "./filter-modal"
 import { CasePanel } from "./case-panel"
 import { processosApi, type ProcessoFormData } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
+import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
   Alta: "destructive",
@@ -42,12 +43,10 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   const [isCaseModalOpen, setIsCaseModalOpen] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<CaseView | null>(null)
-  const [filters, setFilters] = useState<FilterOptions>({ priorities: [] })
+  const [filters, setFilters] = useState<FilterOptions>(EMPTY_FILTERS)
   const [checkedCases, setCheckedCases] = useState<string[]>([])
   const [panelCase, setPanelCase] = useState<CaseView | null>(null)
   const [isPanelOpen, setIsPanelOpen] = useState(false)
-  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
-  const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [isLoading, setIsLoading] = useState(true)
 
   const loadTasks = useCallback(async () => {
@@ -98,10 +97,23 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     return () => window.removeEventListener("openNewCaseModal", handleOpenNewCase)
   }, [canWrite])
 
+  const extraStatuses = useMemo(() => {
+    const known = new Set<string>(PROCESSO_STATUS_OPTIONS)
+    return Array.from(
+      new Set(
+        allTasks
+          .map((t) => t.status || t.project)
+          .filter((s) => s && !known.has(s)),
+      ),
+    )
+  }, [allTasks])
+
+  const activeFilterCount = countActiveFilters(filters)
+
   const filteredTasks = allTasks.filter((task) => {
-    let statusMatch = true
-    if (filter === "concluidas") statusMatch = task.completed
-    else if (filter === "ativas") statusMatch = !task.completed
+    let situacaoMatch = true
+    if (filter === "concluidas") situacaoMatch = task.completed
+    else if (filter === "ativas") situacaoMatch = !task.completed
 
     const searchMatch =
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,22 +121,28 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       task.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (task.cliente?.nome ?? "").toLowerCase().includes(searchTerm.toLowerCase())
 
-    let filterMatch = true
-    if (filters.priorities.length > 0) {
-      filterMatch = filters.priorities.includes(task.priority)
+    let statusMatch = true
+    if (filters.statuses.length > 0) {
+      statusMatch = filters.statuses.includes(task.status || task.project)
     }
 
-    const modalDate = filters.dateRange
+    let priorityMatch = true
+    if (filters.priorities.length > 0) {
+      priorityMatch = filters.priorities.includes(task.priority)
+    }
+
     let dateMatch = true
-    const start = dateRange.start || modalDate?.from || ""
-    const end = dateRange.end || modalDate?.to || ""
+    const start = filters.dateRange?.from || ""
+    const end = filters.dateRange?.to || ""
     if ((start || end) && task.dueDateIso) {
       const taskDate = new Date(task.dueDateIso)
       if (start) dateMatch = dateMatch && taskDate >= new Date(start)
       if (end) dateMatch = dateMatch && taskDate <= new Date(`${end}T23:59:59`)
+    } else if ((start || end) && !task.dueDateIso) {
+      dateMatch = false
     }
 
-    return statusMatch && searchMatch && filterMatch && dateMatch
+    return situacaoMatch && searchMatch && statusMatch && priorityMatch && dateMatch
   })
 
   const handleSaveCase = async (data: ProcessoFormData) => {
@@ -137,6 +155,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       const created = await processosApi.criar(data)
       setAllTasks((prev) => [mapProcessoToCase(created), ...prev])
     }
+    invalidateDashboardCache()
     setSelectedCase(null)
   }
 
@@ -151,6 +170,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       await Promise.all(checkedCases.map((id) => processosApi.remover(id)))
       setAllTasks((prev) => prev.filter((t) => !checkedCases.includes(t.id)))
       setCheckedCases([])
+      invalidateDashboardCache()
       toast({ title: "Casos removidos", description: "Seleção excluída com sucesso" })
     } catch (error) {
       toast({
@@ -189,66 +209,98 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
           <Button variant="outline" className="gap-2 bg-transparent" onClick={() => setIsFilterModalOpen(true)}>
             <Filter className="w-4 h-4" />
             Filtrar
-          </Button>
-          <Button variant="outline" className="gap-2 bg-transparent" onClick={() => setIsDateFilterOpen(true)}>
-            <Calendar className="w-4 h-4" />
-            Data {dateRange.start && `(${dateRange.start})`}
+            {activeFilterCount > 0 && (
+              <Badge variant="default" className="ml-0.5 h-5 min-w-5 px-1.5 text-[10px]">
+                {activeFilterCount}
+              </Badge>
+            )}
           </Button>
         </div>
       </div>
 
-      {isDateFilterOpen && (
-        <div className="p-4 bg-secondary rounded-lg border border-border space-y-3 animate-slide-in-up">
-          <div>
-            <Label htmlFor="start-date" className="text-sm">Data Inicial</Label>
-            <Input
-              id="start-date"
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="end-date" className="text-sm">Data Final</Label>
-            <Input
-              id="end-date"
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 bg-transparent"
-              onClick={() => {
-                setDateRange({ start: "", end: "" })
-                setIsDateFilterOpen(false)
-              }}
-            >
-              Limpar
-            </Button>
-            <Button size="sm" className="flex-1" onClick={() => setIsDateFilterOpen(false)}>
-              Aplicar
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
+        <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">Situação:</span>
         <Button variant={filter === "all" ? "default" : "outline"} onClick={() => handleSetFilter("all")} size="sm" className={filter !== "all" ? "bg-transparent" : ""}>
           Todas ({allTasks.length})
         </Button>
         <Button variant={filter === "ativas" ? "default" : "outline"} onClick={() => handleSetFilter("ativas")} size="sm" className={filter !== "ativas" ? "bg-transparent" : ""}>
-          Ativas ({allTasks.filter((t) => !t.completed).length})
+          Em aberto ({allTasks.filter((t) => !t.completed).length})
         </Button>
         <Button variant={filter === "concluidas" ? "default" : "outline"} onClick={() => handleSetFilter("concluidas")} size="sm" className={filter !== "concluidas" ? "bg-transparent" : ""}>
           Concluídas ({allTasks.filter((t) => t.completed).length})
         </Button>
       </div>
+
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+          {filters.statuses.map((status) => (
+            <Badge key={`st-${status}`} variant="secondary" className="gap-1 pr-1">
+              {status}
+              <button
+                type="button"
+                className="rounded-sm p-0.5 hover:bg-muted"
+                aria-label={`Remover filtro ${status}`}
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    statuses: prev.statuses.filter((s) => s !== status),
+                  }))
+                }
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+          {filters.priorities.map((priority) => (
+            <Badge key={`pr-${priority}`} variant="secondary" className="gap-1 pr-1">
+              Prioridade: {priority}
+              <button
+                type="button"
+                className="rounded-sm p-0.5 hover:bg-muted"
+                aria-label={`Remover prioridade ${priority}`}
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    priorities: prev.priorities.filter((p) => p !== priority),
+                  }))
+                }
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
+          {(filters.dateRange?.from || filters.dateRange?.to) && (
+            <Badge variant="secondary" className="gap-1 pr-1">
+              Prazo
+              {filters.dateRange.from ? ` de ${filters.dateRange.from}` : ""}
+              {filters.dateRange.to ? ` até ${filters.dateRange.to}` : ""}
+              <button
+                type="button"
+                className="rounded-sm p-0.5 hover:bg-muted"
+                aria-label="Remover filtro de prazo"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    dateRange: undefined,
+                  }))
+                }
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setFilters(EMPTY_FILTERS)}
+          >
+            Limpar filtros
+          </Button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
@@ -274,7 +326,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <h3
-                      className={`font-semibold text-foreground break-words ${task.completed ? "line-through opacity-60" : ""}`}
+                      className="font-semibold text-foreground break-words"
                     >
                       {task.title}
                     </h3>
@@ -381,16 +433,9 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       <FilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
-        onApply={(newFilters) => {
-          setFilters(newFilters)
-          if (newFilters.dateRange) {
-            setDateRange({
-              start: newFilters.dateRange.from,
-              end: newFilters.dateRange.to,
-            })
-          }
-        }}
+        onApply={setFilters}
         currentFilters={filters}
+        extraStatuses={extraStatuses}
       />
 
       <CasePanel
