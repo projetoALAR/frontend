@@ -55,8 +55,11 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState<UiConversation[]>([])
   const [activeConversationId, setActiveConversationId] = useState("")
   const [messages, setMessages] = useState<UiMessage[]>([])
+  const [loadingList, setLoadingList] = useState(true)
+  const [sending, setSending] = useState(false)
 
   const loadConversations = useCallback(async () => {
+    setLoadingList(true)
     try {
       const list = await chatApi.listarConversas()
       const mapped = list.map(mapConversation)
@@ -72,6 +75,8 @@ export default function ChatPage() {
         description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
+    } finally {
+      setLoadingList(false)
     }
   }, [activeConversationId, toast])
 
@@ -81,29 +86,41 @@ export default function ChatPage() {
   }, [])
 
   const handleSendMessage = async (content: string) => {
-    let conversaId = activeConversationId
-    if (!conversaId) {
-      const created = await chatApi.criarConversa({ titulo: content.slice(0, 60) })
-      conversaId = created.id
-      setActiveConversationId(conversaId)
-      setConversations((prev) => [mapConversation(created), ...prev])
-    }
+    setSending(true)
+    try {
+      let conversaId = activeConversationId
+      if (!conversaId) {
+        const created = await chatApi.criarConversa({ titulo: content.slice(0, 60) })
+        conversaId = created.id
+        setActiveConversationId(conversaId)
+        setConversations((prev) => [mapConversation(created), ...prev])
+      }
 
-    const { mensagemUsuario, mensagemIa } = await chatApi.enviarMensagem(conversaId, content)
-    const mapped = [mapMessage(mensagemUsuario), mapMessage(mensagemIa)]
-    setMessages((prev) => [...prev, ...mapped])
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === conversaId
-          ? {
-              ...c,
-              title: c.title === "Nova conversa" ? content.slice(0, 60) : c.title,
-              preview: content.slice(0, 40),
-              date: "Agora",
-            }
-          : c,
-      ),
-    )
+      const { mensagemUsuario, mensagemIa } = await chatApi.enviarMensagem(conversaId, content)
+      const mapped = [mapMessage(mensagemUsuario), mapMessage(mensagemIa)]
+      setMessages((prev) => [...prev, ...mapped])
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === conversaId
+            ? {
+                ...c,
+                title: c.title === "Nova conversa" ? content.slice(0, 60) : c.title,
+                preview: content.slice(0, 40),
+                date: "Agora",
+              }
+            : c,
+        ),
+      )
+    } catch (error) {
+      toast({
+        title: "Erro ao enviar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+      throw error
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleNewConversation = async () => {
@@ -189,7 +206,11 @@ export default function ChatPage() {
             </SheetContent>
           </Sheet>
         </div>
-        <ChatInterface messages={messages} onSendMessage={handleSendMessage} />
+        <ChatInterface
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isLoading={loadingList || sending}
+        />
         <div className="hidden lg:flex h-full min-h-0 shrink-0">
           <ChatHistory {...historyProps} />
         </div>

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { LogOut, CheckCircle2 } from "lucide-react"
+import { LogOut } from "lucide-react"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -14,60 +14,28 @@ export default function LogoutPage() {
   const { toast } = useToast()
   const { logout } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isLoggingOutComplete, setIsLoggingOutComplete] = useState(false)
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true)
-    toast({
-      title: "Saindo...",
-      description: "Você está sendo desconectado",
-    })
-
-    setTimeout(() => {
-      setIsLoggingOut(false)
-      setIsLoggingOutComplete(true)
-
+    try {
+      await logout()
       toast({
-        title: "Logout realizado!",
-        description: "Você saiu da sua conta com sucesso",
+        title: "Logout realizado",
+        description: "Você saiu da sua conta",
       })
-
-      setTimeout(() => {
-        logout()
-        router.replace("/login")
-      }, 1200)
-    }, 600)
+      router.replace("/login")
+    } catch (error) {
+      toast({
+        title: "Erro ao sair",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
+      })
+      setIsLoggingOut(false)
+    }
   }
 
   const handleCancel = () => {
     router.back()
-    toast({
-      title: "Logout cancelado",
-      description: "Você continuará conectado",
-    })
-  }
-
-  if (isLoggingOutComplete) {
-    return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-
-        <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 flex items-center justify-center overflow-x-hidden">
-          <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-bounce">
-                <CheckCircle2 className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">Logout Realizado!</h1>
-              <p className="text-muted-foreground">Você saiu com sucesso da sua conta</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Você será redirecionado para o login...</p>
-          </Card>
-        </main>
-      </div>
-    )
   }
 
   return (
@@ -77,7 +45,9 @@ export default function LogoutPage() {
       <main className="flex-1 min-w-0 p-4 lg:p-6 lg:ml-64 flex items-center justify-center overflow-x-hidden">
         <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
           <div className="flex justify-center">
-            <div className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}>
+            <div
+              className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}
+            >
               <LogOut className="w-8 h-8 text-primary" />
             </div>
           </div>
@@ -98,7 +68,7 @@ export default function LogoutPage() {
             </Button>
             <Button
               className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50"
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               disabled={isLoggingOut}
             >
               {isLoggingOut ? "Desconectando..." : "Sair"}

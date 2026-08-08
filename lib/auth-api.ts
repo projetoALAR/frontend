@@ -1,4 +1,4 @@
-const TOKEN_KEY = "alar_token"
+import { api } from "@/lib/api"
 
 export type Role = "ADMIN" | "ADVOGADO" | "ASSISTENTE"
 
@@ -11,20 +11,17 @@ export type AuthUser = {
   criadoEm: string
 }
 
-export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem(TOKEN_KEY)
+export type AuthResponse = {
+  user: AuthUser
 }
 
-export function setAuthToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token)
-}
+const LEGACY_TOKEN_KEY = "alar_token"
 
-export function clearAuthToken() {
-  localStorage.removeItem(TOKEN_KEY)
+/** Remove token legado do localStorage (migração para cookie httpOnly). */
+export function clearLegacyAuthToken() {
+  if (typeof window === "undefined") return
+  localStorage.removeItem(LEGACY_TOKEN_KEY)
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
 
 async function authErrorMessage(response: Response): Promise<string> {
   const fallback = `Erro na autenticação (${response.status})`
@@ -44,9 +41,10 @@ async function authErrorMessage(response: Response): Promise<string> {
   }
 }
 
-async function authRequest<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+async function sessionAuthRequest<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, {
     method: "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
@@ -58,66 +56,32 @@ async function authRequest<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export type AuthResponse = {
-  access_token: string
-  user: AuthUser
-}
-
 export const authApi = {
   login: (email: string, senha: string) =>
-    authRequest<AuthResponse>("/auth/login", { email, senha }),
+    sessionAuthRequest<AuthResponse>("/api/auth/login", { email, senha }),
+
   register: (nome: string, email: string, senha: string) =>
-    authRequest<AuthResponse>("/auth/register", { nome, email, senha }),
-  createUser: async (dados: {
+    sessionAuthRequest<AuthResponse>("/api/auth/register", { nome, email, senha }),
+
+  logout: async () => {
+    clearLegacyAuthToken()
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+    })
+  },
+
+  changePassword: (senhaAtual: string, novaSenha: string) =>
+    api.post<{ ok: boolean }>("/auth/change-password", { senhaAtual, novaSenha }),
+
+  createUser: (dados: {
     nome: string
     email: string
     senha: string
     role?: Role
-  }): Promise<{ user: AuthUser }> => {
-    const token = getAuthToken()
-    if (!token) throw new Error("Não autenticado")
+  }) => api.post<{ user: AuthUser }>("/auth/usuarios", dados),
 
-    const response = await fetch(`${API_URL}/auth/usuarios`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(dados),
-    })
+  listUsers: () => api.get<AuthUser[]>("/auth/usuarios"),
 
-    if (!response.ok) {
-      throw new Error(await authErrorMessage(response))
-    }
-
-    return response.json() as Promise<{ user: AuthUser }>
-  },
-  listUsers: async (): Promise<AuthUser[]> => {
-    const token = getAuthToken()
-    if (!token) throw new Error("Não autenticado")
-
-    const response = await fetch(`${API_URL}/auth/usuarios`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    if (!response.ok) {
-      throw new Error(await authErrorMessage(response))
-    }
-
-    return response.json() as Promise<AuthUser[]>
-  },
-  me: async (): Promise<AuthUser> => {
-    const token = getAuthToken()
-    if (!token) throw new Error("Não autenticado")
-
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    if (!response.ok) {
-      throw new Error("Sessão inválida")
-    }
-
-    return response.json() as Promise<AuthUser>
-  },
+  me: () => api.get<AuthUser>("/auth/me"),
 }

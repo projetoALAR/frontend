@@ -11,9 +11,7 @@ import {
 } from "react"
 import {
   authApi,
-  clearAuthToken,
-  getAuthToken,
-  setAuthToken,
+  clearLegacyAuthToken,
   type AuthUser,
 } from "@/lib/auth-api"
 
@@ -22,7 +20,7 @@ type AuthContextValue = {
   loading: boolean
   login: (email: string, senha: string) => Promise<void>
   register: (nome: string, email: string, senha: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   refresh: () => Promise<void>
   setUser: (user: AuthUser | null) => void
 }
@@ -34,19 +32,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async () => {
-    const token = getAuthToken()
-    if (!token) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
-
+    clearLegacyAuthToken()
     try {
+      const sessionRes = await fetch("/api/auth/session", {
+        credentials: "same-origin",
+      })
+      const session = (await sessionRes.json()) as { authenticated?: boolean }
+      if (!session.authenticated) {
+        setUser(null)
+        return
+      }
+
       const me = await authApi.me()
       setUser(me)
-    } catch {
-      clearAuthToken()
+    } catch (error) {
       setUser(null)
+      const isUnauthorized =
+        error instanceof Error && error.message === "Não autenticado"
+      if (isUnauthorized) {
+        try {
+          await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+          })
+        } catch {
+          // ignore
+        }
+      }
     } finally {
       setLoading(false)
     }
@@ -57,20 +69,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const login = useCallback(async (email: string, senha: string) => {
+    clearLegacyAuthToken()
     const result = await authApi.login(email, senha)
-    setAuthToken(result.access_token)
     setUser(result.user)
   }, [])
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
+    clearLegacyAuthToken()
     const result = await authApi.register(nome, email, senha)
-    setAuthToken(result.access_token)
     setUser(result.user)
   }, [])
 
-  const logout = useCallback(() => {
-    clearAuthToken()
-    setUser(null)
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout()
+    } finally {
+      setUser(null)
+    }
   }, [])
 
   const value = useMemo(

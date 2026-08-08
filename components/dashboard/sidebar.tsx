@@ -6,6 +6,8 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canAccessMenuHref } from "@/lib/roles"
 
 const generalItems = [
   { icon: Settings, label: "Configurações", href: "/settings" },
@@ -21,9 +23,10 @@ type SidebarProps = {
 export function Sidebar({ mobile = false }: SidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
+  const { user } = useAuth()
   const { data } = useDashboardResumo()
-  const menuItems = useMemo(
-    () => [
+  const menuItems = useMemo(() => {
+    const all = [
       { icon: LayoutDashboard, label: "Painel", href: "/" },
       { icon: FolderKanban, label: "Casos", badge: String(data?.totalProcessos ?? 0), href: "/tasks" },
       { icon: Contact, label: "Clientes", href: "/clients" },
@@ -31,9 +34,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
       { icon: BarChart3, label: "Relatórios", href: "/analytics" },
       { icon: Users, label: "Equipe", href: "/team" },
       { icon: MessageCircle, label: "Chat IA", href: "/chat", badge: "Beta" },
-    ],
-    [data?.totalProcessos],
-  )
+    ]
+    return all.filter((item) => canAccessMenuHref(item.href, user?.role))
+  }, [data?.totalProcessos, user?.role])
 
   return (
     <aside

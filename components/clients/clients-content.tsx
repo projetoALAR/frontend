@@ -18,6 +18,7 @@ import {
 } from "@/lib/clientes-api"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
+import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 
 export function ClientsContent() {
   const { toast } = useToast()
@@ -85,6 +86,7 @@ export function ClientsContent() {
       const created = await clientesApi.criar(clientData)
       setClients((prev) => [mapClienteToCard(created), ...prev])
     }
+    invalidateDashboardCache()
     setSelectedClient(null)
   }
 
@@ -93,6 +95,7 @@ export function ClientsContent() {
     try {
       await clientesApi.remover(clientId)
       setClients((prev) => prev.filter((c) => c.id !== clientId))
+      invalidateDashboardCache()
       toast({
         title: "Cliente removido",
         description: "O cliente foi deletado com sucesso",

@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react"
 import { canCreateUsers } from "@/lib/roles"
 import { AdminUsersPanel } from "@/components/settings/admin-users-panel"
 import { ROLE_LABELS } from "@/lib/roles"
+import { ChangePasswordCard } from "@/components/settings/change-password-card"
 
 const defaultNotifications: NotificacoesPrefs = {
   email: true,
@@ -198,6 +199,8 @@ export function SettingsContent() {
           </Button>
         </div>
       </Card>
+
+      <ChangePasswordCard />
 
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-2">Preferências de Notificação</h3>

@@ -10,6 +10,14 @@ import { Loader2 } from "lucide-react"
 import { authApi, type AuthUser, type Role } from "@/lib/auth-api"
 import { ROLE_LABELS } from "@/lib/roles"
 import { useToast } from "@/hooks/use-toast"
+import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function AdminUsersPanel() {
   const { toast } = useToast()
@@ -49,7 +57,8 @@ export function AdminUsersPanel() {
       setEmail("")
       setSenha("")
       setRole("ASSISTENTE")
-      toast({ title: "Usuário criado" })
+      invalidateDashboardCache()
+      toast({ title: "Usuário criado", description: "Também aparece na equipe" })
       await load()
     } catch (error) {
       toast({
@@ -68,6 +77,7 @@ export function AdminUsersPanel() {
         <h3 className="font-semibold text-lg">Usuários do sistema</h3>
         <p className="text-sm text-muted-foreground">
           Apenas administradores podem criar contas quando o cadastro público está desabilitado.
+          Novos usuários entram automaticamente na equipe.
         </p>
       </div>
 
@@ -99,16 +109,16 @@ export function AdminUsersPanel() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="admin-user-role">Papel</Label>
-          <select
-            id="admin-user-role"
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-            value={role}
-            onChange={(e) => setRole(e.target.value as Role)}
-          >
-            <option value="ASSISTENTE">Assistente</option>
-            <option value="ADVOGADO">Advogado</option>
-            <option value="ADMIN">Administrador</option>
-          </select>
+          <Select value={role} onValueChange={(value) => setRole(value as Role)}>
+            <SelectTrigger id="admin-user-role" className="w-full">
+              <SelectValue placeholder="Selecione o papel" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ASSISTENTE">Assistente</SelectItem>
+              <SelectItem value="ADVOGADO">Advogado</SelectItem>
+              <SelectItem value="ADMIN">Administrador</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="md:col-span-2">
           <Button type="submit" disabled={saving}>

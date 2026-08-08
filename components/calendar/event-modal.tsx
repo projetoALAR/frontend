@@ -4,6 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { CompromissoFormData } from "@/lib/compromissos-api"
@@ -129,20 +136,23 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
           </div>
           <div>
             <Label htmlFor="event-processo">Processo vinculado</Label>
-            <select
-              id="event-processo"
-              value={processoId}
-              onChange={(e) => setProcessoId(e.target.value)}
+            <Select
+              value={processoId || "__none__"}
+              onValueChange={(value) => setProcessoId(value === "__none__" ? "" : value)}
               disabled={isSaving}
-              className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              <option value="">Nenhum</option>
-              {processos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="event-processo" className="mt-1 w-full">
+                <SelectValue placeholder="Nenhum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Nenhum</SelectItem>
+                {processos.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="event-desc">Descrição</Label>

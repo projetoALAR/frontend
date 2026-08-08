@@ -9,6 +9,7 @@ import { EventModal, type CalendarEventView } from "./event-modal"
 import { MonthYearPicker } from "./month-year-picker"
 import { compromissosApi, type CompromissoFormData } from "@/lib/compromissos-api"
 import { useToast } from "@/hooks/use-toast"
+import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
@@ -104,6 +105,7 @@ export function CalendarContent() {
       const created = await compromissosApi.criar(data)
       setEvents((prev) => [...prev, toEventView(created)])
     }
+    invalidateDashboardCache()
     setEditingEvent(null)
   }
 
@@ -111,6 +113,7 @@ export function CalendarContent() {
     try {
       await compromissosApi.remover(eventId)
       setEvents((prev) => prev.filter((e) => e.id !== eventId))
+      invalidateDashboardCache()
       toast({ title: "Evento removido" })
     } catch (error) {
       toast({

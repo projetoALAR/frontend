@@ -10,9 +10,16 @@ import { ProjectProgress } from "@/components/dashboard/project-progress"
 import { TeamSummaryCard } from "@/components/dashboard/team-summary-card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth/auth-provider"
+import { canWriteClientesProcessos, getHomeCopy } from "@/lib/roles"
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const canWrite = canWriteClientesProcessos(user?.role)
+  /** Gráficos e resumo no home: admin e advogado; assistente foca em agenda/lista. */
+  const showGestaoWidgets = user?.role === "ADMIN" || user?.role === "ADVOGADO"
+  const home = getHomeCopy(user?.role)
 
   const handleNewCase = () => {
     router.push("/tasks")
@@ -35,23 +42,25 @@ export default function DashboardPage() {
 
       <main className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 lg:ml-64 overflow-x-hidden">
         <Header
-          title="Advocacia Alar"
-          description="Acompanhe seus casos, clientes e documentações em um só lugar."
+          title={home.title}
+          description={home.description}
           actions={
-            <>
-              <Button 
-                onClick={handleNewCase}
-                className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
-              >
-                + Casos
-              </Button>
-              <Button 
-                onClick={handleNewClient}
-                className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
-              >
-                + Cliente
-              </Button>
-            </>
+            canWrite ? (
+              <>
+                <Button
+                  onClick={handleNewCase}
+                  className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+                >
+                  + Casos
+                </Button>
+                <Button
+                  onClick={handleNewClient}
+                  className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+                >
+                  + Cliente
+                </Button>
+              </>
+            ) : undefined
           }
         />
 
@@ -60,14 +69,14 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
             <div className="lg:col-span-2 space-y-3 md:space-y-4 min-w-0">
-              <ProjectAnalytics />
+              {showGestaoWidgets && <ProjectAnalytics />}
               <ProjectList />
             </div>
 
             <div className="space-y-3 md:space-y-4 min-w-0">
               <Reminders />
               <ProjectProgress />
-              <TeamSummaryCard />
+              {showGestaoWidgets && <TeamSummaryCard />}
             </div>
           </div>
         </div>

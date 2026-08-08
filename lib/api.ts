@@ -1,32 +1,43 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
-const TOKEN_KEY = "alar_token"
-
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown
 }
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem(TOKEN_KEY)
-}
+/** Proxy same-origin → Nest, com cookie httpOnly → Authorization. */
+const API_BASE = "/api/backend"
 
 function handleUnauthorized() {
   if (typeof window === "undefined") return
-  localStorage.removeItem(TOKEN_KEY)
   if (!window.location.pathname.startsWith("/login")) {
     window.location.href = "/login"
   }
 }
 
+async function parseError(response: Response): Promise<string> {
+  const fallback = `Erro na API (${response.status})`
+  try {
+    const text = await response.text()
+    if (!text) return fallback
+    try {
+      const json = JSON.parse(text) as { message?: string | string[] }
+      if (Array.isArray(json.message)) return json.message.join(", ")
+      if (typeof json.message === "string" && json.message.trim()) return json.message
+    } catch {
+      return text
+    }
+    return text
+  } catch {
+    return response.statusText || fallback
+  }
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options
-  const token = getToken()
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...rest,
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -38,8 +49,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText)
-    throw new Error(message || `Erro na API (${response.status})`)
+    throw new Error(await parseError(response))
   }
 
   if (response.status === 204) {
@@ -50,12 +60,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
-  const token = getToken()
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    credentials: "same-origin",
     body: formData,
   })
 
@@ -65,8 +72,7 @@ async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
   }
 
   if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText)
-    throw new Error(message || `Erro no upload (${response.status})`)
+    throw new Error(await parseError(response))
   }
 
   return response.json() as Promise<T>
@@ -74,10 +80,12 @@ async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body }),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: "POST", body: body ?? {} }),
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   upload: <T>(path: string, formData: FormData) => uploadFormData<T>(path, formData),
 }
 
-export { API_URL }
+/** @deprecated Preferir rotas same-origin; mantido para help/config. */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
