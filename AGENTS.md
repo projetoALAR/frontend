@@ -3,7 +3,7 @@
 ## project context
 - next.js 16 app router in `app/` with shared chrome in `components/dashboard/`.
 - ui primitives live in `components/ui/` and wrap `radix`, `shadcn/ui`, `class-variance-authority`, and `cn` from `lib/utils.ts`.
-- shared dashboard data comes from `lib/shared-data.ts` and dashboard API helpers in `lib/dashboard-api.ts`; prefer updating them over duplicating mock arrays.
+- dashboard data comes from API helpers in `lib/dashboard-api.ts` (and related `lib/*-api.ts`); prefer updating them over duplicating mock arrays.
 - global styles and tokens live in `app/globals.css`; legacy copy in `styles/globals.css` should stay untouched unless the app imports it.
 - package metadata and scripts live in `package.json`; workspace and build settings live in `pnpm-workspace.yaml`, `next.config.mjs`, `postcss.config.mjs`, and `tsconfig.json`.
 - keep user-facing text in pt-br, matching the existing app copy and the project learning.
@@ -17,7 +17,7 @@ pnpm lint
 
 ## app structure
 - pages use `Sidebar` from `components/dashboard/sidebar.tsx` plus `Header` from `components/dashboard/header.tsx` where applicable.
-- dashboard cards and counts should read from `lib/shared-data.ts` helpers like `getTotalCases()` and `getCompletionPercentage()`.
+- dashboard cards and counts should read from `lib/dashboard-api.ts` / `hooks/use-dashboard-resumo.ts`.
 - forms use local modal components such as `components/tasks/case-modal.tsx`, `components/clients/client-modal.tsx`, and `components/team/team-member-modal.tsx`.
 - route-level exports stay in `app/page.tsx`, `app/tasks/page.tsx`, `app/analytics/page.tsx`, `app/calendar/page.tsx`, `app/chat/page.tsx`, `app/clients/page.tsx`, `app/team/page.tsx`, `app/settings/page.tsx`, `app/help/page.tsx`, and `app/logout/page.tsx`.
 
@@ -39,7 +39,7 @@ pnpm lint
 ## working rules
 - run `pnpm lint` after edits to `app/`, `components/`, `hooks/`, or `lib/`.
 - keep classnames consistent with `Tailwind CSS` tokens from `app/globals.css`.
-- do not add duplicate mock datasets when `lib/shared-data.ts` can provide the values.
+- do not add duplicate mock datasets when the dashboard APIs can provide the values.
 
 <!-- caliber:managed:pre-commit -->
 ## Before Committing

@@ -12,4 +12,4 @@ alwaysApply: false
 - keep form state local with `useState` and `useEffect` like `components/tasks/case-modal.tsx`, `components/clients/client-modal.tsx`, `components/team/team-member-modal.tsx`, and `components/calendar/event-modal.tsx`.
 - use `useToast()` from `hooks/use-toast.ts` for destructive and success feedback; use `alert()` only when matching existing settings/logout flows.
 - prefer explicit handlers for `onSave`, `onClose`, and `onApply` props instead of hidden side effects.
-- when reading or writing shared counts, use `lib/shared-data.ts` helpers instead of duplicating arrays.
+- when reading dashboard counts, cards, or lists, use the real APIs (`lib/dashboard-api.ts`, `lib/processos-api.ts`, etc.) and hooks like `hooks/use-dashboard-resumo.ts` — do not invent local mock datasets.
