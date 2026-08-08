@@ -30,6 +30,7 @@ import {
   CircleDot,
   History,
   RefreshCw,
+  Sparkles,
 } from "lucide-react"
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -54,6 +55,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { GenerateDocumentModal } from "@/components/tasks/generate-document-modal"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -95,6 +97,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const [editingTags, setEditingTags] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
+  const [gerarDocOpen, setGerarDocOpen] = useState(false)
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const container = chatScrollRef.current
@@ -350,6 +353,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   const client = localCase.cliente
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:max-w-xl p-0 gap-0 flex flex-col h-full overflow-hidden">
         <SheetHeader className="p-4 border-b bg-secondary/30 space-y-2 shrink-0">
@@ -710,14 +714,27 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           </TabsContent>
 
           <TabsContent value="docs" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <h4 className="font-medium">Documentos</h4>
-              <div>
-                <input ref={fileInputRef} type="file" className="hidden" multiple onChange={(e) => void handleFileUpload(e)} />
-                <Button size="sm" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
-                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
-                  Enviar
-                </Button>
+              <div className="flex gap-2">
+                {canWrite && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!localCase}
+                    onClick={() => setGerarDocOpen(true)}
+                  >
+                    <Sparkles className="w-4 h-4 mr-1" />
+                    Gerar documento com IA
+                  </Button>
+                )}
+                <div>
+                  <input ref={fileInputRef} type="file" className="hidden" multiple onChange={(e) => void handleFileUpload(e)} />
+                  <Button size="sm" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
+                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
+                    Enviar
+                  </Button>
+                </div>
               </div>
             </div>
             <button
@@ -847,6 +864,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                         {formatDatePt(item.data)}
                       </p>
                       <p className="text-sm">{item.descricao}</p>
+                      {item.explicacao ? (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {item.explicacao}
+                        </p>
+                      ) : null}
                     </div>
                   </li>
                 ))}
@@ -909,5 +931,14 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
         </Tabs>
       </SheetContent>
     </Sheet>
+
+    <GenerateDocumentModal
+      isOpen={gerarDocOpen}
+      onClose={() => setGerarDocOpen(false)}
+      processoId={localCase.id}
+      processoTitulo={localCase.title}
+      onSaved={() => void loadDocs(localCase.id)}
+    />
+    </>
   )
 }
