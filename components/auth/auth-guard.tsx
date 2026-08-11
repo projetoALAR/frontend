@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAccessPath } from "@/lib/roles"
 
-const PUBLIC_PATHS = ["/login"]
+const PUBLIC_PATHS = ["/login", "/sentry-test"]
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
