@@ -31,6 +31,7 @@ import {
   History,
   RefreshCw,
   Sparkles,
+  Clock,
 } from "lucide-react"
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -57,6 +58,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { GenerateDocumentModal } from "@/components/tasks/generate-document-modal"
+import { CaseTimelineTab } from "@/components/tasks/case-timeline-tab"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -440,9 +442,10 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0"
         >
-          <TabsList className="mx-4 mt-3 grid grid-cols-4 shrink-0">
+          <TabsList className="mx-4 mt-3 grid grid-cols-5 shrink-0">
             <TabsTrigger value="info"><Briefcase className="w-4 h-4 mr-1" />Info</TabsTrigger>
             <TabsTrigger value="docs"><FolderOpen className="w-4 h-4 mr-1" />Docs</TabsTrigger>
+            <TabsTrigger value="timeline"><Clock className="w-4 h-4 mr-1" />Timeline</TabsTrigger>
             <TabsTrigger value="andamentos"><History className="w-4 h-4 mr-1" />Andamentos</TabsTrigger>
             <TabsTrigger value="chat"><MessageCircle className="w-4 h-4 mr-1" />Chat</TabsTrigger>
           </TabsList>
@@ -805,6 +808,13 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="timeline" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
+            <CaseTimelineTab
+              processoId={localCase?.id ?? null}
+              active={activeTab === "timeline"}
+            />
           </TabsContent>
 
           <TabsContent value="andamentos" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
