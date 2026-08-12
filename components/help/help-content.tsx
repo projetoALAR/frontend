@@ -2,8 +2,11 @@
 
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, BookOpen, Video, MessageCircle, Mail, ChevronDown } from "lucide-react"
+import { Search, BookOpen, Video, MessageCircle, Mail, ChevronDown, Sparkles } from "lucide-react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/components/auth/auth-provider"
+import { resetOnboarding } from "@/lib/onboarding"
 
 const FORUM_URL = process.env.NEXT_PUBLIC_FORUM_URL || "https://github.com/discussions"
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@alar.com.br"
@@ -79,13 +82,23 @@ const faqs = [
       "Sim. Use o ícone de lixeira no card do cliente ou membro e confirme. A remoção não pode ser desfeita.",
   },
   {
-    question: "Como entrar em contato com o suporte?",
+    question: "Como buscar clientes ou casos rapidamente?",
+    answer:
+      "Use Ctrl+K (ou o campo Buscar no topo) para pesquisar por nome, CPF, número CNJ ou título do caso. Os resultados abrem o cliente ou o painel do caso.",
+  },
+  {
+    question: "O que é a Timeline do caso?",
+    answer:
+      "No painel lateral do caso, aba Timeline, você vê histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
+  },
+  {
     answer:
       "Clique no card Suporte nesta página para abrir seu cliente de e-mail, ou use o e-mail configurado da equipe.",
   },
 ]
 
 export function HelpContent() {
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
 
@@ -150,6 +163,29 @@ export function HelpContent() {
           </Card>
         ))}
       </div>
+
+      <Card className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-semibold">Tour de boas-vindas</h3>
+            <p className="text-sm text-muted-foreground">
+              Revise os passos iniciais do Alar em menos de um minuto.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (user) resetOnboarding(user.id)
+            window.dispatchEvent(new CustomEvent("openOnboardingTour"))
+          }}
+        >
+          Ver tour novamente
+        </Button>
+      </Card>
 
       <div id="faq-section" className="space-y-4 scroll-mt-6">
         <h2 className="text-xl font-semibold">Perguntas Frequentes</h2>

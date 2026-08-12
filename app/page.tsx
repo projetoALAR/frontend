@@ -8,6 +8,7 @@ import { Reminders } from "@/components/dashboard/reminders"
 import { ProjectList } from "@/components/dashboard/project-list"
 import { ProjectProgress } from "@/components/dashboard/project-progress"
 import { TeamSummaryCard } from "@/components/dashboard/team-summary-card"
+import { DashboardWelcomeCard } from "@/components/onboarding/dashboard-welcome-card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -65,6 +66,7 @@ export default function DashboardPage() {
         />
 
         <div className="mt-4 md:mt-5 space-y-3 md:space-y-4">
+          <DashboardWelcomeCard />
           <StatsCards />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">

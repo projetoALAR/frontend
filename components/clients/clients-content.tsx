@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX } from "lucide-react"
+import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { ClientModal } from "./client-modal"
@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ListEmptyState } from "@/components/shared/list-empty-state"
 
 export function ClientsContent() {
   const { toast } = useToast()
@@ -361,18 +362,37 @@ export function ClientsContent() {
       )}
 
       {!isLoading && filteredClients.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhum cliente encontrado</p>
-          {searchTerm && (
-            <Button
-              variant="link"
-              onClick={() => setSearchTerm("")}
-              className="text-primary mt-2"
-            >
-              Limpar busca
-            </Button>
-          )}
-        </div>
+        clients.length === 0 && !searchTerm ? (
+          <ListEmptyState
+            icon={Users}
+            title="Nenhum cliente cadastrado"
+            description="Adicione clientes para vincular casos, documentos e prazos. Você pode importar dados depois via exportação LGPD."
+          >
+            {canWrite && (
+              <Button
+                onClick={() => {
+                  setSelectedClient(null)
+                  setIsModalOpen(true)
+                }}
+              >
+                + Novo cliente
+              </Button>
+            )}
+          </ListEmptyState>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum cliente encontrado</p>
+            {searchTerm && (
+              <Button
+                variant="link"
+                onClick={() => setSearchTerm("")}
+                className="text-primary mt-2"
+              >
+                Limpar busca
+              </Button>
+            )}
+          </div>
+        )
       )}
 
       <ClientModal

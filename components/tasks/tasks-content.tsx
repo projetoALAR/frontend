@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Search, Filter, Tag, Eye, Loader2, Trash2, Pencil, X, Calendar } from "lucide-react"
+import { Search, Filter, Tag, Eye, Loader2, Trash2, Pencil, X, Calendar, Briefcase } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
 import { CaseModal } from "./case-modal"
 import { FilterModal, countActiveFilters, EMPTY_FILTERS, type FilterOptions } from "./filter-modal"
@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
+import { ListEmptyState } from "@/components/shared/list-empty-state"
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
   Alta: "destructive",
@@ -413,8 +414,27 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
               </div>
             </Card>
           ))}
-          {filteredTasks.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">Nenhum caso encontrado</p>
+          {filteredTasks.length === 0 && !isLoading && (
+            allTasks.length === 0 && !searchTerm && filter === "all" && activeFilterCount === 0 ? (
+              <ListEmptyState
+                icon={Briefcase}
+                title="Nenhum caso ainda"
+                description="Crie o primeiro caso para acompanhar prazos, documentos, timeline e andamentos processuais."
+              >
+                {canWrite && (
+                  <Button
+                    onClick={() => {
+                      setSelectedCase(null)
+                      setIsCaseModalOpen(true)
+                    }}
+                  >
+                    + Novo caso
+                  </Button>
+                )}
+              </ListEmptyState>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Nenhum caso encontrado</p>
+            )
           )}
         </div>
       )}

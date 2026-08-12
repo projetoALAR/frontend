@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { AuthGuard } from "@/components/auth/auth-guard"
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour"
 import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
@@ -50,6 +51,7 @@ export default function RootLayout({
         >
           <AuthProvider>
             <AuthGuard>{children}</AuthGuard>
+            <OnboardingTour />
           </AuthProvider>
           <Toaster />
         </ThemeProvider>
