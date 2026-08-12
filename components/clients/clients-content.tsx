@@ -5,31 +5,49 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Mail, Phone, Trash2, Pencil, Search, Loader2 } from "lucide-react"
+import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { ClientModal } from "./client-modal"
 import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
   clientesApi,
+  isClienteAnonimizado,
   mapClienteToCard,
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
 import { useAuth } from "@/components/auth/auth-provider"
-import { canWriteClientesProcessos } from "@/lib/roles"
+import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function ClientsContent() {
   const { toast } = useToast()
   const { user } = useAuth()
   const canWrite = canWriteClientesProcessos(user?.role)
+  const canExport = canExportarCliente(user?.role)
+  const canAnonimizar = canAnonimizarCliente(user?.role)
   const [clients, setClients] = useState<ClienteCard[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<ClienteCard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [exportingId, setExportingId] = useState<string | null>(null)
+  const [lgpdTarget, setLgpdTarget] = useState<{
+    client: ClienteCard
+    modo: "excluir" | "anonimizar"
+  } | null>(null)
   const [contact, setContact] = useState<{
     canal: "email" | "telefone"
     client: ClienteCard
@@ -90,24 +108,79 @@ export function ClientsContent() {
     setSelectedClient(null)
   }
 
-  const handleDeleteClient = async (clientId: string) => {
-    setDeletingId(clientId)
+  const handleExportClient = async (client: ClienteCard) => {
+    setExportingId(client.id)
     try {
-      await clientesApi.remover(clientId)
-      setClients((prev) => prev.filter((c) => c.id !== clientId))
-      invalidateDashboardCache()
+      const payload = await clientesApi.exportar(client.id)
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      const stamp = new Date().toISOString().slice(0, 10)
+      link.href = url
+      link.download = `alar-cliente-${client.id.slice(0, 8)}-${stamp}.json`
+      link.click()
+      URL.revokeObjectURL(url)
       toast({
-        title: "Cliente removido",
-        description: "O cliente foi deletado com sucesso",
+        title: "Dados exportados",
+        description: "Arquivo JSON baixado (pedido LGPD).",
       })
     } catch (error) {
       toast({
-        title: "Erro ao remover",
-        description: error instanceof Error ? error.message : "Não foi possível deletar o cliente",
+        title: "Erro ao exportar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setExportingId(null)
+    }
+  }
+
+  const handleConfirmLgpd = async () => {
+    if (!lgpdTarget) return
+    const { client, modo } = lgpdTarget
+    if (modo === "excluir") {
+      setDeletingId(client.id)
+      try {
+        await clientesApi.remover(client.id)
+        setClients((prev) => prev.filter((c) => c.id !== client.id))
+        invalidateDashboardCache()
+        toast({
+          title: "Cliente removido",
+          description: "O cliente e os casos vinculados foram excluídos.",
+        })
+      } catch (error) {
+        toast({
+          title: "Erro ao remover",
+          description: error instanceof Error ? error.message : "Não foi possível deletar o cliente",
+          variant: "destructive",
+        })
+      } finally {
+        setDeletingId(null)
+        setLgpdTarget(null)
+      }
+      return
+    }
+
+    setDeletingId(client.id)
+    try {
+      const updated = await clientesApi.anonimizar(client.id)
+      const card = mapClienteToCard(updated)
+      setClients((prev) => prev.map((c) => (c.id === client.id ? card : c)))
+      toast({
+        title: "Cliente anonimizado",
+        description: "Dados pessoais removidos. Casos foram mantidos sem identificação.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao anonimizar",
+        description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
     } finally {
       setDeletingId(null)
+      setLgpdTarget(null)
     }
   }
 
@@ -173,20 +246,50 @@ export function ClientsContent() {
                 </Avatar>
                 {canWrite && (
                   <div className="flex gap-1">
+                    {canExport && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleExportClient(client)}
+                        disabled={exportingId === client.id}
+                        className="h-8 w-8 p-0"
+                        title="Exportar dados (LGPD)"
+                      >
+                        {exportingId === client.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditClient(client)}
                       className="h-8 w-8 p-0"
+                      disabled={isClienteAnonimizado(client)}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
+                    {canAnonimizar && !isClienteAnonimizado(client) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLgpdTarget({ client, modo: "anonimizar" })}
+                        disabled={deletingId === client.id}
+                        className="h-8 w-8 p-0"
+                        title="Anonimizar (LGPD)"
+                      >
+                        <UserX className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => void handleDeleteClient(client.id)}
+                      onClick={() => setLgpdTarget({ client, modo: "excluir" })}
                       disabled={deletingId === client.id}
                       className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      title="Excluir cliente"
                     >
                       {deletingId === client.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -202,6 +305,11 @@ export function ClientsContent() {
                 <div>
                   <h3 className="font-semibold text-lg line-clamp-1">{client.name}</h3>
                   <p className="text-xs text-muted-foreground">{client.cpf}</p>
+                  {isClienteAnonimizado(client) && (
+                    <Badge variant="outline" className="mt-1">
+                      Anonimizado
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="space-y-1 text-sm">
@@ -282,6 +390,33 @@ export function ClientsContent() {
           destino={contact.canal === "email" ? contact.client.email : contact.client.phone}
         />
       )}
+
+      <AlertDialog open={!!lgpdTarget} onOpenChange={(open) => !open && setLgpdTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {lgpdTarget?.modo === "anonimizar" ? "Anonimizar cliente?" : "Excluir cliente?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {lgpdTarget?.modo === "anonimizar"
+                ? `Os dados pessoais de ${lgpdTarget.client.name} serão apagados (nome, CPF, e-mail, telefone). Documentos e chats do caso também saem. Os processos permanecem sem identificação.`
+                : `Isso apaga ${lgpdTarget?.client.name} e todos os casos, documentos e prazos vinculados. Não dá para desfazer.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className={lgpdTarget?.modo === "excluir" ? "bg-destructive text-white hover:bg-destructive/90" : ""}
+              onClick={(e) => {
+                e.preventDefault()
+                void handleConfirmLgpd()
+              }}
+            >
+              {lgpdTarget?.modo === "anonimizar" ? "Anonimizar" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

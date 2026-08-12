@@ -37,10 +37,25 @@ export function mapClienteToCard(cliente: ClienteApi): ClienteCard {
   }
 }
 
+export function isClienteAnonimizado(client: Pick<ClienteCard, "name" | "cpf">) {
+  return (
+    client.name === "Titular anonimizado" ||
+    client.cpf.toUpperCase().startsWith("ANON")
+  )
+}
+
 export const clientesApi = {
   listar: () => api.get<ClienteApi[]>("/clientes"),
   criar: (dados: ClienteFormData) => api.post<ClienteApi>("/clientes", dados),
   atualizar: (id: string, dados: ClienteFormData) =>
     api.put<ClienteApi>(`/clientes/${id}`, dados),
   remover: (id: string) => api.delete<ClienteApi>(`/clientes/${id}`),
+  exportar: (id: string) =>
+    api.get<{
+      exportadoEm: string
+      origem: string
+      cliente: ClienteApi
+      processos: unknown[]
+    }>(`/clientes/${id}/export`),
+  anonimizar: (id: string) => api.post<ClienteApi>(`/clientes/${id}/anonimizar`),
 }

@@ -33,6 +33,14 @@ export function canWriteClientesProcessos(role?: Role | null): boolean {
   return role === "ADMIN" || role === "ADVOGADO"
 }
 
+export function canExportarCliente(role?: Role | null): boolean {
+  return role === "ADMIN" || role === "ADVOGADO"
+}
+
+export function canAnonimizarCliente(role?: Role | null): boolean {
+  return role === "ADMIN"
+}
+
 export function canDeleteDocumentos(role?: Role | null): boolean {
   return role === "ADMIN" || role === "ADVOGADO"
 }
