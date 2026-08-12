@@ -9,11 +9,16 @@ export type AuthUser = {
   role: Role
   fotoUrl: string | null
   criadoEm: string
+  totpEnabled?: boolean
 }
 
 export type AuthResponse = {
   user: AuthUser
 }
+
+export type LoginResult =
+  | AuthResponse
+  | { requires2fa: true; preAuthToken: string }
 
 const LEGACY_TOKEN_KEY = "alar_token"
 
@@ -58,7 +63,28 @@ async function sessionAuthRequest<T>(path: string, body: unknown): Promise<T> {
 
 export const authApi = {
   login: (email: string, senha: string) =>
-    sessionAuthRequest<AuthResponse>("/api/auth/login", { email, senha }),
+    sessionAuthRequest<LoginResult>("/api/auth/login", { email, senha }),
+
+  verifyTwoFactor: (preAuthToken: string, code: string) =>
+    sessionAuthRequest<AuthResponse>("/api/auth/2fa/verify", {
+      preAuthToken,
+      code,
+    }),
+
+  twoFactorStatus: () => api.get<{ enabled: boolean }>("/auth/2fa/status"),
+
+  setupTwoFactor: () =>
+    api.post<{ secret: string; otpauthUrl: string; qrDataUrl: string }>(
+      "/auth/2fa/setup",
+    ),
+
+  enableTwoFactor: (code: string) =>
+    api.post<{ ok: boolean; recoveryCodes: string[] }>("/auth/2fa/enable", {
+      code,
+    }),
+
+  disableTwoFactor: (senha: string, code: string) =>
+    api.post<{ ok: boolean }>("/auth/2fa/disable", { senha, code }),
 
   register: (nome: string, email: string, senha: string) =>
     sessionAuthRequest<AuthResponse>("/api/auth/register", { nome, email, senha }),

@@ -16,6 +16,7 @@ import { canCreateUsers } from "@/lib/roles"
 import { AdminUsersPanel } from "@/components/settings/admin-users-panel"
 import { ROLE_LABELS } from "@/lib/roles"
 import { ChangePasswordCard } from "@/components/settings/change-password-card"
+import { TwoFactorCard } from "@/components/settings/two-factor-card"
 
 const defaultNotifications: NotificacoesPrefs = {
   email: true,
@@ -201,6 +202,8 @@ export function SettingsContent() {
       </Card>
 
       <ChangePasswordCard />
+
+      {user?.role === "ADMIN" && <TwoFactorCard />}
 
       <Card className="p-6">
         <h3 className="font-semibold text-lg mb-2">Preferências de Notificação</h3>

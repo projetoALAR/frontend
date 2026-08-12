@@ -11,13 +11,18 @@ import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { PasswordHints } from "@/components/password-hints"
 import { senhaAtendePolitica } from "@/lib/password-policy"
 import { useToast } from "@/hooks/use-toast"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
 
 const ALLOW_PUBLIC_REGISTER =
   process.env.NEXT_PUBLIC_ALLOW_REGISTER === "true" ||
   process.env.NEXT_PUBLIC_ALLOW_REGISTER === "1"
 
 export default function LoginPage() {
-  const { login, register } = useAuth()
+  const { login, register, completeTwoFactor } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const [mode, setMode] = useState<"login" | "register">("login")
@@ -25,13 +30,32 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
   const [loading, setLoading] = useState(false)
+  const [preAuthToken, setPreAuthToken] = useState<string | null>(null)
+  const [otp, setOtp] = useState("")
+  const [useRecovery, setUseRecovery] = useState(false)
+  const [recovery, setRecovery] = useState("")
 
   const isRegister = ALLOW_PUBLIC_REGISTER && mode === "register"
+
+  const finishLogin = () => {
+    toast({
+      title: isRegister ? "Conta criada" : "Bem-vindo!",
+      description: "Sessão iniciada com sucesso",
+    })
+    router.replace("/")
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
+      if (preAuthToken) {
+        const code = useRecovery ? recovery.trim() : otp
+        await completeTwoFactor(preAuthToken, code)
+        finishLogin()
+        return
+      }
+
       if (isRegister) {
         if (!senhaAtendePolitica(senha)) {
           toast({
@@ -43,14 +67,16 @@ export default function LoginPage() {
           return
         }
         await register(nome, email, senha)
-      } else {
-        await login(email, senha)
+        finishLogin()
+        return
       }
-      toast({
-        title: isRegister ? "Conta criada" : "Bem-vindo!",
-        description: "Sessão iniciada com sucesso",
-      })
-      router.replace("/")
+
+      const result = await login(email, senha)
+      if ("requires2fa" in result && result.requires2fa) {
+        setPreAuthToken(result.preAuthToken)
+        return
+      }
+      finishLogin()
     } catch (err) {
       toast({
         title: "Falha na autenticação",
@@ -68,67 +94,135 @@ export default function LoginPage() {
         <div className="space-y-1 text-center">
           <h1 className="text-2xl font-bold">Alar</h1>
           <p className="text-sm text-muted-foreground">
-            {isRegister ? "Crie uma nova conta" : "Entre na sua conta"}
+            {preAuthToken
+              ? "Digite o código do autenticador"
+              : isRegister
+                ? "Crie uma nova conta"
+                : "Entre na sua conta"}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isRegister && (
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                required
-                autoComplete="name"
-              />
-            </div>
+          {preAuthToken ? (
+            <>
+              {useRecovery ? (
+                <div className="space-y-2">
+                  <Label htmlFor="recovery">Código de recuperação</Label>
+                  <Input
+                    id="recovery"
+                    value={recovery}
+                    onChange={(e) => setRecovery(e.target.value)}
+                    required
+                    autoComplete="one-time-code"
+                    placeholder="ABCD-EFGH"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="otp">Código de 6 dígitos</Label>
+                  <InputOTP
+                    id="otp"
+                    maxLength={6}
+                    value={otp}
+                    onChange={setOtp}
+                    containerClassName="justify-center"
+                  >
+                    <InputOTPGroup>
+                      {Array.from({ length: 6 }, (_, i) => (
+                        <InputOTPSlot key={i} index={i} />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || (useRecovery ? recovery.trim().length < 8 : otp.length !== 6)}
+              >
+                {loading ? "Aguarde..." : "Confirmar"}
+              </Button>
+              <button
+                type="button"
+                className="w-full text-sm text-primary hover:underline"
+                onClick={() => setUseRecovery(!useRecovery)}
+              >
+                {useRecovery ? "Usar o app autenticador" : "Usar código de recuperação"}
+              </button>
+              <button
+                type="button"
+                className="w-full text-sm text-muted-foreground hover:underline"
+                onClick={() => {
+                  setPreAuthToken(null)
+                  setOtp("")
+                  setRecovery("")
+                  setUseRecovery(false)
+                }}
+              >
+                Voltar ao login
+              </button>
+            </>
+          ) : (
+            <>
+              {isRegister && (
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="senha">Senha</Label>
+                <Input
+                  id="senha"
+                  type="password"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  required
+                  minLength={isRegister ? 10 : 1}
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                />
+                {isRegister ? <PasswordHints senha={senha} /> : null}
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Aguarde..." : isRegister ? "Cadastrar" : "Entrar"}
+              </Button>
+            </>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="senha">Senha</Label>
-            <Input
-              id="senha"
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              required
-              minLength={isRegister ? 10 : 1}
-              autoComplete={isRegister ? "new-password" : "current-password"}
-            />
-            {isRegister ? <PasswordHints senha={senha} /> : null}
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Aguarde..." : isRegister ? "Cadastrar" : "Entrar"}
-          </Button>
         </form>
 
         <AiDisclaimer compact />
 
-        {ALLOW_PUBLIC_REGISTER ? (
-          <button
-            type="button"
-            className="w-full text-sm text-primary hover:underline"
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
-          >
-            {mode === "login" ? "Criar uma conta" : "Já tenho conta — entrar"}
-          </button>
-        ) : (
-          <p className="text-center text-xs text-muted-foreground">
-            Contas são criadas por um administrador.
-          </p>
-        )}
+        {!preAuthToken &&
+          (ALLOW_PUBLIC_REGISTER ? (
+            <button
+              type="button"
+              className="w-full text-sm text-primary hover:underline"
+              onClick={() => setMode(mode === "login" ? "register" : "login")}
+            >
+              {mode === "login" ? "Criar uma conta" : "Já tenho conta — entrar"}
+            </button>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground">
+              Contas são criadas por um administrador.
+            </p>
+          ))}
       </Card>
     </div>
   )

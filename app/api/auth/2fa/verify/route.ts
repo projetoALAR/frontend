@@ -21,7 +21,7 @@ async function nestErrorMessage(response: Response): Promise<string> {
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const response = await fetch(`${getNestApiUrl()}/auth/login`, {
+  const response = await fetch(`${getNestApiUrl()}/auth/2fa/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -35,26 +35,9 @@ export async function POST(request: Request) {
   }
 
   const data = (await response.json()) as {
-    requires2fa?: boolean
-    preAuthToken?: string
-    access_token?: string
-    user?: unknown
+    access_token: string
+    user: unknown
   }
-
-  if (data.requires2fa && data.preAuthToken) {
-    return NextResponse.json({
-      requires2fa: true,
-      preAuthToken: data.preAuthToken,
-    })
-  }
-
-  if (!data.access_token) {
-    return NextResponse.json(
-      { message: "Resposta de login inválida" },
-      { status: 502 },
-    )
-  }
-
   await setAuthCookie(data.access_token)
   return NextResponse.json({ user: data.user })
 }

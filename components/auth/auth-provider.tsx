@@ -13,12 +13,14 @@ import {
   authApi,
   clearLegacyAuthToken,
   type AuthUser,
+  type LoginResult,
 } from "@/lib/auth-api"
 
 type AuthContextValue = {
   user: AuthUser | null
   loading: boolean
-  login: (email: string, senha: string) => Promise<void>
+  login: (email: string, senha: string) => Promise<LoginResult>
+  completeTwoFactor: (preAuthToken: string, code: string) => Promise<void>
   register: (nome: string, email: string, senha: string) => Promise<void>
   logout: () => Promise<void>
   refresh: () => Promise<void>
@@ -71,8 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, senha: string) => {
     clearLegacyAuthToken()
     const result = await authApi.login(email, senha)
+    if ("requires2fa" in result && result.requires2fa) {
+      return result
+    }
     setUser(result.user)
+    return result
   }, [])
+
+  const completeTwoFactor = useCallback(
+    async (preAuthToken: string, code: string) => {
+      clearLegacyAuthToken()
+      const result = await authApi.verifyTwoFactor(preAuthToken, code)
+      setUser(result.user)
+    },
+    [],
+  )
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     clearLegacyAuthToken()
@@ -89,8 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, refresh, setUser }),
-    [user, loading, login, register, logout, refresh],
+    () => ({
+      user,
+      loading,
+      login,
+      completeTwoFactor,
+      register,
+      logout,
+      refresh,
+      setUser,
+    }),
+    [user, loading, login, completeTwoFactor, register, logout, refresh],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
