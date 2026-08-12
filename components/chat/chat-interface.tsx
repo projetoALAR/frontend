@@ -13,15 +13,24 @@ interface Message {
   isUser: boolean
   timestamp: string
   fontes?: import("@/lib/chat-api").ChatFonteApi[] | null
+  feedback?: "util" | "nao_util" | null
 }
 
 interface ChatInterfaceProps {
   messages: Message[]
   onSendMessage: (content: string) => Promise<void>
+  onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
+  quota?: { usados: number; limite: number; restantes: number } | null
   isLoading?: boolean
 }
 
-export function ChatInterface({ messages, onSendMessage, isLoading = false }: ChatInterfaceProps) {
+export function ChatInterface({
+  messages,
+  onSendMessage,
+  onFeedback,
+  quota,
+  isLoading = false,
+}: ChatInterfaceProps) {
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -71,6 +80,11 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
         <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
         <p className="text-xs text-muted-foreground mt-1">
           Assistente para apoio em questões jurídicas — não substitui advogado
+          {quota ? (
+            <span className="block mt-1">
+              Uso hoje: {quota.usados.toLocaleString("pt-BR")} / {quota.limite.toLocaleString("pt-BR")} tokens
+            </span>
+          ) : null}
         </p>
       </div>
 
@@ -100,10 +114,13 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
             {messages.map((message) => (
               <ChatMessage
                 key={message.id}
+                messageId={message.id}
                 content={message.content}
                 isUser={message.isUser}
                 timestamp={message.timestamp}
                 fontes={message.fontes}
+                feedback={message.feedback}
+                onFeedback={onFeedback}
               />
             ))}
             {(isProcessing || isLoading) && (

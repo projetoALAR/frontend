@@ -45,6 +45,7 @@ import { formatBytes, formatDatePt } from "@/lib/format"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { ChatCitations } from "@/components/chat/chat-citations"
+import { ChatMessageFeedback } from "@/components/chat/chat-message-feedback"
 import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
@@ -297,6 +298,21 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       })
     } finally {
       setIsTyping(false)
+    }
+  }
+
+  const handleChatFeedback = async (messageId: string, util: boolean) => {
+    try {
+      const updated = await chatApi.registrarFeedback(messageId, util)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
+      )
+    } catch (error) {
+      toast({
+        title: "Erro ao avaliar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
     }
   }
 
@@ -938,6 +954,13 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                       </div>
                       {!msg.isUser && msg.fontes && msg.fontes.length > 0 ? (
                         <ChatCitations fontes={msg.fontes} compact />
+                      ) : null}
+                      {!msg.isUser ? (
+                        <ChatMessageFeedback
+                          messageId={msg.id}
+                          feedback={msg.feedback}
+                          onFeedback={handleChatFeedback}
+                        />
                       ) : null}
                     </div>
                     {msg.isUser && <User className="w-5 h-5 shrink-0" />}

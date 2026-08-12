@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/dashboard/sidebar"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatHistory } from "@/components/chat/chat-history"
-import { chatApi, type ConversacaoApi, type MensagemApi } from "@/lib/chat-api"
+import { chatApi, type ChatQuotaApi, type ConversacaoApi, type MensagemApi } from "@/lib/chat-api"
 import { useToast } from "@/hooks/use-toast"
 import { formatDatePt } from "@/lib/format"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,7 @@ type UiMessage = {
   isUser: boolean
   timestamp: string
   fontes?: MensagemApi["fontes"]
+  feedback?: MensagemApi["feedback"]
 }
 
 type UiConversation = {
@@ -34,6 +35,7 @@ function mapMessage(m: MensagemApi): UiMessage {
     content: m.conteudo,
     isUser: m.isUser,
     fontes: m.fontes,
+    feedback: m.feedback,
     timestamp: new Date(m.criadoEm).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
@@ -59,6 +61,15 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [sending, setSending] = useState(false)
+  const [quota, setQuota] = useState<ChatQuotaApi | null>(null)
+
+  const refreshQuota = useCallback(async () => {
+    try {
+      setQuota(await chatApi.obterQuota())
+    } catch {
+      setQuota(null)
+    }
+  }, [])
 
   const loadConversations = useCallback(async () => {
     setLoadingList(true)
@@ -84,6 +95,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     void loadConversations()
+    void refreshQuota()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -113,6 +125,7 @@ export default function ChatPage() {
             : c,
         ),
       )
+      void refreshQuota()
     } catch (error) {
       toast({
         title: "Erro ao enviar",
@@ -180,6 +193,21 @@ export default function ChatPage() {
     }
   }
 
+  const handleFeedback = async (messageId: string, util: boolean) => {
+    try {
+      const updated = await chatApi.registrarFeedback(messageId, util)
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
+      )
+    } catch (error) {
+      toast({
+        title: "Erro ao avaliar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    }
+  }
+
   const historyProps = {
     conversations,
     activeConversationId,
@@ -211,6 +239,8 @@ export default function ChatPage() {
         <ChatInterface
           messages={messages}
           onSendMessage={handleSendMessage}
+          onFeedback={handleFeedback}
+          quota={quota}
           isLoading={loadingList || sending}
         />
         <div className="hidden md:flex h-full min-h-0 shrink-0">

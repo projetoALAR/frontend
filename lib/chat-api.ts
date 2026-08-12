@@ -12,8 +12,16 @@ export type MensagemApi = {
   conteudo: string
   isUser: boolean
   fontes?: ChatFonteApi[] | null
+  feedback?: "util" | "nao_util" | null
+  tokensUsados?: number | null
   criadoEm: string
   conversacaoId: string
+}
+
+export type ChatQuotaApi = {
+  usados: number
+  limite: number
+  restantes: number
 }
 
 export type ConversacaoApi = {
@@ -40,5 +48,8 @@ export const chatApi = {
       `/chat/conversas/${conversacaoId}/mensagens`,
       { conteudo },
     ),
+  obterQuota: () => api.get<ChatQuotaApi>("/chat/quota"),
+  registrarFeedback: (mensagemId: string, util: boolean) =>
+    api.post<MensagemApi>(`/chat/mensagens/${mensagemId}/feedback`, { util }),
   remover: (id: string) => api.delete<ConversacaoApi>(`/chat/conversas/${id}`),
 }

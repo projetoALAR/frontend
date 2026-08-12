@@ -1,15 +1,27 @@
 import { cn } from "@/lib/utils"
 import { ChatCitations } from "./chat-citations"
+import { ChatMessageFeedback } from "./chat-message-feedback"
 import type { ChatFonteApi } from "@/lib/chat-api"
 
 interface ChatMessageProps {
+  messageId?: string
   content: string
   isUser: boolean
   timestamp?: string
   fontes?: ChatFonteApi[] | null
+  feedback?: "util" | "nao_util" | null
+  onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
 }
 
-export function ChatMessage({ content, isUser, timestamp, fontes }: ChatMessageProps) {
+export function ChatMessage({
+  messageId,
+  content,
+  isUser,
+  timestamp,
+  fontes,
+  feedback,
+  onFeedback,
+}: ChatMessageProps) {
   return (
     <div className={cn("flex gap-3 animate-slide-in-up", isUser ? "justify-end" : "justify-start")}>
       <div
@@ -23,6 +35,13 @@ export function ChatMessage({ content, isUser, timestamp, fontes }: ChatMessageP
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
         {!isUser && fontes && fontes.length > 0 ? (
           <ChatCitations fontes={fontes} compact />
+        ) : null}
+        {!isUser && messageId && onFeedback ? (
+          <ChatMessageFeedback
+            messageId={messageId}
+            feedback={feedback}
+            onFeedback={onFeedback}
+          />
         ) : null}
         {timestamp && (
           <p className={cn("text-xs mt-1 opacity-70", isUser ? "text-primary-foreground" : "text-muted-foreground")}>
