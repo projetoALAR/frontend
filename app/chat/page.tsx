@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/sidebar"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatHistory } from "@/components/chat/chat-history"
+import { ChatExportButton } from "@/components/chat/chat-export-button"
 import { chatApi, type ChatQuotaApi, type ConversacaoApi, type MensagemApi } from "@/lib/chat-api"
 import { useToast } from "@/hooks/use-toast"
 import { formatDatePt } from "@/lib/format"
@@ -223,6 +224,9 @@ export default function ChatPage() {
         <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 md:hidden">
           <MobileNav />
           <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>
+          {activeConversationId && messages.length > 0 ? (
+            <ChatExportButton conversacaoId={activeConversationId} size="sm" />
+          ) : null}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
@@ -240,6 +244,7 @@ export default function ChatPage() {
           messages={messages}
           onSendMessage={handleSendMessage}
           onFeedback={handleFeedback}
+          conversacaoId={activeConversationId || undefined}
           quota={quota}
           isLoading={loadingList || sending}
         />

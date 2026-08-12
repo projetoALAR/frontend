@@ -46,6 +46,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { ChatCitations } from "@/components/chat/chat-citations"
 import { ChatMessageFeedback } from "@/components/chat/chat-message-feedback"
+import { ChatExportButton } from "@/components/chat/chat-export-button"
 import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
@@ -971,7 +972,12 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
               </div>
             </div>
             <div className="shrink-0 p-3 border-t bg-background space-y-2">
-              <AiDisclaimer compact />
+              <div className="flex items-center justify-between gap-2">
+                <AiDisclaimer compact />
+                {conversacaoId && messages.length > 0 ? (
+                  <ChatExportButton conversacaoId={conversacaoId} size="sm" />
+                ) : null}
+              </div>
               <div className="flex gap-2">
                 <Textarea
                   value={chatInput}

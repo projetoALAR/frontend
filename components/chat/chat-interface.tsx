@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { ChatMessage } from "./chat-message"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { Send } from "lucide-react"
+import { ChatExportButton } from "./chat-export-button"
 
 interface Message {
   id: string
@@ -20,6 +21,7 @@ interface ChatInterfaceProps {
   messages: Message[]
   onSendMessage: (content: string) => Promise<void>
   onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
+  conversacaoId?: string
   quota?: { usados: number; limite: number; restantes: number } | null
   isLoading?: boolean
 }
@@ -28,6 +30,7 @@ export function ChatInterface({
   messages,
   onSendMessage,
   onFeedback,
+  conversacaoId,
   quota,
   isLoading = false,
 }: ChatInterfaceProps) {
@@ -77,15 +80,22 @@ export function ChatInterface({
   return (
     <div className="flex-1 flex flex-col bg-background min-h-0 min-w-0 h-full">
       <div className="border-b border-border p-3 sm:p-4 bg-card shrink-0 hidden md:block">
-        <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Assistente para apoio em questões jurídicas — não substitui advogado
-          {quota ? (
-            <span className="block mt-1">
-              Uso hoje: {quota.usados.toLocaleString("pt-BR")} / {quota.limite.toLocaleString("pt-BR")} tokens
-            </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Assistente para apoio em questões jurídicas — não substitui advogado
+              {quota ? (
+                <span className="block mt-1">
+                  Uso hoje: {quota.usados.toLocaleString("pt-BR")} / {quota.limite.toLocaleString("pt-BR")} tokens
+                </span>
+              ) : null}
+            </p>
+          </div>
+          {conversacaoId && messages.length > 0 ? (
+            <ChatExportButton conversacaoId={conversacaoId} />
           ) : null}
-        </p>
+        </div>
       </div>
 
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">

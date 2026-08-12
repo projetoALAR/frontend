@@ -18,10 +18,23 @@ export type MensagemApi = {
   conversacaoId: string
 }
 
+export type ChatExportApi = {
+  formato: "markdown" | "json"
+  titulo: string
+  nomeArquivo: string
+  conteudo: string
+}
 export type ChatQuotaApi = {
   usados: number
   limite: number
   restantes: number
+}
+
+export type ChatExportApi = {
+  formato: "markdown" | "json"
+  titulo: string
+  nomeArquivo: string
+  conteudo: string
 }
 
 export type ConversacaoApi = {
@@ -51,5 +64,9 @@ export const chatApi = {
   obterQuota: () => api.get<ChatQuotaApi>("/chat/quota"),
   registrarFeedback: (mensagemId: string, util: boolean) =>
     api.post<MensagemApi>(`/chat/mensagens/${mensagemId}/feedback`, { util }),
+  exportar: (conversacaoId: string, formato: "markdown" | "json" = "markdown") =>
+    api.get<ChatExportApi>(
+      `/chat/conversas/${conversacaoId}/export?formato=${formato}`,
+    ),
   remover: (id: string) => api.delete<ConversacaoApi>(`/chat/conversas/${id}`),
 }
