@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, FolderKanban, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, MessageCircle, Contact, FileText } from "lucide-react"
+import { LayoutDashboard, FolderKanban, Calendar, BarChart3, Users, Settings, HelpCircle, LogOut, MessageCircle, Contact, FileText, ScrollText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useMemo } from "react"
 import Link from "next/link"
@@ -34,6 +34,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
       { icon: Calendar, label: "Calendário", href: "/calendar" },
       { icon: BarChart3, label: "Relatórios", href: "/analytics" },
       { icon: Users, label: "Equipe", href: "/team" },
+      { icon: ScrollText, label: "Auditoria", href: "/auditoria" },
       { icon: MessageCircle, label: "Chat IA", href: "/chat" },
     ]
     return all.filter((item) => canAccessMenuHref(item.href, user?.role))

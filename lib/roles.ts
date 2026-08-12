@@ -8,7 +8,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 /** Rotas do menu principal acessíveis por cada papel. */
 const MENU_HREFS_BY_ROLE: Record<Role, readonly string[]> = {
-  ADMIN: ["/", "/tasks", "/clients", "/calendar", "/analytics", "/team", "/chat", "/templates"],
+  ADMIN: ["/", "/tasks", "/clients", "/calendar", "/analytics", "/team", "/chat", "/templates", "/auditoria"],
   ADVOGADO: ["/", "/tasks", "/clients", "/calendar", "/chat", "/templates"],
   ASSISTENTE: ["/", "/tasks", "/clients", "/calendar", "/chat", "/templates"],
 }
@@ -22,6 +22,10 @@ export function canViewEquipe(role?: Role | null): boolean {
 }
 
 export function canViewAnalytics(role?: Role | null): boolean {
+  return role === "ADMIN"
+}
+
+export function canViewAuditoria(role?: Role | null): boolean {
   return role === "ADMIN"
 }
 
@@ -48,6 +52,9 @@ export function canAccessPath(pathname: string, role?: Role | null): boolean {
 
   if (pathname === "/analytics" || pathname.startsWith("/analytics/")) {
     return canViewAnalytics(role)
+  }
+  if (pathname === "/auditoria" || pathname.startsWith("/auditoria/")) {
+    return canViewAuditoria(role)
   }
   if (pathname === "/team" || pathname.startsWith("/team/")) {
     return canViewEquipe(role)
