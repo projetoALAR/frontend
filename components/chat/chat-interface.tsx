@@ -12,6 +12,7 @@ interface Message {
   content: string
   isUser: boolean
   timestamp: string
+  fontes?: import("@/lib/chat-api").ChatFonteApi[] | null
 }
 
 interface ChatInterfaceProps {
@@ -102,6 +103,7 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
                 content={message.content}
                 isUser={message.isUser}
                 timestamp={message.timestamp}
+                fontes={message.fontes}
               />
             ))}
             {(isProcessing || isLoading) && (

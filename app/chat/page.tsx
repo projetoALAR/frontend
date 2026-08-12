@@ -17,6 +17,7 @@ type UiMessage = {
   content: string
   isUser: boolean
   timestamp: string
+  fontes?: MensagemApi["fontes"]
 }
 
 type UiConversation = {
@@ -32,6 +33,7 @@ function mapMessage(m: MensagemApi): UiMessage {
     id: m.id,
     content: m.conteudo,
     isUser: m.isUser,
+    fontes: m.fontes,
     timestamp: new Date(m.criadoEm).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",

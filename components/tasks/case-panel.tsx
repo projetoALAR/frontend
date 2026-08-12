@@ -44,6 +44,7 @@ import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
+import { ChatCitations } from "@/components/chat/chat-citations"
 import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
@@ -918,8 +919,13 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex gap-2 ${msg.isUser ? "justify-end" : ""}`}>
                     {!msg.isUser && <Bot className="w-5 h-5 text-primary shrink-0" />}
-                    <div className={`text-sm p-3 rounded-lg max-w-[85%] whitespace-pre-wrap ${msg.isUser ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                      {msg.conteudo}
+                    <div className={`max-w-[85%] ${msg.isUser ? "" : ""}`}>
+                      <div className={`text-sm p-3 rounded-lg whitespace-pre-wrap ${msg.isUser ? "bg-primary text-primary-foreground ml-auto" : "bg-secondary"}`}>
+                        {msg.conteudo}
+                      </div>
+                      {!msg.isUser && msg.fontes && msg.fontes.length > 0 ? (
+                        <ChatCitations fontes={msg.fontes} compact />
+                      ) : null}
                     </div>
                     {msg.isUser && <User className="w-5 h-5 shrink-0" />}
                   </div>

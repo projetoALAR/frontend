@@ -1,9 +1,17 @@
 import { api } from "@/lib/api"
 
+export type ChatFonteApi = {
+  documentoId: string
+  nome: string
+  trecho: string | null
+  tipo: "texto" | "pdf" | "imagem" | "outro"
+}
+
 export type MensagemApi = {
   id: string
   conteudo: string
   isUser: boolean
+  fontes?: ChatFonteApi[] | null
   criadoEm: string
   conversacaoId: string
 }
