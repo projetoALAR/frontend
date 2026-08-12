@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAccessMenuHref } from "@/lib/roles"
+import { AlarLogo } from "@/components/brand/alar-logo"
 
 const generalItems = [
   { icon: Settings, label: "Configurações", href: "/settings" },
@@ -49,13 +50,8 @@ export function Sidebar({ mobile = false }: SidebarProps) {
           : "fixed top-0 left-0 z-40 hidden h-screen w-64 border-r border-border lg:block",
       )}
     >
-      <div className="flex items-center gap-2 mb-6 group cursor-pointer">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center transition-transform group-hover:scale-110 duration-300">
-            <span className="text-primary-foreground font-bold text-sm tracking-tight">A</span>
-          </div>
-          <span className="text-lg font-bold text-foreground tracking-tight">Alar</span>
-        </Link>
+      <div className="mb-6">
+        <AlarLogo href="/" size="md" />
       </div>
 
       <div className="space-y-4">

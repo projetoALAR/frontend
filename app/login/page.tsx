@@ -16,6 +16,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp"
+import { AlarLogo } from "@/components/brand/alar-logo"
 
 const ALLOW_PUBLIC_REGISTER =
   process.env.NEXT_PUBLIC_ALLOW_REGISTER === "true" ||
@@ -91,8 +92,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6 space-y-6">
-        <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-bold">Alar</h1>
+        <div className="space-y-3 text-center">
+          <AlarLogo variant="full" size="lg" className="justify-center" />
           <p className="text-sm text-muted-foreground">
             {preAuthToken
               ? "Digite o código do autenticador"
