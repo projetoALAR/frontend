@@ -42,6 +42,7 @@ import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
 import { useAuth } from "@/components/auth/auth-provider"
+import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
@@ -887,7 +888,8 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                     <Bot className="w-5 h-5 text-primary shrink-0" />
                     <p className="text-sm bg-secondary p-3 rounded-lg">
                       Olá! Sou o assistente exclusivo deste caso. Posso resumir o processo,
-                      analisar arquivos anexados e tirar dúvidas gerais. Como posso ajudar?
+                      analisar arquivos anexados e tirar dúvidas gerais. As respostas não
+                      substituem a análise de um advogado.
                     </p>
                   </div>
                 )}
@@ -904,28 +906,31 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 <div ref={messagesEndRef} />
               </div>
             </div>
-            <div className="shrink-0 p-3 border-t bg-background flex gap-2">
-              <Textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Pergunte sobre o caso ou os arquivos..."
-                className="min-h-[44px] max-h-28 resize-none"
-                rows={2}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault()
-                    void handleSendMessage()
-                  }
-                }}
-              />
-              <Button
-                size="icon"
-                className="shrink-0"
-                onClick={() => void handleSendMessage()}
-                disabled={isTyping || !chatInput.trim() || !conversacaoId}
-              >
-                <Send className="w-4 h-4" />
-              </Button>
+            <div className="shrink-0 p-3 border-t bg-background space-y-2">
+              <AiDisclaimer compact />
+              <div className="flex gap-2">
+                <Textarea
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Pergunte sobre o caso ou os arquivos..."
+                  className="min-h-[44px] max-h-28 resize-none"
+                  rows={2}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault()
+                      void handleSendMessage()
+                    }
+                  }}
+                />
+                <Button
+                  size="icon"
+                  className="shrink-0"
+                  onClick={() => void handleSendMessage()}
+                  disabled={isTyping || !chatInput.trim() || !conversacaoId}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

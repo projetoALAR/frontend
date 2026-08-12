@@ -4,6 +4,7 @@ import { useState, useLayoutEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChatMessage } from "./chat-message"
+import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { Send } from "lucide-react"
 
 interface Message {
@@ -67,7 +68,9 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
     <div className="flex-1 flex flex-col bg-background min-h-0 min-w-0 h-full">
       <div className="border-b border-border p-3 sm:p-4 bg-card shrink-0 hidden lg:block">
         <h2 className="text-lg font-semibold text-foreground">Chat com IA Jurídica</h2>
-        <p className="text-xs text-muted-foreground mt-1">Assistente especializado em questões jurídicas</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Assistente para apoio em questões jurídicas — não substitui advogado
+        </p>
       </div>
 
       <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
@@ -87,7 +90,8 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Comece uma conversa</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Faça perguntas sobre direito, contratos, processos jurídicos e outras questões legais.
+              Faça perguntas sobre direito, contratos e processos. Confira sempre o resultado com um
+              advogado habilitado.
             </p>
           </div>
         ) : (
@@ -116,7 +120,8 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
         )}
       </div>
 
-      <div className="border-t border-border p-4 bg-card shrink-0">
+      <div className="border-t border-border p-4 bg-card shrink-0 space-y-3">
+        <AiDisclaimer compact />
         <div className="flex gap-3">
           <Input
             placeholder="Digite sua pergunta jurídica..."

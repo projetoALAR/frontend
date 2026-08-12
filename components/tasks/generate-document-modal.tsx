@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { AlertTriangle, Loader2, Sparkles } from "lucide-react"
+import { Loader2, Sparkles } from "lucide-react"
+import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { useToast } from "@/hooks/use-toast"
 import {
   modelosDocumentoApi,
@@ -152,13 +153,10 @@ export function GenerateDocumentModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 flex gap-2 text-sm">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-          <p>
-            Rascunho gerado por IA — revise cuidadosamente antes de usar. Não
-            substitui a análise de um advogado.
-          </p>
-        </div>
+        <AiDisclaimer>
+          Rascunho gerado por IA — revise cuidadosamente antes de usar. Não
+          substitui a análise de um advogado.
+        </AiDisclaimer>
 
         <div className="space-y-4 py-1">
           {loadingModelos ? (

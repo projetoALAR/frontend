@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/components/auth/auth-provider"
+import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { useToast } from "@/hooks/use-toast"
 
 const ALLOW_PUBLIC_REGISTER =
@@ -100,6 +101,8 @@ export default function LoginPage() {
             {loading ? "Aguarde..." : isRegister ? "Cadastrar" : "Entrar"}
           </Button>
         </form>
+
+        <AiDisclaimer compact />
 
         {ALLOW_PUBLIC_REGISTER ? (
           <button
