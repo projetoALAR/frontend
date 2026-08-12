@@ -354,42 +354,14 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                       </Badge>
                     ))}
                   </div>
-                  <div className="flex items-center gap-1 pt-1 sm:hidden">
-                    {canWrite && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-transparent"
-                        onClick={() => {
-                          setSelectedCase(task)
-                          setIsCaseModalOpen(true)
-                        }}
-                      >
-                        <Pencil className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-transparent"
-                      onClick={() => {
-                        setPanelCase(task)
-                        setIsPanelOpen(true)
-                      }}
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Ver
-                    </Button>
-                  </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   {canWrite && (
                     <Button
-                      size="sm"
-                      variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Editar caso"
+                      size="icon"
+                      variant="outline"
+                      className="min-h-10 min-w-10 bg-transparent"
+                      aria-label={`Editar caso ${task.title}`}
                       onClick={() => {
                         setSelectedCase(task)
                         setIsCaseModalOpen(true)
@@ -399,10 +371,10 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                     </Button>
                   )}
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Ver detalhes"
+                    size="icon"
+                    variant="outline"
+                    className="min-h-10 min-w-10 bg-transparent"
+                    aria-label={`Ver detalhes de ${task.title}`}
                     onClick={() => {
                       setPanelCase(task)
                       setIsPanelOpen(true)

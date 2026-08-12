@@ -90,10 +90,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div id="main-content" className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-6 space-y-6">
         <div className="space-y-3 text-center">
           <AlarLogo variant="full" size="lg" className="justify-center" />
+          <h1 className="sr-only">
+            {preAuthToken ? "Verificação em duas etapas" : isRegister ? "Criar conta no Alar" : "Entrar no Alar"}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {preAuthToken
               ? "Digite o código do autenticador"

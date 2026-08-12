@@ -7,7 +7,7 @@ export default function TemplatesPage() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 lg:ml-64 overflow-x-hidden">
+      <main id="main-content" className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 md:ml-64 overflow-x-hidden">
         <Header
           title="Modelos de documentos"
           description="Biblioteca de petições, contratos e procurações com preenchimento automático."

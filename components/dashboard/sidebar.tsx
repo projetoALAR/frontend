@@ -47,7 +47,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
         "bg-card p-4 overflow-y-auto",
         mobile
           ? "relative h-full w-full border-0"
-          : "fixed top-0 left-0 z-40 hidden h-screen w-64 border-r border-border lg:block",
+          : "fixed top-0 left-0 z-40 hidden h-screen w-64 border-r border-border md:block",
       )}
     >
       <div className="mb-6">
@@ -57,17 +57,18 @@ export function Sidebar({ mobile = false }: SidebarProps) {
       <div className="space-y-4">
         <div>
           <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Menu</p>
-          <nav className="space-y-0.5">
+          <nav className="space-y-0.5" aria-label="Menu principal">
             {menuItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
                   key={item.label}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg text-sm font-medium transition-all duration-300 min-h-11",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -89,17 +90,18 @@ export function Sidebar({ mobile = false }: SidebarProps) {
 
         <div>
           <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Geral</p>
-          <nav className="space-y-0.5">
+          <nav className="space-y-0.5" aria-label="Configurações e ajuda">
             {generalItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
                   key={item.label}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   onMouseEnter={() => setHoveredItem(item.label)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-all duration-300",
+                    "w-full flex items-center gap-2.5 px-2.5 py-3 rounded-lg text-sm font-medium transition-all duration-300 min-h-11",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",

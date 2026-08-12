@@ -1,6 +1,6 @@
 "use client"
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -359,8 +359,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   return (
     <>
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl p-0 gap-0 flex flex-col h-full overflow-hidden">
-        <SheetHeader className="p-4 border-b bg-secondary/30 space-y-2 shrink-0">
+      <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 gap-0 flex flex-col h-full overflow-hidden">
+        <SheetHeader className="p-4 pr-14 border-b bg-secondary/30 space-y-2 shrink-0">
+          <SheetDescription className="sr-only">
+            Detalhes, documentos, timeline, andamentos e chat do caso
+          </SheetDescription>
           {editingHeader ? (
             <div className="space-y-2">
               <Input value={headerData.title} onChange={(e) => setHeaderData({ ...headerData, title: e.target.value })} />
@@ -430,7 +433,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 </div>
               </div>
               {canWrite && (
-                <Button size="icon" variant="ghost" className="shrink-0" onClick={() => setEditingHeader(true)}>
+                <Button size="icon" variant="ghost" className="shrink-0 min-h-10 min-w-10" aria-label="Editar título e status" onClick={() => setEditingHeader(true)}>
                   <Pencil className="w-4 h-4" />
                 </Button>
               )}
@@ -443,12 +446,22 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0"
         >
-          <TabsList className="mx-4 mt-3 grid grid-cols-5 shrink-0">
-            <TabsTrigger value="info"><Briefcase className="w-4 h-4 mr-1" />Info</TabsTrigger>
-            <TabsTrigger value="docs"><FolderOpen className="w-4 h-4 mr-1" />Docs</TabsTrigger>
-            <TabsTrigger value="timeline"><Clock className="w-4 h-4 mr-1" />Timeline</TabsTrigger>
-            <TabsTrigger value="andamentos"><History className="w-4 h-4 mr-1" />Andamentos</TabsTrigger>
-            <TabsTrigger value="chat"><MessageCircle className="w-4 h-4 mr-1" />Chat</TabsTrigger>
+          <TabsList className="mx-4 mt-3 flex w-[calc(100%-2rem)] overflow-x-auto shrink-0 justify-start h-auto p-1 gap-1">
+            <TabsTrigger value="info" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Informações">
+              <Briefcase className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="docs" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Documentos">
+              <FolderOpen className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Docs</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Timeline">
+              <Clock className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Timeline</span>
+            </TabsTrigger>
+            <TabsTrigger value="andamentos" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Andamentos">
+              <History className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Andamentos</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Chat IA">
+              <MessageCircle className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Chat</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="flex-1 overflow-auto p-4 space-y-3 m-0 min-h-0 data-[state=inactive]:hidden">
@@ -460,7 +473,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 </h4>
                 {!editingInfo ? (
                   canWrite ? (
-                    <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingInfo(true)}>
+                    <Button size="icon" variant="ghost" className="min-h-10 min-w-10 shrink-0" aria-label="Editar informações" onClick={() => setEditingInfo(true)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
                   ) : null

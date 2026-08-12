@@ -191,8 +191,8 @@ export default function ChatPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 flex flex-col lg:flex-row lg:ml-64 h-[100dvh] min-h-0 min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 lg:hidden">
+      <main id="main-content" className="flex-1 flex flex-col md:flex-row md:ml-64 h-[100dvh] min-h-0 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 md:hidden">
           <MobileNav />
           <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>
           <Sheet>
@@ -213,7 +213,7 @@ export default function ChatPage() {
           onSendMessage={handleSendMessage}
           isLoading={loadingList || sending}
         />
-        <div className="hidden lg:flex h-full min-h-0 shrink-0">
+        <div className="hidden md:flex h-full min-h-0 shrink-0">
           <ChatHistory {...historyProps} />
         </div>
       </main>

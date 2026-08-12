@@ -73,7 +73,8 @@ export function GlobalSearch() {
       <Button
         variant="outline"
         size="sm"
-        className="hidden md:flex h-8 gap-2 text-muted-foreground max-w-[220px] lg:max-w-xs flex-1 justify-start px-2.5"
+        className="hidden md:flex h-10 gap-2 text-muted-foreground md:max-w-sm lg:max-w-md flex-1 justify-start px-2.5 min-w-0"
+        aria-label="Buscar clientes e casos"
         onClick={() => setOpen(true)}
       >
         <Search className="w-3.5 h-3.5 shrink-0" />
@@ -86,8 +87,8 @@ export function GlobalSearch() {
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden h-8 w-8"
-        title="Buscar"
+        className="md:hidden min-h-11 min-w-11"
+        aria-label="Buscar clientes e casos"
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4" />
@@ -106,12 +107,16 @@ export function GlobalSearch() {
         />
         <CommandList>
           {loading ? (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center justify-center py-8 text-sm text-muted-foreground gap-2"
+            >
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
               Buscando...
             </div>
           ) : query.trim().length < 2 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
+            <div role="status" className="py-6 text-center text-sm text-muted-foreground">
               Digite ao menos 2 caracteres
             </div>
           ) : (

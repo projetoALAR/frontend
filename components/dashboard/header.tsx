@@ -103,13 +103,16 @@ export function Header({ title, description, actions }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 h-8 w-8"
-            title="Mensagens"
+            className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 min-h-11 min-w-11"
+            aria-label={inboxUnread > 0 ? `Mensagens, ${inboxUnread} não lidas` : "Mensagens"}
             onClick={() => router.push("/messages")}
           >
             <Mail className="w-4 h-4" />
             {inboxUnread > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+              <>
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                <span className="sr-only">{inboxUnread} mensagens não lidas</span>
+              </>
             )}
           </Button>
 
@@ -118,12 +121,15 @@ export function Header({ title, description, actions }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 h-8 w-8"
-                title="Notificações"
+                className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 min-h-11 min-w-11"
+                aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : "Notificações"}
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                  <>
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                    <span className="sr-only">{unreadCount} notificações não lidas</span>
+                  </>
                 )}
               </Button>
             </DropdownMenuTrigger>
@@ -175,11 +181,13 @@ export function Header({ title, description, actions }: HeaderProps) {
           </DropdownMenu>
 
           <button
+            type="button"
             onClick={() => {
               void refresh()
               router.push("/settings")
             }}
-            className="flex items-center gap-2 pl-2 md:pl-3 border-l border-border hover:opacity-80 transition-opacity cursor-pointer"
+            aria-label={`Conta de ${user?.nome || "usuário"}`}
+            className="flex items-center gap-2 pl-2 md:pl-3 border-l border-border hover:opacity-80 transition-opacity cursor-pointer min-h-11"
           >
             <Avatar className="w-7 h-7 md:w-8 md:h-8 ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40">
               <AvatarImage src={user?.fotoUrl || undefined} alt={user?.nome || "Conta"} />

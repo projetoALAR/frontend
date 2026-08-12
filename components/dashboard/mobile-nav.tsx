@@ -18,7 +18,7 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden hover:bg-secondary transition-all duration-300 shrink-0">
+        <Button variant="ghost" size="icon" className="md:hidden hover:bg-secondary transition-all duration-300 shrink-0 min-h-11 min-w-11">
           <Menu className="w-6 h-6" />
           <span className="sr-only">Abrir menu</span>
         </Button>

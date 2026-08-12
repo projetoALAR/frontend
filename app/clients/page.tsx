@@ -8,7 +8,7 @@ export default function ClientsPage() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 lg:ml-64 overflow-x-hidden">
+      <main id="main-content" className="flex-1 min-w-0 p-3 md:p-4 lg:p-5 md:ml-64 overflow-x-hidden">
         <Header
           title="Clientes"
           description="Gerencie seus clientes e seus respectivos casos."
