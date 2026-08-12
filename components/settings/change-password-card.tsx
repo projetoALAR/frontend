@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { authApi } from "@/lib/auth-api"
+import { PasswordHints } from "@/components/password-hints"
+import { senhaAtendePolitica } from "@/lib/password-policy"
 
 export function ChangePasswordCard() {
   const { toast } = useToast()
@@ -16,10 +18,10 @@ export function ChangePasswordCard() {
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async () => {
-    if (novaSenha.length < 8) {
+    if (!senhaAtendePolitica(novaSenha)) {
       toast({
         title: "Senha fraca",
-        description: "A nova senha deve ter pelo menos 8 caracteres",
+        description: "Use no mínimo 10 caracteres, com maiúscula, minúscula e número.",
         variant: "destructive",
       })
       return
@@ -55,7 +57,7 @@ export function ChangePasswordCard() {
     <Card className="p-6">
       <h3 className="font-semibold text-lg mb-2">Alterar senha</h3>
       <p className="text-sm text-muted-foreground mb-6">
-        Informe a senha atual e defina uma nova com pelo menos 8 caracteres.
+        Informe a senha atual e defina uma nova com maiúscula, minúscula, número e no mínimo 10 caracteres.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
@@ -77,6 +79,7 @@ export function ChangePasswordCard() {
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
           />
+          <PasswordHints senha={novaSenha} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>

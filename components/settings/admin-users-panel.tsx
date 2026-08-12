@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react"
 import { authApi, type AuthUser, type Role } from "@/lib/auth-api"
 import { ROLE_LABELS } from "@/lib/roles"
 import { useToast } from "@/hooks/use-toast"
+import { PasswordHints } from "@/components/password-hints"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
   Select,
@@ -104,8 +105,9 @@ export function AdminUsersPanel() {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             required
-            minLength={8}
+            minLength={10}
           />
+          <PasswordHints senha={senha} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="admin-user-role">Papel</Label>

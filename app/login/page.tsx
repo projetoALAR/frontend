@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
+import { PasswordHints } from "@/components/password-hints"
+import { senhaAtendePolitica } from "@/lib/password-policy"
 import { useToast } from "@/hooks/use-toast"
 
 const ALLOW_PUBLIC_REGISTER =
@@ -31,6 +33,15 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (isRegister) {
+        if (!senhaAtendePolitica(senha)) {
+          toast({
+            title: "Senha fraca",
+            description: "Use no mínimo 10 caracteres, com maiúscula, minúscula e número.",
+            variant: "destructive",
+          })
+          setLoading(false)
+          return
+        }
         await register(nome, email, senha)
       } else {
         await login(email, senha)
@@ -93,9 +104,10 @@ export default function LoginPage() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
-              minLength={isRegister ? 8 : 6}
+              minLength={isRegister ? 10 : 1}
               autoComplete={isRegister ? "new-password" : "current-password"}
             />
+            {isRegister ? <PasswordHints senha={senha} /> : null}
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Aguarde..." : isRegister ? "Cadastrar" : "Entrar"}

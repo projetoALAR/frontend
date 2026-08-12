@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { MembroEquipeApi, MembroFormData } from "@/lib/equipe-api"
 import type { Role } from "@/lib/auth-api"
 import { ROLE_LABELS } from "@/lib/roles"
+import { PasswordHints } from "@/components/password-hints"
 import {
   Select,
   SelectContent,
@@ -148,8 +149,9 @@ export function TeamMemberModal({ isOpen, onClose, onSave, memberData, isEditing
                 className="mt-1"
                 disabled={isSaving}
                 placeholder="Obrigatória se o e-mail ainda não tiver login"
-                minLength={8}
+                minLength={10}
               />
+              <PasswordHints senha={senha} />
               <p className="text-xs text-muted-foreground mt-1">
                 Se o e-mail já for de um usuário, o membro é vinculado. Caso contrário, informe a senha para criar a conta.
               </p>
