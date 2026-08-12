@@ -2,6 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   // Pendente: 2 erros TS em components/tasks/case-modal.tsx (status tipado vs string).
   // Remover quando o status do formulário usar ProcessoStatus canônico.
   typescript: {
