@@ -1,4 +1,12 @@
 import { api } from "@/lib/api"
+import type { Role } from "@/lib/auth-api"
+
+export type UsuarioResumo = {
+  id: string
+  nome: string
+  email: string
+  role: Role
+}
 
 export type ProcessoApi = {
   id: string
@@ -11,6 +19,10 @@ export type ProcessoApi = {
   tags: string[] | null
   concluido: boolean
   clienteId: string
+  responsavelId: string | null
+  coResponsavelId: string | null
+  responsavel?: UsuarioResumo | null
+  coResponsavel?: UsuarioResumo | null
   criadoEm: string
   atualizadoEm: string
   cliente?: {
@@ -33,6 +45,8 @@ export type ProcessoFormData = {
   prazo?: string | null
   tags?: string[]
   concluido?: boolean
+  responsavelId?: string | null
+  coResponsavelId?: string | null
 }
 
 export const processosApi = {

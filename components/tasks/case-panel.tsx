@@ -561,6 +561,18 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                       </Badge>
                     </dd>
                   </div>
+                  <div className="rounded-md bg-background/80 border border-border/60 px-3 py-2.5 space-y-1">
+                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <User className="w-3 h-3" /> Responsável
+                    </dt>
+                    <dd className="text-sm font-medium">{localCase.responsavel?.nome || "—"}</dd>
+                  </div>
+                  <div className="rounded-md bg-background/80 border border-border/60 px-3 py-2.5 space-y-1">
+                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <User className="w-3 h-3" /> Co-responsável
+                    </dt>
+                    <dd className="text-sm font-medium">{localCase.coResponsavel?.nome || "—"}</dd>
+                  </div>
                 </dl>
               )}
             </section>

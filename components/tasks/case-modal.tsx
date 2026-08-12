@@ -17,6 +17,9 @@ import { useToast } from "@/hooks/use-toast"
 import type { CaseView } from "@/lib/processo-mapper"
 import type { ProcessoFormData } from "@/lib/processos-api"
 import { clientesApi, type ClienteApi } from "@/lib/clientes-api"
+import { equipeApi, type MembroEquipeApi } from "@/lib/equipe-api"
+import { ROLE_LABELS } from "@/lib/roles"
+import { useAuth } from "@/components/auth/auth-provider"
 import {
   PROCESSO_STATUS_DEFAULT,
   isProcessoStatusConcluido,
@@ -33,6 +36,7 @@ interface CaseModalProps {
 
 export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: CaseModalProps) {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [title, setTitle] = useState("")
   const [descricao, setDescricao] = useState("")
   const [numero, setNumero] = useState("")
@@ -40,13 +44,17 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
   const [priority, setPriority] = useState("Média")
   const [dueDate, setDueDate] = useState("")
   const [clienteId, setClienteId] = useState("")
+  const [responsavelId, setResponsavelId] = useState("")
+  const [coResponsavelId, setCoResponsavelId] = useState("")
   const [clientes, setClientes] = useState<ClienteApi[]>([])
+  const [equipe, setEquipe] = useState<MembroEquipeApi[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
     void clientesApi.listar().then(setClientes).catch(() => setClientes([]))
+    void equipeApi.listar().then(setEquipe).catch(() => setEquipe([]))
   }, [isOpen])
 
   useEffect(() => {
@@ -58,6 +66,8 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
       setPriority(caseData.priority || "Média")
       setDueDate(caseData.dueDateIso ? caseData.dueDateIso.slice(0, 10) : "")
       setClienteId(caseData.clienteId || "")
+      setResponsavelId(caseData.responsavelId || "")
+      setCoResponsavelId(caseData.coResponsavelId || "")
       setErrors({})
     } else if (isOpen) {
       setTitle("")
@@ -67,9 +77,11 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
       setPriority("Média")
       setDueDate("")
       setClienteId("")
+      setResponsavelId(user?.id || "")
+      setCoResponsavelId("")
       setErrors({})
     }
-  }, [isOpen, caseData])
+  }, [isOpen, caseData, user?.id])
 
   const handleSave = async () => {
     const newErrors: Record<string, string> = {}
@@ -101,6 +113,8 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
         prazo: new Date(`${dueDate}T12:00:00`).toISOString(),
         concluido: isProcessoStatusConcluido(status) || (caseData?.completed ?? false),
         tags: caseData?.tags ?? [],
+        responsavelId: responsavelId || null,
+        coResponsavelId: coResponsavelId || null,
       })
       toast({
         title: "Sucesso!",
@@ -188,6 +202,52 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
               </SelectContent>
             </Select>
             {errors.clienteId && <p className="text-xs text-destructive mt-1">{errors.clienteId}</p>}
+          </div>
+          <div>
+            <Label htmlFor="case-responsavel">Responsável</Label>
+            <Select
+              value={responsavelId || undefined}
+              onValueChange={(v) => setResponsavelId(v === "none" ? "" : v)}
+              disabled={isSaving}
+            >
+              <SelectTrigger id="case-responsavel" className="mt-1 w-full">
+                <SelectValue placeholder="Selecione (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem responsável</SelectItem>
+                {equipe
+                  .filter((m) => m.usuarioId)
+                  .map((m) => (
+                    <SelectItem key={m.usuarioId!} value={m.usuarioId!}>
+                      {m.nome}
+                      {m.usuario?.role ? ` · ${ROLE_LABELS[m.usuario.role]}` : ""}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="case-co-responsavel">Co-responsável</Label>
+            <Select
+              value={coResponsavelId || undefined}
+              onValueChange={(v) => setCoResponsavelId(v === "none" ? "" : v)}
+              disabled={isSaving}
+            >
+              <SelectTrigger id="case-co-responsavel" className="mt-1 w-full">
+                <SelectValue placeholder="Selecione (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {equipe
+                  .filter((m) => m.usuarioId && m.usuarioId !== responsavelId)
+                  .map((m) => (
+                    <SelectItem key={m.usuarioId!} value={m.usuarioId!}>
+                      {m.nome}
+                      {m.usuario?.role ? ` · ${ROLE_LABELS[m.usuario.role]}` : ""}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label htmlFor="case-status">Status *</Label>
