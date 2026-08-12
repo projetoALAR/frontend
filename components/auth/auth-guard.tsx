@@ -41,15 +41,27 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   if (!user && !isPublic) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Redirecionando para o login...</p>
+      </div>
+    )
   }
 
   if (user && pathname === "/login") {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Entrando...</p>
+      </div>
+    )
   }
 
   if (forbidden) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Sem permissão — redirecionando...</p>
+      </div>
+    )
   }
 
   return <>{children}</>
