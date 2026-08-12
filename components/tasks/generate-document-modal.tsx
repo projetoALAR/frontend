@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Sparkles } from "lucide-react"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { useToast } from "@/hooks/use-toast"
@@ -40,7 +41,9 @@ export function GenerateDocumentModal({
   const [modelos, setModelos] = useState<ModeloDocumentoApi[]>([])
   const [modeloId, setModeloId] = useState("")
   const [texto, setTexto] = useState("")
+  const [textoOriginal, setTextoOriginal] = useState("")
   const [nomeArquivo, setNomeArquivo] = useState("")
+  const [revisaoConfirmada, setRevisaoConfirmada] = useState(false)
   const [loadingModelos, setLoadingModelos] = useState(false)
   const [gerando, setGerando] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -48,8 +51,10 @@ export function GenerateDocumentModal({
   useEffect(() => {
     if (!isOpen) return
     setTexto("")
+    setTextoOriginal("")
     setModeloId("")
     setNomeArquivo("")
+    setRevisaoConfirmada(false)
     setLoadingModelos(true)
     void modelosDocumentoApi
       .listar()
@@ -90,10 +95,15 @@ export function GenerateDocumentModal({
       return
     }
     setGerando(true)
+    setRevisaoConfirmada(false)
     try {
       const result = await peticoesApi.gerar({ modeloId, processoId })
       setTexto(result.texto)
-      toast({ title: "Rascunho gerado", description: "Revise o texto antes de salvar." })
+      setTextoOriginal(result.texto)
+      toast({
+        title: "Rascunho gerado",
+        description: "Revise o texto e confirme a revisão humana antes de salvar.",
+      })
     } catch (error) {
       toast({
         title: "Erro ao gerar com IA",
@@ -105,6 +115,8 @@ export function GenerateDocumentModal({
       setGerando(false)
     }
   }
+
+  const foiEditado = texto.trim() !== textoOriginal.trim() && textoOriginal.length > 0
 
   const handleSalvar = async () => {
     if (!texto.trim()) {
@@ -121,12 +133,21 @@ export function GenerateDocumentModal({
       })
       return
     }
+    if (!revisaoConfirmada) {
+      toast({
+        title: "Revisão humana obrigatória",
+        description: "Marque a confirmação de que revisou o rascunho antes de salvar.",
+        variant: "destructive",
+      })
+      return
+    }
     setSalvando(true)
     try {
       await peticoesApi.salvar({
         processoId,
         nomeArquivo: nomeArquivo.trim(),
         texto,
+        revisaoConfirmada: true,
       })
       toast({ title: "Documento salvo no processo" })
       onSaved()
@@ -149,13 +170,13 @@ export function GenerateDocumentModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Gerar documento com IA
+            Gerar rascunho com IA
           </DialogTitle>
         </DialogHeader>
 
         <AiDisclaimer>
-          Rascunho gerado por IA — revise cuidadosamente antes de usar. Não
-          substitui a análise de um advogado.
+          Rascunho gerado por IA — a revisão humana é obrigatória antes de salvar.
+          Não invente nem aceite jurisprudência ou números de processo sem conferir as fontes do caso.
         </AiDisclaimer>
 
         <div className="space-y-4 py-1">
@@ -192,17 +213,27 @@ export function GenerateDocumentModal({
                 ) : (
                   <Sparkles className="w-4 h-4 mr-1" />
                 )}
-                {gerando ? "Gerando com IA…" : "Gerar com IA"}
+                {gerando ? "Gerando com IA…" : "Gerar rascunho com IA"}
               </Button>
 
               {texto ? (
                 <>
                   <div className="space-y-1.5">
-                    <Label htmlFor="rascunho-texto">Rascunho (editável)</Label>
+                    <Label htmlFor="rascunho-texto">
+                      Rascunho (editável)
+                      {foiEditado ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          · editado após a geração
+                        </span>
+                      ) : null}
+                    </Label>
                     <Textarea
                       id="rascunho-texto"
                       value={texto}
-                      onChange={(e) => setTexto(e.target.value)}
+                      onChange={(e) => {
+                        setTexto(e.target.value)
+                        setRevisaoConfirmada(false)
+                      }}
                       className="min-h-[280px] font-mono text-sm"
                       disabled={salvando}
                     />
@@ -217,6 +248,25 @@ export function GenerateDocumentModal({
                       disabled={salvando}
                     />
                   </div>
+                  <label
+                    htmlFor="revisao-confirmada"
+                    className="flex items-start gap-3 rounded-lg border border-border bg-secondary/40 p-3 cursor-pointer"
+                  >
+                    <Checkbox
+                      id="revisao-confirmada"
+                      checked={revisaoConfirmada}
+                      onCheckedChange={(checked) => setRevisaoConfirmada(checked === true)}
+                      disabled={salvando}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm leading-snug">
+                      <span className="font-medium text-foreground">Confirmo a revisão humana</span>
+                      <span className="block text-muted-foreground mt-0.5">
+                        Li o rascunho, verifiquei fatos e referências, e assumo a responsabilidade
+                        antes de salvar no processo.
+                      </span>
+                    </span>
+                  </label>
                 </>
               ) : null}
             </>
@@ -229,7 +279,7 @@ export function GenerateDocumentModal({
           </Button>
           <Button
             onClick={() => void handleSalvar()}
-            disabled={!texto.trim() || salvando || gerando}
+            disabled={!texto.trim() || !revisaoConfirmada || salvando || gerando}
           >
             {salvando ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
             Salvar como documento do processo

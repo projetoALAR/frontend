@@ -10,6 +10,7 @@ export type SalvarRascunhoPayload = {
   processoId: string
   nomeArquivo: string
   texto: string
+  revisaoConfirmada: true
 }
 
 export const peticoesApi = {

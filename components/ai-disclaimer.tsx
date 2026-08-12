@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export const AI_DISCLAIMER =
-  "A IA do Alar não substitui a análise de um advogado habilitado. Revise sempre as respostas e rascunhos antes de usar."
+  "A IA do Alar não substitui a análise de um advogado habilitado. Não invente nem aceite jurisprudência, súmulas ou números de processo sem conferir as fontes. Revise sempre as respostas e rascunhos antes de usar."
 
 type AiDisclaimerProps = {
   className?: string
