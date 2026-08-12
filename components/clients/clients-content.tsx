@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { ClientModal } from "./client-modal"
 import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -34,6 +35,7 @@ import {
 export function ClientsContent() {
   const { toast } = useToast()
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const canWrite = canWriteClientesProcessos(user?.role)
   const canExport = canExportarCliente(user?.role)
   const canAnonimizar = canAnonimizarCliente(user?.role)
@@ -72,6 +74,11 @@ export function ClientsContent() {
   useEffect(() => {
     void loadClients()
   }, [loadClients])
+
+  useEffect(() => {
+    const q = searchParams.get("q")
+    if (q) setSearchTerm(q)
+  }, [searchParams])
 
   useEffect(() => {
     if (!canWrite) return

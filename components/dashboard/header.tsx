@@ -4,6 +4,7 @@ import { Mail, Bell, CheckCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileNav } from "./mobile-nav"
+import { GlobalSearch } from "@/components/search/global-search"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
@@ -93,8 +94,9 @@ export function Header({ title, description, actions }: HeaderProps) {
   return (
     <header className="space-y-3 md:space-y-4 animate-slide-in-up">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <MobileNav />
+          <GlobalSearch />
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2">

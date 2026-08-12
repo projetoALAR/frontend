@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { Header } from "@/components/dashboard/header"
 import { ClientsContent } from "@/components/clients/clients-content"
+import { Suspense } from "react"
 
 export default function ClientsPage() {
   return (
@@ -14,7 +15,9 @@ export default function ClientsPage() {
         />
 
         <div className="mt-4 md:mt-5">
-          <ClientsContent />
+          <Suspense fallback={<div className="text-sm text-muted-foreground p-4">Carregando clientes...</div>}>
+            <ClientsContent />
+          </Suspense>
         </div>
       </main>
     </div>
