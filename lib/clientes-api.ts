@@ -3,13 +3,23 @@ import type { components } from "@/lib/openapi"
 
 export type ClienteApi = components["schemas"]["ClienteRespostaDto"]
 export type ClienteFormData = components["schemas"]["CreateClienteDto"]
+export type ClienteTipo = "PF" | "PJ"
 
 export type ClienteCard = {
   id: string
   name: string
+  tipo: ClienteTipo
   email: string
   phone: string
   cpf: string
+  cnpj: string
+  nomeFantasia: string
+  rg: string
+  endereco: string
+  cidade: string
+  uf: string
+  cep: string
+  observacoes: string
   casesCount: number
 }
 
@@ -17,9 +27,18 @@ export function mapClienteToCard(cliente: ClienteApi): ClienteCard {
   return {
     id: cliente.id,
     name: cliente.nome,
+    tipo: cliente.tipo === "PJ" ? "PJ" : "PF",
     email: cliente.email ?? "",
     phone: cliente.telefone ?? "",
-    cpf: cliente.cpf,
+    cpf: cliente.cpf ?? "",
+    cnpj: cliente.cnpj ?? "",
+    nomeFantasia: cliente.nomeFantasia ?? "",
+    rg: cliente.rg ?? "",
+    endereco: cliente.endereco ?? "",
+    cidade: cliente.cidade ?? "",
+    uf: cliente.uf ?? "",
+    cep: cliente.cep ?? "",
+    observacoes: cliente.observacoes ?? "",
     casesCount: cliente._count?.processos ?? 0,
   }
 }

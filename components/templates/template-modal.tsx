@@ -54,7 +54,7 @@ export function TemplateModal({
       setCategoria(CATEGORIAS_MODELO[0])
       setConteudo(
         "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO\n\n" +
-          "{{cliente.nome}}, inscrito(a) no CPF sob o nº {{cliente.cpf}}, " +
+          "{{cliente.nome}}, inscrito(a) no CPF sob o nº {{cliente.cpf}} / CNPJ {{cliente.cnpj}}, " +
           "e-mail {{cliente.email}}, telefone {{cliente.telefone}}, " +
           "vem, respeitosamente, perante Vossa Excelência, nos autos do processo " +
           "nº {{processo.numero}} ({{processo.titulo}}), expor e requerer o que segue.\n\n" +

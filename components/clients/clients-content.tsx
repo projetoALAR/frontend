@@ -18,7 +18,7 @@ import {
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
-import { formatCpf, formatPhone, onlyDigits } from "@/lib/masks"
+import { formatDocumentoCliente, formatPhone, onlyDigits } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
@@ -97,9 +97,14 @@ export function ClientsContent() {
     const termDigits = onlyDigits(searchTerm)
     return (
       client.name.toLowerCase().includes(term) ||
+      client.nomeFantasia.toLowerCase().includes(term) ||
       client.email.toLowerCase().includes(term) ||
       client.cpf.toLowerCase().includes(term) ||
-      (termDigits.length >= 3 && onlyDigits(client.cpf).includes(termDigits))
+      client.cnpj.toLowerCase().includes(term) ||
+      client.cidade.toLowerCase().includes(term) ||
+      (termDigits.length >= 3 &&
+        (onlyDigits(client.cpf).includes(termDigits) ||
+          onlyDigits(client.cnpj).includes(termDigits)))
     )
   })
 
@@ -220,7 +225,7 @@ export function ClientsContent() {
         <div className="flex-1 relative">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar cliente por nome, email ou CPF..."
+            placeholder="Buscar por nome, CPF, CNPJ ou cidade..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -315,12 +320,15 @@ export function ClientsContent() {
               <div className="space-y-3">
                 <div>
                   <h3 className="font-semibold text-lg line-clamp-1">{client.name}</h3>
-                  <p className="text-xs text-muted-foreground font-mono">{formatCpf(client.cpf)}</p>
-                  {isClienteAnonimizado(client) && (
-                    <Badge variant="outline" className="mt-1">
-                      Anonimizado
-                    </Badge>
-                  )}
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {formatDocumentoCliente(client)}
+                  </p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <Badge variant="outline">{client.tipo === "PJ" ? "PJ" : "PF"}</Badge>
+                    {isClienteAnonimizado(client) && (
+                      <Badge variant="outline">Anonimizado</Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1 text-sm">

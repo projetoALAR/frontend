@@ -54,7 +54,7 @@ const faqs = [
   {
     question: "Como adicionar um novo cliente?",
     answer:
-      "Acesse a página 'Clientes' no menu lateral ou clique em '+ Cliente' no dashboard. Preencha nome, CPF, e-mail e telefone. Os clientes ficam disponíveis ao criar casos.",
+      "Clique no botão '+ Cliente'. Escolha pessoa física (CPF) ou jurídica (CNPJ). Preencha nome/razão social, contato e, se quiser, endereço e observações internas.",
   },
   {
     question: "Como convidar membros da equipe?",

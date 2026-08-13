@@ -44,7 +44,7 @@ import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
 import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
-import { formatCnj, formatCpf, formatPhone, maskProcessoNumero } from "@/lib/masks"
+import { formatCnj, formatDocumentoCliente, formatPhone, maskProcessoNumero } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { ChatCitations } from "@/components/chat/chat-citations"
@@ -745,11 +745,30 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
               </h4>
               <div className="rounded-md bg-background/80 border border-border/60 p-3 space-y-3">
                 <p className="text-sm font-semibold">{client?.nome ?? "Sem cliente vinculado"}</p>
+                {client?.nomeFantasia ? (
+                  <p className="text-xs text-muted-foreground">{client.nomeFantasia}</p>
+                ) : null}
                 <dl className="grid gap-2.5 text-sm">
                   <div className="flex items-start gap-2.5">
-                    <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5">CPF</span>
-                    <dd className="font-medium font-mono">{formatCpf(client?.cpf)}</dd>
+                    <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5">
+                      {client?.tipo === "PJ" ? "CNPJ" : "CPF"}
+                    </span>
+                    <dd className="font-medium font-mono">
+                      {formatDocumentoCliente({
+                        tipo: client?.tipo,
+                        cpf: client?.cpf,
+                        cnpj: client?.cnpj,
+                      })}
+                    </dd>
                   </div>
+                  {(client?.endereco || client?.cidade) && (
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5">Endereço</span>
+                      <dd className="font-medium">
+                        {[client.endereco, client.cidade, client.uf, client.cep].filter(Boolean).join(" · ")}
+                      </dd>
+                    </div>
+                  )}
                   <div className="flex items-start gap-2.5">
                     <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5 flex items-center gap-1">
                       <Mail className="w-3 h-3" /> Email

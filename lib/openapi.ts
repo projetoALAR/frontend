@@ -12,18 +12,36 @@ export type ClienteCountDto = {
 export type ClienteRespostaDto = {
   id: string
   nome: string
-  cpf: string
+  tipo?: "PF" | "PJ"
+  cpf?: string | null
+  cnpj?: string | null
+  nomeFantasia?: string | null
+  rg?: string | null
   email?: string | null
   telefone?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  uf?: string | null
+  cep?: string | null
+  observacoes?: string | null
   criadoEm: string
   _count?: ClienteCountDto
 }
 
 export type CreateClienteDto = {
   nome: string
-  cpf: string
+  tipo?: "PF" | "PJ"
+  cpf?: string | null
+  cnpj?: string | null
+  nomeFantasia?: string | null
+  rg?: string | null
   email?: string
   telefone?: string
+  endereco?: string | null
+  cidade?: string | null
+  uf?: string | null
+  cep?: string | null
+  observacoes?: string | null
 }
 
 export type UpdateClienteDto = Partial<CreateClienteDto>
@@ -38,9 +56,16 @@ export type UsuarioResumoDto = {
 export type ProcessoClienteResumoDto = {
   id: string
   nome: string
+  tipo?: "PF" | "PJ"
   email?: string | null
   telefone?: string | null
-  cpf?: string
+  cpf?: string | null
+  cnpj?: string | null
+  nomeFantasia?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  uf?: string | null
+  cep?: string | null
 }
 
 export type ProcessoCountDto = {

@@ -1,4 +1,4 @@
-export type MaskKind = "cpf" | "phone" | "cnj" | "processo"
+export type MaskKind = "cpf" | "cnpj" | "phone" | "cnj" | "cep" | "processo"
 
 export function onlyDigits(value: string): string {
   return value.replace(/\D/g, "")
@@ -19,6 +19,34 @@ export function maskCpf(value: string): string {
   if (d.length < 9) return `${p1}.${p2}.${p3}`
   if (d.length === 9) return `${p1}.${p2}.${p3}-`
   return `${p1}.${p2}.${p3}-${p4}`
+}
+
+/** 00.000.000/0000-00 (14 dígitos). */
+export function maskCnpj(value: string): string {
+  const d = onlyDigits(value).slice(0, 14)
+  const p1 = d.slice(0, 2)
+  const p2 = d.slice(2, 5)
+  const p3 = d.slice(5, 8)
+  const p4 = d.slice(8, 12)
+  const p5 = d.slice(12, 14)
+  if (d.length === 0) return ""
+  if (d.length < 2) return p1
+  if (d.length === 2) return `${p1}.`
+  if (d.length < 5) return `${p1}.${p2}`
+  if (d.length === 5) return `${p1}.${p2}.`
+  if (d.length < 8) return `${p1}.${p2}.${p3}`
+  if (d.length === 8) return `${p1}.${p2}.${p3}/`
+  if (d.length < 12) return `${p1}.${p2}.${p3}/${p4}`
+  if (d.length === 12) return `${p1}.${p2}.${p3}/${p4}-`
+  return `${p1}.${p2}.${p3}/${p4}-${p5}`
+}
+
+/** 00000-000. */
+export function maskCep(value: string): string {
+  const d = onlyDigits(value).slice(0, 8)
+  if (d.length === 0) return ""
+  if (d.length <= 5) return d
+  return `${d.slice(0, 5)}-${d.slice(5)}`
 }
 
 /** Celular (11) 99999-9999 ou fixo (11) 9999-9999. */
@@ -70,6 +98,10 @@ export function applyMask(kind: MaskKind, value: string): string {
   switch (kind) {
     case "cpf":
       return maskCpf(value)
+    case "cnpj":
+      return maskCnpj(value)
+    case "cep":
+      return maskCep(value)
     case "phone":
       return maskPhone(value)
     case "cnj":
@@ -93,6 +125,27 @@ export function formatPhone(value?: string | null): string {
   return maskPhone(d)
 }
 
+export function formatCnpj(value?: string | null): string {
+  if (!value) return "—"
+  const d = onlyDigits(value)
+  return d.length === 14 ? maskCnpj(d) : value
+}
+
+export function formatCep(value?: string | null): string {
+  if (!value) return "—"
+  const d = onlyDigits(value)
+  return d.length === 8 ? maskCep(d) : value
+}
+
+export function formatDocumentoCliente(opts: {
+  tipo?: string | null
+  cpf?: string | null
+  cnpj?: string | null
+}): string {
+  if (opts.tipo === "PJ") return formatCnpj(opts.cnpj)
+  return formatCpf(opts.cpf)
+}
+
 export function formatCnj(value?: string | null): string {
   if (!value) return "—"
   const d = onlyDigits(value)
@@ -101,6 +154,8 @@ export function formatCnj(value?: string | null): string {
 
 export const MASK_MAX_LENGTH: Record<MaskKind, number> = {
   cpf: 14,
+  cnpj: 18,
+  cep: 9,
   phone: 15,
   cnj: 25,
   processo: 80,

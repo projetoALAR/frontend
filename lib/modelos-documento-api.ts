@@ -14,8 +14,10 @@ export type CategoriaModelo = (typeof CATEGORIAS_MODELO)[number]
 export const PLACEHOLDERS_DISPONIVEIS = [
   "{{cliente.nome}}",
   "{{cliente.cpf}}",
+  "{{cliente.cnpj}}",
   "{{cliente.email}}",
   "{{cliente.telefone}}",
+  "{{cliente.endereco}}",
   "{{processo.numero}}",
   "{{processo.titulo}}",
   "{{processo.status}}",
