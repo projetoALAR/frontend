@@ -1,16 +1,9 @@
 import { api } from "@/lib/api"
+import type { components, Role as OpenApiRole } from "@/lib/openapi"
 
-export type Role = "ADMIN" | "ADVOGADO" | "ASSISTENTE"
+export type Role = OpenApiRole
 
-export type AuthUser = {
-  id: string
-  nome: string
-  email: string
-  role: Role
-  fotoUrl: string | null
-  criadoEm: string
-  totpEnabled?: boolean
-}
+export type AuthUser = components["schemas"]["UsuarioAuthDto"]
 
 export type AuthResponse = {
   user: AuthUser

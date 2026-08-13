@@ -1,13 +1,7 @@
 import { api } from "@/lib/api"
+import type { components } from "@/lib/openapi"
 
-export type DocumentoApi = {
-  id: string
-  nome: string
-  urlArquivo: string
-  tamanho: number | null
-  criadoEm: string
-  processoId: string
-}
+export type DocumentoApi = components["schemas"]["DocumentoRespostaDto"]
 
 export const documentosApi = {
   listarPorProcesso: (processoId: string) =>

@@ -1,21 +1,8 @@
 import { api } from "@/lib/api"
+import type { components } from "@/lib/openapi"
 
-export type ClienteApi = {
-  id: string
-  nome: string
-  cpf: string
-  email: string | null
-  telefone: string | null
-  criadoEm: string
-  _count?: { processos: number }
-}
-
-export type ClienteFormData = {
-  nome: string
-  cpf: string
-  email?: string
-  telefone?: string
-}
+export type ClienteApi = components["schemas"]["ClienteRespostaDto"]
+export type ClienteFormData = components["schemas"]["CreateClienteDto"]
 
 export type ClienteCard = {
   id: string
