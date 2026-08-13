@@ -12,7 +12,7 @@ npm run dev
 
 Variáveis:
 
-- `NEXT_PUBLIC_API_URL` — URL da API Nest usada pelo BFF (`/api/backend`, `/api/auth/*`; padrão `http://localhost:3001`)
+- `NEXT_PUBLIC_API_URL` — URL da API Nest usada pelo BFF (`/api/backend/v1`, `/api/auth/*`; padrão `http://localhost:3001`)
 - `API_URL` — opcional, override só no servidor
 - `NEXT_PUBLIC_ALLOW_REGISTER` — deve espelhar `AUTH_ALLOW_PUBLIC_REGISTER` do backend
 

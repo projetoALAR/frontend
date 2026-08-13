@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { clearAuthCookie, getAuthCookie, getNestApiUrl } from "@/lib/auth-session"
+import { clearAuthCookie, getAuthCookie, getNestApiV1Url } from "@/lib/auth-session"
 
 export async function POST() {
   const token = await getAuthCookie()
   if (token) {
     try {
-      await fetch(`${getNestApiUrl()}/auth/logout`, {
+      await fetch(`${getNestApiV1Url()}/auth/logout`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       })

@@ -2,8 +2,8 @@ type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown
 }
 
-/** Proxy same-origin → Nest, com cookie httpOnly → Authorization. */
-const API_BASE = "/api/backend"
+/** Proxy same-origin → Nest `/v1`, com cookie httpOnly → Authorization. */
+const API_BASE = "/api/backend/v1"
 
 function handleUnauthorized() {
   if (typeof window === "undefined") return

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getNestApiUrl, setAuthCookie } from "@/lib/auth-session"
+import { getNestApiV1Url, setAuthCookie } from "@/lib/auth-session"
 
 async function nestErrorMessage(response: Response): Promise<string> {
   const fallback = `Erro na autenticação (${response.status})`
@@ -21,7 +21,7 @@ async function nestErrorMessage(response: Response): Promise<string> {
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const response = await fetch(`${getNestApiUrl()}/auth/register`, {
+  const response = await fetch(`${getNestApiV1Url()}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

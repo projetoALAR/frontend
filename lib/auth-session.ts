@@ -29,11 +29,16 @@ export async function getAuthCookie(): Promise<string | undefined> {
   return store.get(AUTH_COOKIE)?.value
 }
 
-/** URL absoluta da API Nest (só no servidor). */
+/** URL absoluta da API Nest (só no servidor). Sem versão — health, docs, etc. */
 export function getNestApiUrl() {
   return (
     process.env.API_URL?.trim() ||
     process.env.NEXT_PUBLIC_API_URL?.trim() ||
     "http://localhost:3001"
   )
+}
+
+/** Base das rotas de negócio: `{API}/v1`. */
+export function getNestApiV1Url() {
+  return `${getNestApiUrl()}/v1`
 }
