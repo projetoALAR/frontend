@@ -59,6 +59,42 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return response.json() as Promise<T>
 }
 
+function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null
+  const star = /filename\*=(?:UTF-8''|)([^;]+)/i.exec(header)
+  if (star?.[1]) {
+    try {
+      return decodeURIComponent(star[1].replace(/"/g, "").trim())
+    } catch {
+      return star[1].replace(/"/g, "").trim()
+    }
+  }
+  const quoted = /filename="([^"]+)"/i.exec(header)
+  if (quoted?.[1]) return quoted[1]
+  const plain = /filename=([^;]+)/i.exec(header)
+  return plain?.[1]?.trim() ?? null
+}
+
+async function getBlob(path: string): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    credentials: "same-origin",
+  })
+
+  if (response.status === 401) {
+    handleUnauthorized()
+    throw new Error("Não autenticado")
+  }
+
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: filenameFromDisposition(response.headers.get("content-disposition")),
+  }
+}
+
 async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
@@ -85,6 +121,7 @@ export const api = {
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   upload: <T>(path: string, formData: FormData) => uploadFormData<T>(path, formData),
+  getBlob,
 }
 
 /** @deprecated Preferir rotas same-origin; mantido para help/config. */

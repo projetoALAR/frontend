@@ -40,6 +40,10 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
   if (upstreamType) {
     responseHeaders.set("content-type", upstreamType)
   }
+  const disposition = upstream.headers.get("content-disposition")
+  if (disposition) {
+    responseHeaders.set("content-disposition", disposition)
+  }
 
   const buffer = await upstream.arrayBuffer()
   return new NextResponse(buffer, {

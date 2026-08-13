@@ -16,4 +16,5 @@ export const processosApi = {
   atualizar: (id: string, dados: Partial<ProcessoFormData>) =>
     api.put<ProcessoApi>(`/processos/${id}`, dados),
   remover: (id: string) => api.delete<ProcessoApi>(`/processos/${id}`),
+  baixarCapa: (id: string) => api.getBlob(`/processos/${id}/capa`),
 }

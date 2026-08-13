@@ -39,6 +39,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
 import { processosApi } from "@/lib/processos-api"
+import { downloadBlob } from "@/lib/download"
 import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
@@ -141,6 +142,7 @@ export function CasePanel({
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState("")
   const [gerarDocOpen, setGerarDocOpen] = useState(false)
+  const [baixandoCapa, setBaixandoCapa] = useState(false)
 
   const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const container = chatScrollRef.current
@@ -262,6 +264,24 @@ export function CasePanel({
         description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
+    }
+  }
+
+  const baixarCapa = async () => {
+    if (!localCase) return
+    setBaixandoCapa(true)
+    try {
+      const { blob, filename } = await processosApi.baixarCapa(localCase.id)
+      downloadBlob(blob, filename || `capa-${localCase.numero}.pdf`)
+      toast({ title: "Capa baixada", description: "PDF do resumo do caso." })
+    } catch (error) {
+      toast({
+        title: "Erro ao baixar capa",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setBaixandoCapa(false)
     }
   }
 
@@ -449,11 +469,28 @@ export function CasePanel({
                   </Badge>
                 </div>
               </div>
-              {canWrite && (
-                <Button size="icon" variant="ghost" className="shrink-0 min-h-10 min-w-10" aria-label="Editar título e status" onClick={() => setEditingHeader(true)}>
-                  <Pencil className="w-4 h-4" />
+              <div className="flex shrink-0 items-start gap-1">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="min-h-10 min-w-10"
+                  aria-label="Baixar capa do processo"
+                  disabled={baixandoCapa}
+                  onClick={() => void baixarCapa()}
+                >
+                  {baixandoCapa ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                 </Button>
-              )}
+                {canWrite && (
+                  <Button size="icon" variant="ghost" className="min-h-10 min-w-10" aria-label="Editar título e status" onClick={() => setEditingHeader(true)}>
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
