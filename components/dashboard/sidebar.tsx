@@ -59,7 +59,9 @@ export function Sidebar({ mobile = false }: SidebarProps) {
           <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Menu</p>
           <nav className="space-y-0.5" aria-label="Menu principal">
             {menuItems.map((item) => {
-              const isActive = pathname === item.href
+              const isActive =
+                pathname === item.href ||
+                (item.href === "/tasks" && pathname.startsWith("/casos"))
               return (
                 <Link
                   key={item.label}

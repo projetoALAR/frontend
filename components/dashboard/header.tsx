@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
+import { casoHref } from "@/lib/caso-href"
 import { useAuth } from "@/components/auth/auth-provider"
 import { preferenciasApi } from "@/lib/preferencias-api"
 import { inboxApi } from "@/lib/inbox-api"
@@ -159,7 +160,7 @@ export function Header({ title, description, actions }: HeaderProps) {
                     }`}
                     onClick={() => {
                       if (item.tipo === "processo") {
-                        router.push(`/tasks?caseId=${item.entityId}`)
+                        router.push(casoHref(item.entityId))
                       } else {
                         router.push("/calendar")
                       }

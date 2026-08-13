@@ -5,11 +5,12 @@ import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { GlobalSearch } from "@/components/search/global-search"
 import { TasksContent } from "@/components/tasks/tasks-content"
 import { Button } from "@/components/ui/button"
-import { useRef, useCallback } from "react"
+import { useRef, useCallback, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
+import { casoHref } from "@/lib/caso-href"
 
 function TasksPageContent() {
   const tasksContentRef = useRef<HTMLDivElement>(null)
@@ -19,6 +20,12 @@ function TasksPageContent() {
   const canWrite = canWriteClientesProcessos(user?.role)
   const initialFilter = searchParams.get("filter") || "all"
   const caseId = searchParams.get("caseId")
+
+  useEffect(() => {
+    if (caseId) {
+      router.replace(casoHref(caseId))
+    }
+  }, [caseId, router])
 
   const handleFilterChange = useCallback(
     (newFilter: string) => {
@@ -35,6 +42,14 @@ function TasksPageContent() {
 
   const handleNewCase = () => {
     window.dispatchEvent(new CustomEvent("openNewCaseModal"))
+  }
+
+  if (caseId) {
+    return (
+      <main id="main-content" className="flex-1 min-w-0 p-4 md:p-6 md:ml-64">
+        <p className="text-sm text-muted-foreground">Abrindo o caso...</p>
+      </main>
+    )
   }
 
   return (
@@ -64,7 +79,6 @@ function TasksPageContent() {
         <TasksContent
           ref={tasksContentRef}
           initialFilter={initialFilter}
-          initialCaseId={caseId}
           onFilterChange={handleFilterChange}
         />
       </div>

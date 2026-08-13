@@ -3,7 +3,7 @@
 import { Card } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
-import { formatDatePt } from "@/lib/format"
+import { casoHref } from "@/lib/caso-href"
 
 const colors = ["bg-blue-500", "bg-sky-500", "bg-indigo-500", "bg-blue-700", "bg-cyan-600"]
 
@@ -33,7 +33,7 @@ export function ProjectList() {
             <div
               key={project.id}
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-all duration-300 cursor-pointer group"
-              onClick={() => router.push(`/tasks?caseId=${project.id}`)}
+              onClick={() => router.push(casoHref(project.id))}
               style={{ animationDelay: `${800 + index * 100}ms` }}
             >
               <div

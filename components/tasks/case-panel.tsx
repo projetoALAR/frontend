@@ -1,6 +1,6 @@
 "use client"
 
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,8 +34,9 @@ import {
   Sparkles,
   Clock,
   ListTodo,
+  ArrowLeft,
 } from "lucide-react"
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, type ReactNode } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
@@ -72,9 +73,43 @@ interface CasePanelProps {
   onClose: () => void
   caseData: CaseView | null
   onUpdated?: (caseData: CaseView) => void
+  layout?: "sheet" | "page"
 }
 
-export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelProps) {
+function CasePanelShell({
+  layout,
+  isOpen,
+  onClose,
+  children,
+}: {
+  layout: "sheet" | "page"
+  isOpen: boolean
+  onClose: () => void
+  children: ReactNode
+}) {
+  if (layout === "page") {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col rounded-xl border bg-background overflow-hidden">
+        {children}
+      </div>
+    )
+  }
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 gap-0 flex flex-col h-full overflow-hidden">
+        {children}
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+export function CasePanel({
+  isOpen,
+  onClose,
+  caseData,
+  onUpdated,
+  layout = "sheet",
+}: CasePanelProps) {
   const { toast } = useToast()
   const { user } = useAuth()
   const canWrite = canWriteClientesProcessos(user?.role)
@@ -376,15 +411,28 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
   if (!localCase) return null
 
   const client = localCase.cliente
+  const isPage = layout === "page"
 
   return (
     <>
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 gap-0 flex flex-col h-full overflow-hidden">
-        <SheetHeader className="p-4 pr-14 border-b bg-secondary/30 space-y-2 shrink-0">
-          <SheetDescription className="sr-only">
-            Detalhes, checklist, documentos, timeline, andamentos e chat do caso
-          </SheetDescription>
+    <CasePanelShell layout={layout} isOpen={isOpen} onClose={onClose}>
+        <div className={`p-4 border-b bg-secondary/30 space-y-2 shrink-0 ${isPage ? "" : "pr-14"}`}>
+          {isPage ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="-ml-2 mb-1 h-8 text-muted-foreground"
+              onClick={onClose}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Voltar aos casos
+            </Button>
+          ) : (
+            <SheetDescription className="sr-only">
+              Detalhes, checklist, documentos, timeline, andamentos e chat do caso
+            </SheetDescription>
+          )}
           {editingHeader ? (
             <div className="space-y-2">
               <Input value={headerData.title} onChange={(e) => setHeaderData({ ...headerData, title: e.target.value })} />
@@ -440,7 +488,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           ) : (
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <SheetTitle className="text-left text-base leading-snug">{localCase.title}</SheetTitle>
+                {isPage ? (
+                  <h1 className="text-left text-base leading-snug font-semibold">{localCase.title}</h1>
+                ) : (
+                  <SheetTitle className="text-left text-base leading-snug">{localCase.title}</SheetTitle>
+                )}
                 <p className="text-xs text-muted-foreground mt-1 font-mono">{formatCnj(localCase.numero)}</p>
                 <div className="flex gap-2 mt-2.5 flex-wrap">
                   <Badge variant={localCase.priority === "Alta" ? "destructive" : localCase.priority === "Baixa" ? "secondary" : "default"}>
@@ -460,7 +512,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
               )}
             </div>
           )}
-        </SheetHeader>
+        </div>
 
         <Tabs
           value={activeTab}
@@ -1040,8 +1092,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             </div>
           </TabsContent>
         </Tabs>
-      </SheetContent>
-    </Sheet>
+    </CasePanelShell>
 
     <GenerateDocumentModal
       isOpen={gerarDocOpen}

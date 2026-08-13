@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, Filter, Tag, Eye, Loader2, Trash2, Pencil, X, Calendar, Briefcase } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
+import Link from "next/link"
 import { CaseModal } from "./case-modal"
 import { FilterModal, countActiveFilters, EMPTY_FILTERS, type FilterOptions } from "./filter-modal"
-import { CasePanel } from "./case-panel"
 import { processosApi, type ProcessoFormData } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
+import { casoHref } from "@/lib/caso-href"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
@@ -28,12 +29,11 @@ const priorityVariant: Record<string, "destructive" | "default" | "secondary"> =
 
 interface TasksContentProps {
   initialFilter?: string
-  initialCaseId?: string | null
   onFilterChange?: (filter: string) => void
 }
 
 export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(function TasksContent(
-  { initialFilter = "all", initialCaseId = null, onFilterChange },
+  { initialFilter = "all", onFilterChange },
   ref,
 ) {
   const { toast } = useToast()
@@ -47,8 +47,6 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   const [selectedCase, setSelectedCase] = useState<CaseView | null>(null)
   const [filters, setFilters] = useState<FilterOptions>(EMPTY_FILTERS)
   const [checkedCases, setCheckedCases] = useState<string[]>([])
-  const [panelCase, setPanelCase] = useState<CaseView | null>(null)
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   const loadTasks = useCallback(async () => {
@@ -74,15 +72,6 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   useEffect(() => {
     setFilter(initialFilter)
   }, [initialFilter])
-
-  useEffect(() => {
-    if (!initialCaseId || allTasks.length === 0) return
-    const found = allTasks.find((t) => t.id === initialCaseId)
-    if (found) {
-      setPanelCase(found)
-      setIsPanelOpen(true)
-    }
-  }, [initialCaseId, allTasks])
 
   const handleSetFilter = (newFilter: string) => {
     setFilter(newFilter)
@@ -155,18 +144,12 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       const updated = await processosApi.atualizar(selectedCase.id, data)
       const mapped = mapProcessoToCase(updated)
       setAllTasks((prev) => prev.map((t) => (t.id === selectedCase.id ? mapped : t)))
-      if (panelCase?.id === selectedCase.id) setPanelCase(mapped)
     } else {
       const created = await processosApi.criar(data)
       setAllTasks((prev) => [mapProcessoToCase(created), ...prev])
     }
     invalidateDashboardCache()
     setSelectedCase(null)
-  }
-
-  const handleCaseUpdated = (updated: CaseView) => {
-    setAllTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-    setPanelCase(updated)
   }
 
   const handleDeleteChecked = async () => {
@@ -330,10 +313,10 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                 )}
                 <div className="flex-1 min-w-0 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h3
-                      className="font-semibold text-foreground break-words"
-                    >
-                      {task.title}
+                    <h3 className="font-semibold text-foreground break-words">
+                      <Link href={casoHref(task.id)} className="hover:underline">
+                        {task.title}
+                      </Link>
                     </h3>
                     <Badge variant={priorityVariant[task.priority] ?? "secondary"} className="shrink-0">
                       {task.priority}
@@ -379,12 +362,11 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                     variant="outline"
                     className="min-h-10 min-w-10 bg-transparent"
                     aria-label={`Ver detalhes de ${task.title}`}
-                    onClick={() => {
-                      setPanelCase(task)
-                      setIsPanelOpen(true)
-                    }}
+                    asChild
                   >
-                    <Eye className="w-4 h-4" />
+                    <Link href={casoHref(task.id)}>
+                      <Eye className="w-4 h-4" />
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -432,13 +414,6 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
         onApply={setFilters}
         currentFilters={filters}
         extraStatuses={extraStatuses}
-      />
-
-      <CasePanel
-        isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
-        caseData={panelCase}
-        onUpdated={handleCaseUpdated}
       />
     </div>
   )

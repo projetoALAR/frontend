@@ -74,12 +74,12 @@ const faqs = [
   {
     question: "Como fazer upload de documentos?",
     answer:
-      "Abra um caso pelo ícone de olho. Na aba 'Documentos', arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",
+      "Abra um caso pelo título ou pelo ícone de olho. Na aba Documentos, arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",
   },
   {
     question: "Como editar um caso ou membro?",
     answer:
-      "Nos casos, use o lápis para o modal de edição ou o olho para o painel lateral. Nos membros, use o ícone de lápis no card.",
+      "Nos casos, use o lápis para o modal de edição ou o olho para abrir a página do caso. Nos membros, use o ícone de lápis no card.",
   },
   {
     question: "Posso deletar clientes ou membros?",
@@ -89,12 +89,12 @@ const faqs = [
   {
     question: "Como buscar clientes ou casos rapidamente?",
     answer:
-      "Use Ctrl+K (ou o campo Buscar no topo) para pesquisar por nome, CPF, número CNJ ou título do caso. Os resultados abrem o cliente ou o painel do caso.",
+      "Use Ctrl+K (ou o campo Buscar no topo) para pesquisar por nome, CPF, CNPJ, número CNJ ou título do caso. Os resultados abrem o cliente ou a página do caso.",
   },
   {
     question: "O que é a Timeline do caso?",
     answer:
-      "No painel lateral do caso, aba Timeline, você vê histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
+      "Na página do caso, aba Timeline, você vê histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
   },
   {
     answer:

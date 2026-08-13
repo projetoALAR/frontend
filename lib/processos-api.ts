@@ -9,6 +9,7 @@ export type ProcessoFormData = components["schemas"]["CreateProcessoDto"]
 
 export const processosApi = {
   listar: () => api.get<ProcessoApi[]>("/processos"),
+  obter: (id: string) => api.get<ProcessoApi>(`/processos/${id}`),
   listarPorCliente: (clienteId: string) =>
     api.get<ProcessoApi[]>(`/processos/cliente/${clienteId}`),
   criar: (dados: ProcessoFormData) => api.post<ProcessoApi>("/processos", dados),

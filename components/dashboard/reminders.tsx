@@ -5,6 +5,7 @@ import { Clock, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
+import { casoHref } from "@/lib/caso-href"
 
 export function Reminders() {
   const router = useRouter()
@@ -48,7 +49,7 @@ export function Reminders() {
               className="w-full text-left bg-secondary rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer"
               onClick={() => {
                 if (item.tipo === "processo") {
-                  router.push(`/tasks?caseId=${item.entityId}`)
+                  router.push(casoHref(item.entityId))
                 } else {
                   router.push("/calendar")
                 }
