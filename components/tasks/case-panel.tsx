@@ -32,6 +32,7 @@ import {
   Clock,
   ListTodo,
   ArrowLeft,
+  AlertCircle,
 } from "lucide-react"
 import { useState, useRef, useEffect, useLayoutEffect, useCallback, type ReactNode } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -64,6 +65,7 @@ import { GenerateDocumentModal } from "@/components/tasks/generate-document-moda
 import { CaseTimelineTab } from "@/components/tasks/case-timeline-tab"
 import { CaseTarefasTab } from "@/components/tasks/case-tarefas-tab"
 import { CaseAndamentosTab } from "@/components/tasks/case-andamentos-tab"
+import { CasePrazosTab } from "@/components/tasks/case-prazos-tab"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -474,6 +476,9 @@ export function CasePanel({
             <TabsTrigger value="timeline" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Timeline">
               <Clock className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
+            <TabsTrigger value="prazos" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Prazos">
+              <AlertCircle className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Prazos</span>
+            </TabsTrigger>
             <TabsTrigger value="andamentos" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Andamentos">
               <History className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Andamentos</span>
             </TabsTrigger>
@@ -874,6 +879,17 @@ export function CasePanel({
             <CaseTimelineTab
               processoId={localCase?.id ?? null}
               active={activeTab === "timeline"}
+            />
+          </TabsContent>
+
+          <TabsContent value="prazos" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
+            <CasePrazosTab
+              processoId={localCase?.id ?? null}
+              prazoIso={localCase?.dueDateIso ?? null}
+              active={activeTab === "prazos"}
+              canWritePrazo={canWrite}
+              canRegistrar={canCreateAndamentos}
+              onPrazoChange={(iso) => persistCase({ prazo: iso })}
             />
           </TabsContent>
 

@@ -31,9 +31,10 @@ interface EventModalProps {
   onSave: (data: CompromissoFormData) => Promise<void>
   event?: CalendarEventView | null
   isEditing?: boolean
+  lockedProcessoId?: string | null
 }
 
-export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventModalProps) {
+export function EventModal({ isOpen, onClose, onSave, event, isEditing, lockedProcessoId }: EventModalProps) {
   const { toast } = useToast()
   const [titulo, setTitulo] = useState("")
   const [dataHora, setDataHora] = useState("")
@@ -43,7 +44,7 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || lockedProcessoId) return
     void processosApi
       .listar()
       .then((list) =>
@@ -55,21 +56,21 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
         ),
       )
       .catch(() => setProcessos([]))
-  }, [isOpen])
+  }, [isOpen, lockedProcessoId])
 
   useEffect(() => {
     if (isOpen && event) {
       setTitulo(event.titulo || "")
       setDataHora(formatDateTimeLocalInput(event.dataHora))
       setDescricao(event.descricao || "")
-      setProcessoId(event.processoId || "")
+      setProcessoId(lockedProcessoId || event.processoId || "")
     } else if (isOpen) {
       setTitulo("")
       setDataHora("")
       setDescricao("")
-      setProcessoId("")
+      setProcessoId(lockedProcessoId || "")
     }
-  }, [isOpen, event])
+  }, [isOpen, event, lockedProcessoId])
 
   const handleSave = async () => {
     if (!titulo.trim()) {
@@ -87,7 +88,7 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
         titulo: titulo.trim(),
         descricao: descricao.trim() || undefined,
         dataHora: new Date(dataHora).toISOString(),
-        processoId: processoId || null,
+        processoId: lockedProcessoId || processoId || null,
       })
       toast({
         title: "Sucesso!",
@@ -134,6 +135,7 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
               disabled={isSaving}
             />
           </div>
+          {!lockedProcessoId && (
           <div>
             <Label htmlFor="event-processo">Processo vinculado</Label>
             <Select
@@ -154,6 +156,7 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing }: EventM
               </SelectContent>
             </Select>
           </div>
+          )}
           <div>
             <Label htmlFor="event-desc">Descrição</Label>
             <Input

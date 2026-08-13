@@ -19,6 +19,8 @@ export type CompromissoFormData = {
 
 export const compromissosApi = {
   listar: () => api.get<CompromissoApi[]>("/compromissos"),
+  listarPorProcesso: (processoId: string) =>
+    api.get<CompromissoApi[]>(`/compromissos/processo/${processoId}`),
   criar: (dados: CompromissoFormData) => api.post<CompromissoApi>("/compromissos", dados),
   atualizar: (id: string, dados: Partial<CompromissoFormData>) =>
     api.put<CompromissoApi>(`/compromissos/${id}`, dados),
