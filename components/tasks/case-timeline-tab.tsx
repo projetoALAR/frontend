@@ -10,6 +10,7 @@ import {
   Loader2,
   MessageCircle,
   Send,
+  ListTodo,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -33,6 +34,7 @@ const tipoIcon: Record<TimelineTipo, typeof Briefcase> = {
   ANDAMENTO: History,
   AUDITORIA: CircleDot,
   COMENTARIO: MessageCircle,
+  TAREFA: ListTodo,
 }
 
 const tipoLabel: Record<TimelineTipo, string> = {
@@ -42,6 +44,7 @@ const tipoLabel: Record<TimelineTipo, string> = {
   ANDAMENTO: "Andamento",
   AUDITORIA: "Auditoria",
   COMENTARIO: "Comentário",
+  TAREFA: "Tarefa",
 }
 
 export function CaseTimelineTab({ processoId, active }: CaseTimelineTabProps) {

@@ -395,7 +395,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
               <ListEmptyState
                 icon={Briefcase}
                 title="Nenhum caso ainda"
-                description="Crie o primeiro caso para acompanhar prazos, documentos, timeline e andamentos processuais."
+                description="Crie o primeiro caso para acompanhar prazos, checklist, documentos, timeline e andamentos processuais."
               >
                 {canWrite && (
                   <Button

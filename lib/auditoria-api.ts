@@ -1,7 +1,7 @@
 import { api } from "@/lib/api"
 
 export type AuditAcao = "CRIAR" | "EDITAR" | "EXCLUIR"
-export type AuditEntidade = "CLIENTE" | "PROCESSO" | "DOCUMENTO" | "USUARIO"
+export type AuditEntidade = "CLIENTE" | "PROCESSO" | "DOCUMENTO" | "USUARIO" | "TAREFA"
 
 export type AuditLogApi = {
   id: string
@@ -42,6 +42,7 @@ export const AUDIT_ENTIDADE_LABEL: Record<AuditEntidade, string> = {
   PROCESSO: "Caso",
   DOCUMENTO: "Documento",
   USUARIO: "Usuário",
+  TAREFA: "Tarefa",
 }
 
 export const auditoriaApi = {

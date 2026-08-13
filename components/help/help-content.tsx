@@ -67,6 +67,11 @@ const faqs = [
       "Na página de Casos, use o botão 'Data' ou o modal 'Filtrar' com datas de vencimento. Escolha início e fim para filtrar casos com prazo nesse período.",
   },
   {
+    question: "Como usar o checklist do caso?",
+    answer:
+      "Abra o caso e vá na aba Checklist. Adicione itens (protocolar, ligar no cliente, juntar documentos) com prazo opcional. Marque ao concluir. Assistentes também podem marcar; exclusão fica com advogado e admin.",
+  },
+  {
     question: "Como fazer upload de documentos?",
     answer:
       "Abra um caso pelo ícone de olho. Na aba 'Documentos', arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",

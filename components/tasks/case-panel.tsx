@@ -33,6 +33,7 @@ import {
   RefreshCw,
   Sparkles,
   Clock,
+  ListTodo,
 } from "lucide-react"
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -64,6 +65,7 @@ import {
 } from "@/components/ui/select"
 import { GenerateDocumentModal } from "@/components/tasks/generate-document-modal"
 import { CaseTimelineTab } from "@/components/tasks/case-timeline-tab"
+import { CaseTarefasTab } from "@/components/tasks/case-tarefas-tab"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -381,7 +383,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
       <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 gap-0 flex flex-col h-full overflow-hidden">
         <SheetHeader className="p-4 pr-14 border-b bg-secondary/30 space-y-2 shrink-0">
           <SheetDescription className="sr-only">
-            Detalhes, documentos, timeline, andamentos e chat do caso
+            Detalhes, checklist, documentos, timeline, andamentos e chat do caso
           </SheetDescription>
           {editingHeader ? (
             <div className="space-y-2">
@@ -468,6 +470,9 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
           <TabsList className="mx-4 mt-3 flex w-[calc(100%-2rem)] overflow-x-auto shrink-0 justify-start h-auto p-1 gap-1">
             <TabsTrigger value="info" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Informações">
               <Briefcase className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="tarefas" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Checklist">
+              <ListTodo className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Checklist</span>
             </TabsTrigger>
             <TabsTrigger value="docs" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Documentos">
               <FolderOpen className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Docs</span>
@@ -760,6 +765,15 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 </dl>
               </div>
             </section>
+          </TabsContent>
+
+          <TabsContent value="tarefas" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
+            <CaseTarefasTab
+              processoId={localCase?.id ?? null}
+              active={activeTab === "tarefas"}
+              canWrite
+              canDelete={canWrite}
+            />
           </TabsContent>
 
           <TabsContent value="docs" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
