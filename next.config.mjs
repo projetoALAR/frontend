@@ -11,6 +11,26 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/tasks',
+        has: [{ type: 'query', key: 'caseId' }],
+        destination: '/casos/:caseId',
+        permanent: false,
+      },
+      { source: '/tasks', destination: '/casos', permanent: false },
+      { source: '/clients', destination: '/clientes', permanent: false },
+      { source: '/clients/:id', destination: '/clientes/:id', permanent: false },
+      { source: '/calendar', destination: '/agenda', permanent: false },
+      { source: '/analytics', destination: '/relatorios', permanent: false },
+      { source: '/templates', destination: '/modelos', permanent: false },
+      { source: '/team', destination: '/equipe', permanent: false },
+      { source: '/settings', destination: '/configuracoes', permanent: false },
+      { source: '/help', destination: '/ajuda', permanent: false },
+      { source: '/messages', destination: '/mensagens', permanent: false },
+    ]
+  },
 }
 
 export default withSentryConfig(nextConfig, {

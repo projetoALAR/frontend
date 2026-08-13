@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
-import { casoHref } from "@/lib/caso-href"
+import { casoHref, rotas } from "@/lib/app-routes"
 import { useAuth } from "@/components/auth/auth-provider"
 import { preferenciasApi } from "@/lib/preferencias-api"
 import { inboxApi } from "@/lib/inbox-api"
@@ -59,13 +59,15 @@ export function Header({ title, description, actions }: HeaderProps) {
         id: `p-${p.id}`,
         tipo: "processo" as const,
         entityId: p.id,
+        processoId: p.id as string | null,
         title: p.titulo || p.numero,
         dueDate: formatDatePt(p.prazo),
       })),
       ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
         id: `c-${c.id}`,
         tipo: "compromisso" as const,
-        entityId: c.id,
+        entityId: c.processoId || c.id,
+        processoId: c.processoId,
         title: c.titulo,
         dueDate: formatDatePt(c.dataHora),
       })),
@@ -106,7 +108,7 @@ export function Header({ title, description, actions }: HeaderProps) {
             size="icon"
             className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 min-h-11 min-w-11"
             aria-label={inboxUnread > 0 ? `Mensagens, ${inboxUnread} não lidas` : "Mensagens"}
-            onClick={() => router.push("/messages")}
+            onClick={() => router.push(rotas.mensagens)}
           >
             <Mail className="w-4 h-4" />
             {inboxUnread > 0 && (
@@ -161,8 +163,10 @@ export function Header({ title, description, actions }: HeaderProps) {
                     onClick={() => {
                       if (item.tipo === "processo") {
                         router.push(casoHref(item.entityId))
+                      } else if (item.processoId) {
+                        router.push(casoHref(item.processoId))
                       } else {
-                        router.push("/calendar")
+                        router.push(rotas.agenda)
                       }
                     }}
                   >
@@ -174,7 +178,7 @@ export function Header({ title, description, actions }: HeaderProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-xs text-primary justify-center cursor-pointer"
-                onClick={() => router.push("/tasks")}
+                onClick={() => router.push(rotas.casos)}
               >
                 Ver todos os casos
               </DropdownMenuItem>
@@ -185,7 +189,7 @@ export function Header({ title, description, actions }: HeaderProps) {
             type="button"
             onClick={() => {
               void refresh()
-              router.push("/settings")
+              router.push(rotas.configuracoes)
             }}
             aria-label={`Conta de ${user?.nome || "usuário"}`}
             className="flex items-center gap-2 pl-2 md:pl-3 border-l border-border hover:opacity-80 transition-opacity cursor-pointer min-h-11"

@@ -5,7 +5,7 @@ import { Clock, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
-import { casoHref } from "@/lib/caso-href"
+import { casoHref, rotas } from "@/lib/app-routes"
 
 export function Reminders() {
   const router = useRouter()
@@ -17,6 +17,7 @@ export function Reminders() {
     ...processos.map((p) => ({
       id: `p-${p.id}`,
       entityId: p.id,
+      processoId: p.id as string | null,
       tipo: "processo" as const,
       title: p.titulo || p.numero,
       project: p.status,
@@ -25,6 +26,7 @@ export function Reminders() {
     ...compromissos.map((c) => ({
       id: `c-${c.id}`,
       entityId: c.id,
+      processoId: c.processoId,
       tipo: "compromisso" as const,
       title: c.titulo,
       project: c.processo?.numero ? `Proc. ${c.processo.numero}` : "Agenda",
@@ -50,8 +52,10 @@ export function Reminders() {
               onClick={() => {
                 if (item.tipo === "processo") {
                   router.push(casoHref(item.entityId))
+                } else if (item.processoId) {
+                  router.push(casoHref(item.processoId))
                 } else {
-                  router.push("/calendar")
+                  router.push(rotas.agenda)
                 }
               }}
             >

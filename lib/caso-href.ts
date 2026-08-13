@@ -1,3 +1,1 @@
-export function casoHref(id: string) {
-  return `/casos/${id}`
-}
+export { casoHref } from "@/lib/app-routes"

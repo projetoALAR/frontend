@@ -8,6 +8,7 @@ import { ListEmptyState } from "@/components/shared/list-empty-state"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
+import { clientesListaHref, casosListaHref } from "@/lib/app-routes"
 
 export function DashboardWelcomeCard() {
   const router = useRouter()
@@ -39,10 +40,7 @@ export function DashboardWelcomeCard() {
             {data.totalClientes === 0 && (
               <Button
                 className="flex-1"
-                onClick={() => {
-                  router.push("/clients")
-                  setTimeout(() => window.dispatchEvent(new CustomEvent("openNewClientModal")), 150)
-                }}
+                onClick={() => router.push(clientesListaHref({ novo: true }))}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Novo cliente
@@ -51,10 +49,7 @@ export function DashboardWelcomeCard() {
             <Button
               variant={data.totalClientes === 0 ? "outline" : "default"}
               className="flex-1"
-              onClick={() => {
-                router.push("/tasks")
-                setTimeout(() => window.dispatchEvent(new CustomEvent("openNewCaseModal")), 150)
-              }}
+              onClick={() => router.push(casosListaHref({ novo: true }))}
             >
               <Briefcase className="w-4 h-4 mr-2" />
               Novo caso

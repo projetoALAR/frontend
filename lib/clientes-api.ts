@@ -52,6 +52,7 @@ export function isClienteAnonimizado(client: Pick<ClienteCard, "name" | "cpf">) 
 
 export const clientesApi = {
   listar: () => api.get<ClienteApi[]>("/clientes"),
+  obter: (id: string) => api.get<ClienteApi>(`/clientes/${id}`),
   criar: (dados: ClienteFormData) => api.post<ClienteApi>("/clientes", dados),
   atualizar: (id: string, dados: ClienteFormData) =>
     api.put<ClienteApi>(`/clientes/${id}`, dados),

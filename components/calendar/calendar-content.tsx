@@ -11,6 +11,8 @@ import { compromissosApi, type CompromissoFormData } from "@/lib/compromissos-ap
 import { useToast } from "@/hooks/use-toast"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
+import { casoHref } from "@/lib/app-routes"
+import Link from "next/link"
 
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
@@ -305,6 +307,11 @@ export function CalendarContent() {
                     </div>
                   </div>
                   <Badge variant="secondary">Compromisso</Badge>
+                  {event.processoId ? (
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link href={casoHref(event.processoId)}>Abrir caso</Link>
+                    </Button>
+                  ) : null}
                 </div>
               ))
             )}

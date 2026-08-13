@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { casoHref } from "@/lib/caso-href"
+import { formatDatePt } from "@/lib/format"
 
 const colors = ["bg-blue-500", "bg-sky-500", "bg-indigo-500", "bg-blue-700", "bg-cyan-600"]
 

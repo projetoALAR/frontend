@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { DashboardResumoError } from "@/components/dashboard/dashboard-resumo-error"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
+import { casosListaHref, rotas } from "@/lib/app-routes"
 
 export function StatsCards() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -44,8 +45,8 @@ export function StatsCards() {
   ]
 
   const handleCardClick = (filter: string | null) => {
-    if (filter) router.push(`/tasks?filter=${filter}`)
-    else router.push("/tasks")
+    if (filter) router.push(casosListaHref({ filter }))
+    else router.push(rotas.casos)
   }
 
   if (error && !data) {

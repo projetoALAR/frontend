@@ -8,12 +8,13 @@ import { usePathname } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAccessMenuHref } from "@/lib/roles"
+import { rotas } from "@/lib/app-routes"
 import { AlarLogo } from "@/components/brand/alar-logo"
 
 const generalItems = [
-  { icon: Settings, label: "Configurações", href: "/settings" },
-  { icon: HelpCircle, label: "Ajuda", href: "/help" },
-  { icon: LogOut, label: "Sair", href: "/logout" },
+  { icon: Settings, label: "Configurações", href: rotas.configuracoes },
+  { icon: HelpCircle, label: "Ajuda", href: rotas.ajuda },
+  { icon: LogOut, label: "Sair", href: rotas.logout },
 ]
 
 type SidebarProps = {
@@ -28,15 +29,15 @@ export function Sidebar({ mobile = false }: SidebarProps) {
   const { data } = useDashboardResumo()
   const menuItems = useMemo(() => {
     const all = [
-      { icon: LayoutDashboard, label: "Painel", href: "/" },
-      { icon: FolderKanban, label: "Casos", badge: String(data?.totalProcessos ?? 0), href: "/tasks" },
-      { icon: Contact, label: "Clientes", href: "/clients" },
-      { icon: FileText, label: "Modelos", href: "/templates" },
-      { icon: Calendar, label: "Calendário", href: "/calendar" },
-      { icon: BarChart3, label: "Relatórios", href: "/analytics" },
-      { icon: Users, label: "Equipe", href: "/team" },
-      { icon: ScrollText, label: "Auditoria", href: "/auditoria" },
-      { icon: MessageCircle, label: "Chat IA", href: "/chat" },
+      { icon: LayoutDashboard, label: "Painel", href: rotas.painel },
+      { icon: FolderKanban, label: "Casos", badge: String(data?.totalProcessos ?? 0), href: rotas.casos },
+      { icon: Contact, label: "Clientes", href: rotas.clientes },
+      { icon: FileText, label: "Modelos", href: rotas.modelos },
+      { icon: Calendar, label: "Agenda", href: rotas.agenda },
+      { icon: BarChart3, label: "Relatórios", href: rotas.relatorios },
+      { icon: Users, label: "Equipe", href: rotas.equipe },
+      { icon: ScrollText, label: "Auditoria", href: rotas.auditoria },
+      { icon: MessageCircle, label: "Chat IA", href: rotas.chat },
     ]
     return all.filter((item) => canAccessMenuHref(item.href, user?.role))
   }, [data?.totalProcessos, user?.role])
@@ -61,7 +62,8 @@ export function Sidebar({ mobile = false }: SidebarProps) {
             {menuItems.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href === "/tasks" && pathname.startsWith("/casos"))
+                (item.href === rotas.casos && pathname.startsWith("/casos/")) ||
+                (item.href === rotas.clientes && pathname.startsWith("/clientes/"))
               return (
                 <Link
                   key={item.label}
@@ -94,7 +96,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
           <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Geral</p>
           <nav className="space-y-0.5" aria-label="Configurações e ajuda">
             {generalItems.map((item) => {
-              const isActive = pathname === item.href
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
               return (
                 <Link
                   key={item.label}

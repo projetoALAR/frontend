@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/components/auth/auth-provider"
 import { isOnboardingDone, markOnboardingDone } from "@/lib/onboarding"
 import { canWriteClientesProcessos } from "@/lib/roles"
+import { rotas } from "@/lib/app-routes"
 
 const STEPS = [
   {
@@ -34,21 +35,21 @@ const STEPS = [
     title: "Cadastre clientes",
     description:
       "Comece pela aba Clientes. Cada cliente pode ter vários casos vinculados com CPF e contato.",
-    action: { label: "Ir para Clientes", href: "/clients" },
+    action: { label: "Ir para Clientes", href: rotas.clientes },
   },
   {
     icon: Briefcase,
     title: "Abra casos e prazos",
     description:
       "Em Casos, crie processos, defina responsável, anexe documentos e acompanhe a timeline do andamento.",
-    action: { label: "Ir para Casos", href: "/tasks" },
+    action: { label: "Ir para Casos", href: rotas.casos },
   },
   {
     icon: Search,
     title: "Busca e mensagens",
     description:
       "Use Ctrl+K para buscar por nome, CPF ou CNJ. Lembretes de prazo aparecem em Mensagens e no sino do topo.",
-    action: { label: "Abrir Mensagens", href: "/messages" },
+    action: { label: "Abrir Mensagens", href: rotas.mensagens },
   },
   {
     icon: MessageCircle,

@@ -172,6 +172,10 @@ export function CaseAndamentosTab({
         </Button>
       </div>
 
+      <p className="text-xs text-muted-foreground rounded-md border border-border bg-secondary/40 px-3 py-2">
+        A sincronização consulta a base pública do CNJ (DataJud). Não há garantia de completude nem de atualização em tempo real — registre o andamento interno quando o tribunal atrasar ou o movimento não aparecer.
+      </p>
+
       <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="cnj-numero">Número CNJ</Label>
@@ -197,7 +201,7 @@ export function CaseAndamentosTab({
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Formato: NNNNNNN-DD.AAAA.J.TR.OOOO — usado na consulta DataJud
+            Consulta pública do CNJ (DataJud). Sem garantia de completude; não substitui o andamento interno do escritório.
           </p>
         </div>
       </section>

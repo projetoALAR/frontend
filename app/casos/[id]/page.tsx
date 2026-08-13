@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { processosApi } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
+import { rotas } from "@/lib/app-routes"
 
 export default function CasoPage() {
   const params = useParams<{ id: string }>()
@@ -59,7 +60,7 @@ export default function CasoPage() {
         ) : error || !caseData ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
             <p className="text-sm text-muted-foreground">{error || "Caso não encontrado"}</p>
-            <Button variant="outline" onClick={() => router.push("/tasks")}>
+            <Button variant="outline" onClick={() => router.push(rotas.casos)}>
               Voltar aos casos
             </Button>
           </div>
@@ -68,7 +69,7 @@ export default function CasoPage() {
             layout="page"
             isOpen
             caseData={caseData}
-            onClose={() => router.push("/tasks")}
+            onClose={() => router.push(rotas.casos)}
             onUpdated={setCaseData}
           />
         )}

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos, getHomeCopy } from "@/lib/roles"
+import { clientesListaHref, casosListaHref } from "@/lib/app-routes"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -23,18 +24,11 @@ export default function DashboardPage() {
   const home = getHomeCopy(user?.role)
 
   const handleNewCase = () => {
-    router.push("/tasks")
-    setTimeout(() => {
-      const event = new CustomEvent("openNewCaseModal")
-      window.dispatchEvent(event)
-    }, 100)
+    router.push(casosListaHref({ novo: true }))
   }
 
   const handleNewClient = () => {
-    router.push("/clients")
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("openNewClientModal"))
-    }, 100)
+    router.push(clientesListaHref({ novo: true }))
   }
 
   return (

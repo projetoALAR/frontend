@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import { ClientModal } from "./client-modal"
 import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
@@ -22,6 +23,7 @@ import { formatDocumentoCliente, formatPhone, onlyDigits } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import { clienteHref, rotas } from "@/lib/app-routes"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +41,7 @@ export function ClientsContent() {
   const { toast } = useToast()
   const { user } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const canWrite = canWriteClientesProcessos(user?.role)
   const canExport = canExportarCliente(user?.role)
   const canAnonimizar = canAnonimizarCliente(user?.role)
@@ -92,6 +95,15 @@ export function ClientsContent() {
     window.addEventListener("openNewClientModal", handleOpenNewClient)
     return () => window.removeEventListener("openNewClientModal", handleOpenNewClient)
   }, [canWrite])
+
+  useEffect(() => {
+    if (searchParams.get("novo") !== "1" || !canWrite) return
+    window.dispatchEvent(new CustomEvent("openNewClientModal"))
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("novo")
+    const qs = params.toString()
+    router.replace(qs ? `${rotas.clientes}?${qs}` : rotas.clientes, { scroll: false })
+  }, [searchParams, canWrite, router])
 
   const filteredClients = clients.filter((client) => {
     const term = searchTerm.toLowerCase()
@@ -317,7 +329,11 @@ export function ClientsContent() {
 
               <div className="space-y-3">
                 <div>
-                  <h3 className="font-semibold text-lg line-clamp-1">{client.name}</h3>
+                  <h3 className="font-semibold text-lg line-clamp-1">
+                    <Link href={clienteHref(client.id)} className="hover:underline">
+                      {client.name}
+                    </Link>
+                  </h3>
                   <p className="text-xs text-muted-foreground font-mono">
                     {formatDocumentoCliente(client)}
                   </p>
