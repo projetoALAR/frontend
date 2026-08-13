@@ -2,46 +2,40 @@
 
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search, BookOpen, Video, MessageCircle, Mail, ChevronDown, Sparkles } from "lucide-react"
+import {
+  Search,
+  BookOpen,
+  Mail,
+  ChevronDown,
+  Sparkles,
+  ListChecks,
+  Briefcase,
+} from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/components/auth/auth-provider"
 import { resetOnboarding } from "@/lib/onboarding"
 
-const FORUM_URL = process.env.NEXT_PUBLIC_FORUM_URL || "https://github.com/discussions"
 const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@alar.com.br"
-const VIDEOS_URL =
-  process.env.NEXT_PUBLIC_VIDEOS_URL ||
-  "https://www.youtube.com/results?search_query=gest%C3%A3o+jur%C3%ADdica+escrit%C3%B3rio"
+const VIDEOS_URL = process.env.NEXT_PUBLIC_VIDEOS_URL?.trim() || ""
+const FORUM_URL = process.env.NEXT_PUBLIC_FORUM_URL?.trim() || ""
 
-const helpCategories = [
+const passos = [
   {
-    id: "docs",
-    icon: BookOpen,
-    title: "Documentação",
-    description: "Acesse nossos guias e tutoriais completos",
-    color: "bg-primary",
+    title: "Cadastre o cliente",
+    text: "Em Clientes, escolha pessoa física (CPF) ou jurídica (CNPJ). Endereço e observações são opcionais.",
   },
   {
-    id: "videos",
-    icon: Video,
-    title: "Tutoriais em Vídeo",
-    description: "Assista guias passo a passo em vídeo",
-    color: "bg-blue-400",
+    title: "Abra o caso",
+    text: "Em Casos, informe o número CNJ, o responsável e o prazo. O título do caso vira um link para a página dele.",
   },
   {
-    id: "forum",
-    icon: MessageCircle,
-    title: "Fórum da Comunidade",
-    description: "Conecte-se com outros usuários e obtenha respostas",
-    color: "bg-indigo-500",
+    title: "Acompanhe o dia a dia",
+    text: "Na página do caso use Checklist, Documentos, Timeline e Andamentos (sincronize o tribunal ou registre um movimento interno).",
   },
   {
-    id: "support",
-    icon: Mail,
-    title: "Suporte",
-    description: "Obtenha ajuda direta da nossa equipe de suporte",
-    color: "bg-sky-500",
+    title: "Use a IA com revisão",
+    text: "O chat do caso cita anexos quando encontra trecho. Rascunhos de petição exigem revisão humana. A IA não substitui o advogado.",
   },
 ]
 
@@ -49,20 +43,25 @@ const faqs = [
   {
     question: "Como criar um novo caso?",
     answer:
-      "Clique no botão '+ Casos' no painel ou '+ Novo Caso' na página de Casos. Preencha título, cliente, prioridade, status e prazo. Você também pode adicionar tags para organizar melhor seus casos.",
+      "Clique em '+ Novo Caso' na página de Casos (ou '+ Casos' no painel). Preencha título, cliente, prioridade, status e prazo. Tags ajudam a organizar.",
   },
   {
     question: "Como adicionar um novo cliente?",
     answer:
-      "Clique no botão '+ Cliente'. Escolha pessoa física (CPF) ou jurídica (CNPJ). Preencha nome/razão social, contato e, se quiser, endereço e observações internas.",
+      "Clique em '+ Cliente'. Escolha pessoa física (CPF) ou jurídica (CNPJ). Preencha nome/razão social, contato e, se quiser, endereço e observações internas.",
+  },
+  {
+    question: "Como abrir a página de um caso?",
+    answer:
+      "Na lista de Casos, clique no título ou no ícone de olho. A URL fica /casos/... e pode ser favoritada. Busca (Ctrl+K), prazos e mensagens também abrem essa página.",
   },
   {
     question: "Como convidar membros da equipe?",
     answer:
-      "Acesse a página Equipe e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode registrar e enviar e-mail pelo botão no card do membro.",
+      "Acesse Equipe (admin) e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode registrar e enviar e-mail pelo botão no card do membro.",
   },
   {
-    question: "Como usar o filtro de datas nas tarefas?",
+    question: "Como usar o filtro de datas nos casos?",
     answer:
       "Na página de Casos, use o botão 'Data' ou o modal 'Filtrar' com datas de vencimento. Escolha início e fim para filtrar casos com prazo nesse período.",
   },
@@ -72,39 +71,33 @@ const faqs = [
       "Abra o caso e vá na aba Checklist. Adicione itens (protocolar, ligar no cliente, juntar documentos) com prazo opcional. Marque ao concluir. Assistentes também podem marcar; exclusão fica com advogado e admin.",
   },
   {
+    question: "Como registrar um andamento?",
+    answer:
+      "Na aba Andamentos, use Sincronizar para buscar movimentos do tribunal (DataJud) ou registre um andamento interno com data e descrição. Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
+  },
+  {
     question: "Como fazer upload de documentos?",
     answer:
-      "Abra um caso pelo título ou pelo ícone de olho. Na aba Documentos, arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",
-  },
-  {
-    question: "Como editar um caso ou membro?",
-    answer:
-      "Nos casos, use o lápis para o modal de edição ou o olho para abrir a página do caso. Nos membros, use o ícone de lápis no card.",
-  },
-  {
-    question: "Posso deletar clientes ou membros?",
-    answer:
-      "Sim. Use o ícone de lixeira no card do cliente ou membro e confirme. A remoção não pode ser desfeita.",
+      "Na página do caso, aba Documentos, arraste arquivos para a área tracejada ou clique em Enviar. Depois você pode baixar ou excluir.",
   },
   {
     question: "Como buscar clientes ou casos rapidamente?",
     answer:
-      "Use Ctrl+K (ou o campo Buscar no topo) para pesquisar por nome, CPF, CNPJ, número CNJ ou título do caso. Os resultados abrem o cliente ou a página do caso.",
+      "Use Ctrl+K (ou o campo Buscar no topo) para pesquisar por nome, CPF, CNPJ, número CNJ ou título do caso.",
   },
   {
     question: "O que é a Timeline do caso?",
     answer:
-      "Na página do caso, aba Timeline, você vê histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
+      "Na aba Timeline você vê o histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
   },
   {
-    question: "Como registrar um andamento?",
+    question: "Posso deletar clientes ou membros?",
     answer:
-      "Abra o caso na aba Andamentos. Use Sincronizar para buscar movimentos do tribunal (DataJud) ou registre um andamento interno com data e descrição (protocolo, intimação, redesignação). Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
+      "Sim. Use o ícone de lixeira no card e confirme. A remoção não pode ser desfeita. Em clientes, admin também pode anonimizar (LGPD).",
   },
   {
     question: "Como falar com o suporte?",
-    answer:
-      "Clique no card Suporte nesta página para abrir seu cliente de e-mail, ou use o e-mail configurado da equipe.",
+    answer: `Clique no card Suporte nesta página para abrir o e-mail ${SUPPORT_EMAIL}.`,
   },
 ]
 
@@ -119,22 +112,9 @@ export function HelpContent() {
       faq.answer.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const handleCategoryClick = (id: string) => {
-    if (id === "docs") {
-      document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })
-      return
-    }
-    if (id === "videos") {
-      window.open(VIDEOS_URL, "_blank", "noopener,noreferrer")
-      return
-    }
-    if (id === "forum") {
-      window.open(FORUM_URL, "_blank", "noopener,noreferrer")
-      return
-    }
-    if (id === "support") {
-      window.location.href = `mailto:${SUPPORT_EMAIL}`
-    }
+  const openTour = () => {
+    if (user) resetOnboarding(user.id)
+    window.dispatchEvent(new CustomEvent("openOnboardingTour"))
   }
 
   return (
@@ -149,57 +129,138 @@ export function HelpContent() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {helpCategories.map((category, index) => (
-          <Card
-            key={category.title}
-            role="button"
-            tabIndex={0}
-            onClick={() => handleCategoryClick(category.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") handleCategoryClick(category.id)
-            }}
-            className="p-6 hover:shadow-lg transition-all duration-300 cursor-pointer animate-slide-in-up"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-lg ${category.color}`}>
-                <category.icon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-1">{category.title}</h3>
-                <p className="text-sm text-muted-foreground">{category.description}</p>
-              </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => document.getElementById("primeiros-passos")?.scrollIntoView({ behavior: "smooth" })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              document.getElementById("primeiros-passos")?.scrollIntoView({ behavior: "smooth" })
+            }
+          }}
+          className="p-5 hover:shadow-lg transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-lg bg-primary">
+              <ListChecks className="w-5 h-5 text-white" />
             </div>
-          </Card>
-        ))}
+            <div>
+              <h3 className="font-semibold mb-1">Primeiros passos</h3>
+              <p className="text-sm text-muted-foreground">Cliente, caso, checklist e andamentos no Alar.</p>
+            </div>
+          </div>
+        </Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })
+            }
+          }}
+          className="p-5 hover:shadow-lg transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-lg bg-blue-500">
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold mb-1">Perguntas frequentes</h3>
+              <p className="text-sm text-muted-foreground">Respostas curtas sobre o que o escritório usa no dia a dia.</p>
+            </div>
+          </div>
+        </Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={openTour}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") openTour()
+          }}
+          className="p-5 hover:shadow-lg transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-lg bg-indigo-500">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold mb-1">Tour de boas-vindas</h3>
+              <p className="text-sm text-muted-foreground">Revise os passos iniciais em menos de um minuto.</p>
+            </div>
+          </div>
+        </Card>
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            window.location.href = `mailto:${SUPPORT_EMAIL}`
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              window.location.href = `mailto:${SUPPORT_EMAIL}`
+            }
+          }}
+          className="p-5 hover:shadow-lg transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-3 rounded-lg bg-sky-500">
+              <Mail className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold mb-1">Suporte</h3>
+              <p className="text-sm text-muted-foreground">Fale com a equipe em {SUPPORT_EMAIL}.</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {(VIDEOS_URL || FORUM_URL) && (
+        <p className="text-xs text-muted-foreground">
+          {VIDEOS_URL ? (
+            <a href={VIDEOS_URL} className="underline" target="_blank" rel="noopener noreferrer">
+              Vídeos
+            </a>
+          ) : null}
+          {VIDEOS_URL && FORUM_URL ? " · " : null}
+          {FORUM_URL ? (
+            <a href={FORUM_URL} className="underline" target="_blank" rel="noopener noreferrer">
+              Fórum
+            </a>
+          ) : null}
+        </p>
+      )}
+
+      <div id="primeiros-passos" className="space-y-3 scroll-mt-6">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <Briefcase className="w-5 h-5 text-muted-foreground" />
+          Como usar o Alar
+        </h2>
+        <ol className="grid gap-3">
+          {passos.map((passo, index) => (
+            <Card key={passo.title} className="p-4">
+              <p className="text-sm font-semibold">
+                {index + 1}. {passo.title}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">{passo.text}</p>
+            </Card>
+          ))}
+        </ol>
       </div>
 
       <Card className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-primary/10 text-primary">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-semibold">Tour de boas-vindas</h3>
-            <p className="text-sm text-muted-foreground">
-              Revise os passos iniciais do Alar em menos de um minuto.
-            </p>
-          </div>
+        <div>
+          <h3 className="font-semibold">Prefere o tour guiado?</h3>
+          <p className="text-sm text-muted-foreground">Abre o mesmo passo a passo do primeiro login.</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (user) resetOnboarding(user.id)
-            window.dispatchEvent(new CustomEvent("openOnboardingTour"))
-          }}
-        >
+        <Button variant="outline" onClick={openTour}>
           Ver tour novamente
         </Button>
       </Card>
 
       <div id="faq-section" className="space-y-4 scroll-mt-6">
-        <h2 className="text-xl font-semibold">Perguntas Frequentes</h2>
+        <h2 className="text-xl font-semibold">Perguntas frequentes</h2>
         {filteredFaqs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum resultado para a busca.</p>
         ) : (

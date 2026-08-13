@@ -1,12 +1,13 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Users, CheckCircle, Clock, Target, ArrowUpRight, Loader2 } from "lucide-react"
+import { Users, CheckCircle, Clock, Target, ArrowUpRight } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { DashboardResumoError } from "@/components/dashboard/dashboard-resumo-error"
 import { ProjectAnalytics } from "@/components/dashboard/project-analytics"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 export function AnalyticsContent() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -54,12 +55,7 @@ export function AnalyticsContent() {
   }
 
   if (loading && !data) {
-    return (
-      <div className="flex justify-center py-12 gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Carregando relatórios...
-      </div>
-    )
+    return <ListSkeleton variant="stats" count={4} />
   }
 
   return (

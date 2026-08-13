@@ -1,11 +1,12 @@
 "use client"
 
-import { ArrowUpRight, TrendingUp, Loader2 } from "lucide-react"
+import { ArrowUpRight, TrendingUp } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { DashboardResumoError } from "@/components/dashboard/dashboard-resumo-error"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 export function StatsCards() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -54,12 +55,7 @@ export function StatsCards() {
   }
 
   if (loading && !data) {
-    return (
-      <div className="flex justify-center py-8 text-muted-foreground gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Carregando métricas...
-      </div>
-    )
+    return <ListSkeleton variant="stats" count={3} />
   }
 
   return (

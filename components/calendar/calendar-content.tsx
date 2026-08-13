@@ -3,13 +3,14 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Edit2, Trash2, Calendar, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit2, Trash2, Calendar } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { EventModal, type CalendarEventView } from "./event-modal"
 import { MonthYearPicker } from "./month-year-picker"
 import { compromissosApi, type CompromissoFormData } from "@/lib/compromissos-api"
 import { useToast } from "@/hooks/use-toast"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
@@ -165,10 +166,7 @@ export function CalendarContent() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12 gap-2 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Carregando agenda...
-        </div>
+        <ListSkeleton variant="calendar" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-3">

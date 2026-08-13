@@ -11,6 +11,7 @@ import { Suspense } from "react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
 import { casoHref } from "@/lib/caso-href"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 function TasksPageContent() {
   const tasksContentRef = useRef<HTMLDivElement>(null)
@@ -90,7 +91,7 @@ export default function TasksPage() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <Suspense fallback={<div>Carregando...</div>}>
+      <Suspense fallback={<ListSkeleton variant="rows" count={4} />}>
         <TasksPageContent />
       </Suspense>
     </div>

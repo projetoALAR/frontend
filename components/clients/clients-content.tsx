@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ListEmptyState } from "@/components/shared/list-empty-state"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 export function ClientsContent() {
   const { toast } = useToast()
@@ -242,10 +243,7 @@ export function ClientsContent() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Carregando clientes...
-        </div>
+        <ListSkeleton variant="cards" count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client, index) => (

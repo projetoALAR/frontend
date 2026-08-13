@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Search, Filter, Tag, Eye, Loader2, Trash2, Pencil, X, Calendar, Briefcase } from "lucide-react"
+import { Search, Filter, Tag, Eye, Trash2, Pencil, X, Calendar, Briefcase } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
 import Link from "next/link"
 import { CaseModal } from "./case-modal"
@@ -20,6 +20,7 @@ import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
 import { formatCnj, onlyDigits } from "@/lib/masks"
 import { ListEmptyState } from "@/components/shared/list-empty-state"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
   Alta: "destructive",
@@ -291,10 +292,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Carregando casos...
-        </div>
+        <ListSkeleton variant="rows" count={5} />
       ) : (
         <div className="grid gap-4">
           {filteredTasks.map((task, index) => (

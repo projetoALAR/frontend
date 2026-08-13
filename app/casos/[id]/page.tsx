@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Loader2 } from "lucide-react"
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { GlobalSearch } from "@/components/search/global-search"
 import { CasePanel } from "@/components/tasks/case-panel"
 import { Button } from "@/components/ui/button"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { processosApi } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
 
@@ -55,13 +55,7 @@ export default function CasoPage() {
         </header>
 
         {loading ? (
-          <div
-            role="status"
-            className="flex-1 flex items-center justify-center gap-2 text-muted-foreground"
-          >
-            <Loader2 className="w-5 h-5 animate-spin" aria-hidden />
-            Carregando caso...
-          </div>
+          <ListSkeleton variant="detail" />
         ) : error || !caseData ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
             <p className="text-sm text-muted-foreground">{error || "Caso não encontrado"}</p>

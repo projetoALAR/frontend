@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { Header } from "@/components/dashboard/header"
 import { ClientsContent } from "@/components/clients/clients-content"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { Suspense } from "react"
 
 export default function ClientsPage() {
@@ -15,7 +16,7 @@ export default function ClientsPage() {
         />
 
         <div className="mt-4 md:mt-5">
-          <Suspense fallback={<div className="text-sm text-muted-foreground p-4">Carregando clientes...</div>}>
+          <Suspense fallback={<ListSkeleton variant="cards" count={6} />}>
             <ClientsContent />
           </Suspense>
         </div>
