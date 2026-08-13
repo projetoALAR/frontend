@@ -97,6 +97,12 @@ const faqs = [
       "Na página do caso, aba Timeline, você vê histórico unificado: documentos, prazos, andamentos, auditoria e comentários internos da equipe.",
   },
   {
+    question: "Como registrar um andamento?",
+    answer:
+      "Abra o caso na aba Andamentos. Use Sincronizar para buscar movimentos do tribunal (DataJud) ou registre um andamento interno com data e descrição (protocolo, intimação, redesignação). Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
+  },
+  {
+    question: "Como falar com o suporte?",
     answer:
       "Clique no card Suporte nesta página para abrir seu cliente de e-mail, ou use o e-mail configurado da equipe.",
   },

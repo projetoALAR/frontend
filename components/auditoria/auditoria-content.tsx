@@ -96,6 +96,7 @@ export function AuditoriaContent() {
               <SelectItem value="DOCUMENTO">Documento</SelectItem>
               <SelectItem value="USUARIO">Usuário</SelectItem>
               <SelectItem value="TAREFA">Tarefa</SelectItem>
+              <SelectItem value="ANDAMENTO">Andamento</SelectItem>
             </SelectContent>
           </Select>
         </div>

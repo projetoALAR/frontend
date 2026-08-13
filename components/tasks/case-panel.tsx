@@ -4,8 +4,6 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MaskedInput } from "@/components/ui/masked-input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -30,7 +28,6 @@ import {
   Flag,
   CircleDot,
   History,
-  RefreshCw,
   Sparkles,
   Clock,
   ListTodo,
@@ -42,7 +39,6 @@ import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
 import { processosApi } from "@/lib/processos-api"
 import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
-import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
 import { formatCnj, formatDocumentoCliente, formatPhone, maskProcessoNumero } from "@/lib/masks"
@@ -51,7 +47,7 @@ import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { ChatCitations } from "@/components/chat/chat-citations"
 import { ChatMessageFeedback } from "@/components/chat/chat-message-feedback"
 import { ChatExportButton } from "@/components/chat/chat-export-button"
-import { canDeleteDocumentos, canWriteClientesProcessos } from "@/lib/roles"
+import { canDeleteAndamentos, canDeleteDocumentos, canWriteAndamentos, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import {
   isProcessoStatusConcluido,
@@ -67,6 +63,7 @@ import {
 import { GenerateDocumentModal } from "@/components/tasks/generate-document-modal"
 import { CaseTimelineTab } from "@/components/tasks/case-timeline-tab"
 import { CaseTarefasTab } from "@/components/tasks/case-tarefas-tab"
+import { CaseAndamentosTab } from "@/components/tasks/case-andamentos-tab"
 
 interface CasePanelProps {
   isOpen: boolean
@@ -114,18 +111,17 @@ export function CasePanel({
   const { user } = useAuth()
   const canWrite = canWriteClientesProcessos(user?.role)
   const canDeleteDocs = canDeleteDocumentos(user?.role)
+  const canCreateAndamentos = canWriteAndamentos(user?.role)
+  const canDeleteAndamentosManuais = canDeleteAndamentos(user?.role)
   const [localCase, setLocalCase] = useState<CaseView | null>(caseData)
   const [messages, setMessages] = useState<MensagemApi[]>([])
   const [conversacaoId, setConversacaoId] = useState<string | null>(null)
   const [chatInput, setChatInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [documents, setDocuments] = useState<DocumentoApi[]>([])
-  const [andamentos, setAndamentos] = useState<AndamentoApi[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [loadingDocs, setLoadingDocs] = useState(false)
-  const [loadingAndamentos, setLoadingAndamentos] = useState(false)
-  const [syncingAndamentos, setSyncingAndamentos] = useState(false)
   const [cnjDraft, setCnjDraft] = useState("")
   const [savingCnj, setSavingCnj] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -179,17 +175,6 @@ export function CasePanel({
     }
   }, [])
 
-  const loadAndamentos = useCallback(async (processoId: string) => {
-    setLoadingAndamentos(true)
-    try {
-      setAndamentos(await andamentosApi.listarPorProcesso(processoId))
-    } catch {
-      setAndamentos([])
-    } finally {
-      setLoadingAndamentos(false)
-    }
-  }, [])
-
   const handleSaveCnj = async () => {
     if (!localCase) return
     const numero = maskProcessoNumero(cnjDraft.trim())
@@ -207,48 +192,6 @@ export function CasePanel({
       setCnjDraft(numero)
     } finally {
       setSavingCnj(false)
-    }
-  }
-
-  const handleSyncAndamentos = async () => {
-    if (!localCase) return
-    const numeroAtual = cnjDraft.trim()
-    if (numeroAtual && numeroAtual !== localCase.numero) {
-      toast({
-        title: "Salve o número CNJ",
-        description: "Há alterações não salvas no número do processo.",
-        variant: "destructive",
-      })
-      return
-    }
-    setSyncingAndamentos(true)
-    try {
-      const resultado = await andamentosApi.sincronizar(localCase.id)
-      await loadAndamentos(localCase.id)
-      if (resultado.inseridos > 0) {
-        toast({
-          title: "Andamentos sincronizados",
-          description: `${resultado.inseridos} novo(s) andamento(s) encontrado(s).`,
-        })
-      } else if (resultado.motivo) {
-        toast({
-          title: "Nenhum andamento novo",
-          description: resultado.motivo,
-        })
-      } else {
-        toast({
-          title: "Sincronização concluída",
-          description: "Nenhum andamento novo desde a última consulta.",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Falha ao sincronizar",
-        description: error instanceof Error ? error.message : "Tente novamente.",
-        variant: "destructive",
-      })
-    } finally {
-      setSyncingAndamentos(false)
     }
   }
 
@@ -290,9 +233,8 @@ export function CasePanel({
       setChatInput("")
       void loadDocs(caseData.id)
       void loadChat(caseData.id)
-      void loadAndamentos(caseData.id)
     }
-  }, [isOpen, caseData, loadDocs, loadChat, loadAndamentos])
+  }, [isOpen, caseData, loadDocs, loadChat])
 
   const persistCase = async (partial: {
     titulo?: string
@@ -936,86 +878,18 @@ export function CasePanel({
           </TabsContent>
 
           <TabsContent value="andamentos" className="flex-1 overflow-auto p-4 space-y-4 m-0 min-h-0 data-[state=inactive]:hidden">
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="font-medium flex items-center gap-2">
-                <History className="w-4 h-4 text-muted-foreground" />
-                Andamentos
-              </h4>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={syncingAndamentos || savingCnj || !localCase}
-                onClick={() => void handleSyncAndamentos()}
-              >
-                {syncingAndamentos ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                )}
-                Sincronizar
-              </Button>
-            </div>
-
-            <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cnj-numero">Número CNJ</Label>
-                <div className="flex gap-2">
-                  <MaskedInput
-                    id="cnj-numero"
-                    mask="processo"
-                    value={cnjDraft}
-                    onValueChange={setCnjDraft}
-                    placeholder="0001234-56.2024.8.26.0100"
-                    className="font-mono text-sm"
-                    disabled={!canWrite || savingCnj}
-                  />
-                  {canWrite && (
-                    <Button
-                      size="sm"
-                      className="shrink-0"
-                      disabled={savingCnj || cnjDraft.trim() === (localCase?.numero || "")}
-                      onClick={() => void handleSaveCnj()}
-                    >
-                      {savingCnj ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Salvar"
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Formato: NNNNNNN-DD.AAAA.J.TR.OOOO — usado na consulta DataJud
-                </p>
-              </div>
-            </section>
-
-            {loadingAndamentos ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
-            ) : andamentos.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum andamento sincronizado ainda
-              </p>
-            ) : (
-              <ol className="relative space-y-0 border-l border-border ml-2">
-                {andamentos.map((item) => (
-                  <li key={item.id} className="relative pl-6 pb-4 last:pb-0">
-                    <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
-                    <div className="rounded-lg border border-border bg-secondary/40 p-3 space-y-1">
-                      <p className="text-xs text-muted-foreground">
-                        {formatDatePt(item.data)}
-                      </p>
-                      <p className="text-sm">{item.descricao}</p>
-                      {item.explicacao ? (
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {item.explicacao}
-                        </p>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
+            <CaseAndamentosTab
+              processoId={localCase?.id ?? null}
+              active={activeTab === "andamentos"}
+              canWriteCnj={canWrite}
+              canCreate={canCreateAndamentos}
+              canDelete={canDeleteAndamentosManuais}
+              cnjDraft={cnjDraft}
+              onCnjChange={setCnjDraft}
+              onSaveCnj={handleSaveCnj}
+              savingCnj={savingCnj}
+              cnjDirty={cnjDraft.trim() !== (localCase?.numero || "")}
+            />
           </TabsContent>
 
           <TabsContent

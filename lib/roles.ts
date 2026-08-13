@@ -29,7 +29,11 @@ export function canViewAuditoria(role?: Role | null): boolean {
   return role === "ADMIN"
 }
 
-export function canWriteClientesProcessos(role?: Role | null): boolean {
+export function canWriteAndamentos(role?: Role | null): boolean {
+  return role === "ADMIN" || role === "ADVOGADO" || role === "ASSISTENTE"
+}
+
+export function canDeleteAndamentos(role?: Role | null): boolean {
   return role === "ADMIN" || role === "ADVOGADO"
 }
 
