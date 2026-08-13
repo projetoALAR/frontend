@@ -31,7 +31,7 @@ const passos = [
   },
   {
     title: "Acompanhe o dia a dia",
-    text: "Na página do caso use Checklist, Documentos, Timeline e Andamentos (sincronize o tribunal ou registre um movimento interno).",
+    text: "Na página do caso use Checklist, Documentos, Timeline, Prazos e Andamentos. Dá para registrar intimação, baixar a capa em PDF e sincronizar o tribunal.",
   },
   {
     title: "Use a IA com revisão",
@@ -74,6 +74,26 @@ const faqs = [
     question: "Como registrar um andamento?",
     answer:
       "Na aba Andamentos, use Sincronizar para buscar movimentos do tribunal (DataJud) ou registre um andamento interno com data e descrição. Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
+  },
+  {
+    question: "Como registrar uma intimação ou prazo?",
+    answer:
+      "Abra o caso na aba Prazos. Ali ficam o prazo principal, compromissos e tarefas com data. Use Registrar intimação para lançar o andamento e, se quiser, um compromisso de lembrete.",
+  },
+  {
+    question: "Como baixar a capa do processo?",
+    answer:
+      "No cabeçalho do caso, clique no ícone de download ao lado do lápis. O PDF traz número CNJ, cliente, responsáveis, prazo e os próximos compromissos/tarefas.",
+  },
+  {
+    question: "Como exportar um relatório de casos?",
+    answer:
+      "Em Relatórios (admin), filtre por status, prazo, responsável ou busca e use Exportar CSV. O arquivo traz só o recorte filtrado.",
+  },
+  {
+    question: "Como ativar a autenticação em dois fatores?",
+    answer:
+      "Em Configurações, administrador e advogado veem o card de 2FA. Escaneie o QR no autenticador, confirme o código e guarde os de recuperação. No próximo login o código será pedido.",
   },
   {
     question: "Como fazer upload de documentos?",
@@ -147,7 +167,7 @@ export function HelpContent() {
             </div>
             <div>
               <h3 className="font-semibold mb-1">Primeiros passos</h3>
-              <p className="text-sm text-muted-foreground">Cliente, caso, checklist e andamentos no Alar.</p>
+              <p className="text-sm text-muted-foreground">Cliente, caso, prazos, capa PDF e andamentos no Alar.</p>
             </div>
           </div>
         </Card>
