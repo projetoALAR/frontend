@@ -125,7 +125,7 @@ export function TwoFactorCard() {
       <div>
         <h3 className="font-semibold text-lg">Autenticação em dois fatores</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Obrigatório no próximo login depois de ativar. Use Google Authenticator, Authy ou similar.
+          Disponível para administrador e advogado. Depois de ativar, o código será pedido no próximo login. Use Google Authenticator, Authy ou similar.
         </p>
       </div>
 

@@ -29,6 +29,10 @@ export function canViewAuditoria(role?: Role | null): boolean {
   return role === "ADMIN"
 }
 
+export function canUseTwoFactor(role?: Role | null): boolean {
+  return role === "ADMIN" || role === "ADVOGADO"
+}
+
 export function canWriteClientesProcessos(role?: Role | null): boolean {
   return role === "ADMIN" || role === "ADVOGADO"
 }
