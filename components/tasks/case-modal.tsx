@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MaskedInput } from "@/components/ui/masked-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -20,6 +21,7 @@ import { clientesApi, type ClienteApi } from "@/lib/clientes-api"
 import { equipeApi, type MembroEquipeApi } from "@/lib/equipe-api"
 import { ROLE_LABELS } from "@/lib/roles"
 import { useAuth } from "@/components/auth/auth-provider"
+import { maskProcessoNumero } from "@/lib/masks"
 import {
   PROCESSO_STATUS_DEFAULT,
   isProcessoStatusConcluido,
@@ -105,7 +107,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
     try {
       await onSave({
         titulo: title.trim(),
-        numero: numero.trim(),
+        numero: maskProcessoNumero(numero.trim()),
         status: status.trim(),
         clienteId,
         descricao: descricao.trim() || null,
@@ -166,11 +168,15 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
           </div>
           <div>
             <Label htmlFor="case-numero">Número CNJ do processo *</Label>
-            <Input
+            <MaskedInput
               id="case-numero"
+              mask="processo"
               value={numero}
-              onChange={(e) => setNumero(e.target.value)}
-              placeholder="Ex: 0001234-56.2026.8.26.0100"
+              onValueChange={(v) => {
+                setNumero(v)
+                if (errors.numero) setErrors({ ...errors, numero: "" })
+              }}
+              placeholder="0001234-56.2026.8.26.0100"
               className={`mt-1 font-mono ${errors.numero ? "border-destructive" : ""}`}
               disabled={isSaving}
             />

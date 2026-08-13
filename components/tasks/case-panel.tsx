@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MaskedInput } from "@/components/ui/masked-input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
@@ -42,6 +43,7 @@ import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
 import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
+import { formatCnj, formatCpf, formatPhone, maskProcessoNumero } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { ChatCitations } from "@/components/chat/chat-citations"
@@ -153,7 +155,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
 
   const handleSaveCnj = async () => {
     if (!localCase) return
-    const numero = cnjDraft.trim()
+    const numero = maskProcessoNumero(cnjDraft.trim())
     if (!numero) {
       toast({
         title: "Número CNJ obrigatório",
@@ -437,7 +439,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <SheetTitle className="text-left text-base leading-snug">{localCase.title}</SheetTitle>
-                <p className="text-xs text-muted-foreground mt-1 font-mono">{localCase.numero}</p>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">{formatCnj(localCase.numero)}</p>
                 <div className="flex gap-2 mt-2.5 flex-wrap">
                   <Badge variant={localCase.priority === "Alta" ? "destructive" : localCase.priority === "Baixa" ? "secondary" : "default"}>
                     {localCase.priority}
@@ -741,7 +743,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                 <dl className="grid gap-2.5 text-sm">
                   <div className="flex items-start gap-2.5">
                     <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5">CPF</span>
-                    <dd className="font-medium">{client?.cpf ?? "—"}</dd>
+                    <dd className="font-medium font-mono">{formatCpf(client?.cpf)}</dd>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5 flex items-center gap-1">
@@ -753,7 +755,7 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
                     <span className="text-muted-foreground w-20 shrink-0 text-xs pt-0.5 flex items-center gap-1">
                       <Phone className="w-3 h-3" /> Telefone
                     </span>
-                    <dd className="font-medium">{client?.telefone ?? "—"}</dd>
+                    <dd className="font-medium font-mono">{formatPhone(client?.telefone)}</dd>
                   </div>
                 </dl>
               </div>
@@ -873,10 +875,11 @@ export function CasePanel({ isOpen, onClose, caseData, onUpdated }: CasePanelPro
               <div className="space-y-1.5">
                 <Label htmlFor="cnj-numero">Número CNJ</Label>
                 <div className="flex gap-2">
-                  <Input
+                  <MaskedInput
                     id="cnj-numero"
+                    mask="processo"
                     value={cnjDraft}
-                    onChange={(e) => setCnjDraft(e.target.value)}
+                    onValueChange={setCnjDraft}
                     placeholder="0001234-56.2024.8.26.0100"
                     className="font-mono text-sm"
                     disabled={!canWrite || savingCnj}

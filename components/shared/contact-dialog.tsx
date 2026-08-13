@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { inboxApi } from "@/lib/inbox-api"
+import { formatPhone, onlyDigits } from "@/lib/masks"
 import { useToast } from "@/hooks/use-toast"
 
 type ContactDialogProps = {
@@ -57,7 +58,7 @@ export function ContactDialog({
       if (canal === "email") {
         window.location.href = `mailto:${destino}`
       } else {
-        window.location.href = `tel:${destino}`
+        window.location.href = `tel:${onlyDigits(destino)}`
       }
     } catch (error) {
       toast({
@@ -80,7 +81,10 @@ export function ContactDialog({
         </DialogHeader>
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
-            Destino: <span className="font-medium text-foreground">{destino}</span>
+            Destino:{" "}
+            <span className="font-medium text-foreground">
+              {canal === "telefone" ? formatPhone(destino) : destino}
+            </span>
           </p>
           <div className="space-y-2">
             <Label htmlFor="obs">Observação (opcional)</Label>

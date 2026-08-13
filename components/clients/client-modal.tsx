@@ -3,10 +3,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MaskedInput } from "@/components/ui/masked-input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { ClienteCard, ClienteFormData } from "@/lib/clientes-api"
+import { maskCpf, maskPhone, onlyDigits } from "@/lib/masks"
 
 interface ClientModalProps {
   isOpen: boolean
@@ -29,8 +31,8 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
     if (isOpen && clientData) {
       setName(clientData.name || "")
       setEmail(clientData.email || "")
-      setPhone(clientData.phone || "")
-      setCpf(clientData.cpf || "")
+      setPhone(maskPhone(clientData.phone || ""))
+      setCpf(maskCpf(clientData.cpf || ""))
       setErrors({})
     } else if (isOpen) {
       setName("")
@@ -50,9 +52,16 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
     const newErrors: Record<string, string> = {}
 
     if (!name.trim()) newErrors.name = "Nome é obrigatório"
+    const cpfAnon = /^ANON/i.test(cpf.trim())
+    const cpfDigits = onlyDigits(cpf)
     if (!cpf.trim()) newErrors.cpf = "CPF é obrigatório"
+    else if (!cpfAnon && cpfDigits.length !== 11) newErrors.cpf = "CPF deve ter 11 dígitos"
     if (email.trim() && !validateEmail(email.trim())) {
       newErrors.email = "Email inválido"
+    }
+    const phoneDigits = onlyDigits(phone)
+    if (phone.trim() && (phoneDigits.length < 10 || phoneDigits.length > 11)) {
+      newErrors.phone = "Telefone deve ter DDD + 8 ou 9 dígitos"
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -69,9 +78,9 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
     try {
       await onSave({
         nome: name.trim(),
-        cpf: cpf.trim(),
+        cpf: cpfAnon ? cpf.trim() : cpfDigits,
         email: email.trim() || undefined,
-        telefone: phone.trim() || undefined,
+        telefone: phone.trim() ? maskPhone(phone) : undefined,
       })
 
       toast({
@@ -116,15 +125,16 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
 
           <div>
             <Label htmlFor="client-cpf">CPF *</Label>
-            <Input
+            <MaskedInput
               id="client-cpf"
+              mask="cpf"
               value={cpf}
-              onChange={(e) => {
-                setCpf(e.target.value)
+              onValueChange={(v) => {
+                setCpf(v)
                 if (errors.cpf) setErrors({ ...errors, cpf: "" })
               }}
-              placeholder="Ex: 000.000.000-00"
-              className={`mt-1 ${errors.cpf ? "border-destructive" : ""}`}
+              placeholder="000.000.000-00"
+              className={`mt-1 font-mono ${errors.cpf ? "border-destructive" : ""}`}
               disabled={isSaving}
             />
             {errors.cpf && <p className="text-xs text-destructive mt-1">{errors.cpf}</p>}
@@ -149,14 +159,19 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
 
           <div>
             <Label htmlFor="client-phone">Telefone</Label>
-            <Input
+            <MaskedInput
               id="client-phone"
+              mask="phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Ex: (11) 99999-9999"
-              className="mt-1"
+              onValueChange={(v) => {
+                setPhone(v)
+                if (errors.phone) setErrors({ ...errors, phone: "" })
+              }}
+              placeholder="(11) 99999-9999"
+              className={`mt-1 font-mono ${errors.phone ? "border-destructive" : ""}`}
               disabled={isSaving}
             />
+            {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
           </div>
         </div>
 

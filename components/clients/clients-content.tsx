@@ -18,6 +18,7 @@ import {
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
+import { formatCpf, formatPhone, onlyDigits } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
@@ -93,10 +94,12 @@ export function ClientsContent() {
 
   const filteredClients = clients.filter((client) => {
     const term = searchTerm.toLowerCase()
+    const termDigits = onlyDigits(searchTerm)
     return (
       client.name.toLowerCase().includes(term) ||
       client.email.toLowerCase().includes(term) ||
-      client.cpf.toLowerCase().includes(term)
+      client.cpf.toLowerCase().includes(term) ||
+      (termDigits.length >= 3 && onlyDigits(client.cpf).includes(termDigits))
     )
   })
 
@@ -312,7 +315,7 @@ export function ClientsContent() {
               <div className="space-y-3">
                 <div>
                   <h3 className="font-semibold text-lg line-clamp-1">{client.name}</h3>
-                  <p className="text-xs text-muted-foreground">{client.cpf}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{formatCpf(client.cpf)}</p>
                   {isClienteAnonimizado(client) && (
                     <Badge variant="outline" className="mt-1">
                       Anonimizado
@@ -325,7 +328,7 @@ export function ClientsContent() {
                     <span className="text-foreground">Email:</span> {client.email || "—"}
                   </p>
                   <p className="text-muted-foreground line-clamp-1">
-                    <span className="text-foreground">Telefone:</span> {client.phone || "—"}
+                    <span className="text-foreground">Telefone:</span> {formatPhone(client.phone)}
                   </p>
                 </div>
 

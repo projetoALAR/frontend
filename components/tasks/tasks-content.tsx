@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
+import { formatCnj, onlyDigits } from "@/lib/masks"
 import { ListEmptyState } from "@/components/shared/list-empty-state"
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
@@ -116,11 +117,14 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     if (filter === "concluidas") situacaoMatch = task.completed
     else if (filter === "ativas") situacaoMatch = !task.completed
 
+    const term = searchTerm.toLowerCase()
+    const termDigits = onlyDigits(searchTerm)
     const searchMatch =
-      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.project.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (task.cliente?.nome ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+      task.title.toLowerCase().includes(term) ||
+      task.project.toLowerCase().includes(term) ||
+      task.numero.toLowerCase().includes(term) ||
+      (termDigits.length >= 4 && onlyDigits(task.numero).includes(termDigits)) ||
+      (task.cliente?.nome ?? "").toLowerCase().includes(term)
 
     let statusMatch = true
     if (filters.statuses.length > 0) {
@@ -344,7 +348,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
                       <Calendar className="w-4 h-4 shrink-0" />
                       {task.dueDate}
                     </span>
-                    <span className="break-all">{task.numero}</span>
+                    <span className="break-all font-mono">{formatCnj(task.numero)}</span>
                     {task.cliente?.nome && <span className="truncate max-w-full">{task.cliente.nome}</span>}
                   </div>
                   <div className="flex gap-2 flex-wrap">
