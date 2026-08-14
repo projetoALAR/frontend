@@ -3,8 +3,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  // Pendente: 2 erros TS em components/tasks/case-modal.tsx (status tipado vs string).
-  // Remover quando o status do formulário usar ProcessoStatus canônico.
+  // Pendente: erros de tipo em components/auth/auth-provider.tsx,
+  // components/tasks/case-modal.tsx, lib/chat-api.ts e lib/processo-mapper.ts.
+  // Ver auditoria (Passo 4) para a lista completa antes de remover esta flag.
   typescript: {
     ignoreBuildErrors: true,
   },
