@@ -14,6 +14,7 @@ import {
   User,
   Bot,
   Calendar,
+  CalendarPlus,
   Tag,
   Briefcase,
   Download,
@@ -617,6 +618,12 @@ export function CasePanel({
                       <Calendar className="w-3 h-3" /> Prazo
                     </dt>
                     <dd className="text-sm font-medium">{localCase.dueDate || "—"}</dd>
+                  </div>
+                  <div className="rounded-md bg-background/80 border border-border/60 px-3 py-2.5 space-y-1">
+                    <dt className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <CalendarPlus className="w-3 h-3" /> Criado em
+                    </dt>
+                    <dd className="text-sm font-medium">{localCase.createdAt || "—"}</dd>
                   </div>
                   <div className="rounded-md bg-background/80 border border-border/60 px-3 py-2.5 space-y-1">
                     <dt className="text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">

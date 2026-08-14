@@ -8,6 +8,8 @@ export type CaseView = {
   priority: string
   dueDate: string
   dueDateIso: string | null
+  createdAt: string
+  createdAtIso: string
   completed: boolean
   tags: string[]
   numero: string
@@ -32,6 +34,8 @@ export function mapProcessoToCase(p: ProcessoApi): CaseView {
     priority: p.prioridade || "Média",
     dueDate: formatDatePt(p.prazo),
     dueDateIso: p.prazo,
+    createdAt: formatDatePt(p.criadoEm),
+    createdAtIso: p.criadoEm,
     completed: p.concluido,
     tags,
     numero: p.numero,
