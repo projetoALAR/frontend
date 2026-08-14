@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 export default function GlobalError({
   error,
 }: {
@@ -15,7 +17,7 @@ export default function GlobalError({
           <p style={{ fontSize: 12, color: "#666" }}>{error.message}</p>
         ) : null}
         <p>
-          <a href="/">Voltar ao painel</a>
+          <Link href="/">Voltar ao painel</Link>
         </p>
       </body>
     </html>
