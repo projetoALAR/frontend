@@ -31,7 +31,7 @@ const passos = [
   },
   {
     title: "Acompanhe o dia a dia",
-    text: "Na página do caso use Checklist, Documentos, Timeline, Prazos e Andamentos. Dá para registrar intimação, baixar a capa em PDF e sincronizar o tribunal.",
+    text: "Na página do caso use Checklist, Documentos, Timeline, Prazos e Andamentos. Em Andamentos, Consultar CNJ mostra a base pública; Importar grava no caso. Dá para registrar intimação e baixar a capa em PDF.",
   },
   {
     title: "Use a IA com revisão",
@@ -73,7 +73,7 @@ const faqs = [
   {
     question: "Como registrar um andamento?",
     answer:
-      "Na aba Andamentos, use Sincronizar para buscar movimentos do tribunal (DataJud) ou registre um andamento interno com data e descrição. Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
+      "Na aba Andamentos, use Consultar CNJ para ver os movimentos na base pública e Importar para gravar no caso. Também dá para registrar um andamento interno. Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
   },
   {
     question: "Como registrar uma intimação ou prazo?",

@@ -19,6 +19,8 @@ export type CaseView = {
   coResponsavelId: string | null
   responsavel?: ProcessoApi["responsavel"]
   coResponsavel?: ProcessoApi["coResponsavel"]
+  tribunalSigla: string | null
+  andamentosConsulta: ProcessoApi["andamentosConsulta"]
 }
 
 export function mapProcessoToCase(p: ProcessoApi): CaseView {
@@ -41,5 +43,7 @@ export function mapProcessoToCase(p: ProcessoApi): CaseView {
     coResponsavelId: p.coResponsavelId ?? null,
     responsavel: p.responsavel,
     coResponsavel: p.coResponsavel,
+    tribunalSigla: p.tribunalSigla ?? null,
+    andamentosConsulta: p.andamentosConsulta ?? null,
   }
 }

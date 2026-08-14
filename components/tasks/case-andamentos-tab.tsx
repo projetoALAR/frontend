@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { History, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react"
+import { History, Loader2, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MaskedInput } from "@/components/ui/masked-input"
@@ -9,8 +9,16 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { formatDatePt } from "@/lib/format"
-import { andamentosApi, type AndamentoApi } from "@/lib/andamentos-api"
+import { formatDatePt, formatDateTimePt } from "@/lib/format"
+import {
+  andamentosApi,
+  type AndamentoApi,
+  type ResultadoConsultaPublica,
+  type ResultadoSyncAndamentos,
+} from "@/lib/andamentos-api"
+import type { ProcessoApi } from "@/lib/processos-api"
+
+type ConsultaCaso = NonNullable<ProcessoApi["andamentosConsulta"]>
 
 type CaseAndamentosTabProps = {
   processoId: string | null
@@ -23,10 +31,30 @@ type CaseAndamentosTabProps = {
   onSaveCnj: () => Promise<void> | void
   savingCnj: boolean
   cnjDirty: boolean
+  consulta?: ConsultaCaso | null
+  onConsultaChange?: (consulta: ConsultaCaso) => void
 }
 
 function hojeIsoDate() {
   return new Date().toISOString().slice(0, 10)
+}
+
+function snapshotDeSync(resultado: ResultadoSyncAndamentos): ConsultaCaso {
+  return {
+    em: resultado.em,
+    status: resultado.status,
+    mensagem: resultado.mensagem,
+    tribunalSigla: resultado.tribunalSigla,
+    tribunalNome: resultado.tribunalNome,
+    inseridos: resultado.inseridos,
+    jaExistentes: resultado.jaExistentes,
+    totalNaFonte: resultado.totalNaFonte,
+    ultimoMovimento: resultado.ultimoMovimento,
+  }
+}
+
+function parecePrazo(texto: string) {
+  return /intima|cita[cç]|audi[eê]ncia|pauta|senten[cç]a/i.test(texto)
 }
 
 export function CaseAndamentosTab({
@@ -40,11 +68,15 @@ export function CaseAndamentosTab({
   onSaveCnj,
   savingCnj,
   cnjDirty,
+  consulta,
+  onConsultaChange,
 }: CaseAndamentosTabProps) {
   const { toast } = useToast()
   const [andamentos, setAndamentos] = useState<AndamentoApi[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const [consultando, setConsultando] = useState(false)
+  const [preview, setPreview] = useState<ResultadoConsultaPublica | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [descricao, setDescricao] = useState("")
@@ -68,6 +100,46 @@ export function CaseAndamentosTab({
     }
   }, [active, processoId, carregar])
 
+  const handleConsultar = async () => {
+    const numero = cnjDraft.trim()
+    if (!numero) {
+      toast({
+        title: "Informe o número CNJ",
+        description: "Salve o número do processo para consultar a base pública.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (cnjDirty) {
+      toast({
+        title: "Salve o número CNJ",
+        description: "Há alterações não salvas no número do processo.",
+        variant: "destructive",
+      })
+      return
+    }
+    setConsultando(true)
+    try {
+      const resultado = await andamentosApi.consultar(numero)
+      setPreview(resultado)
+      if (!resultado.ok) {
+        toast({
+          title: "Consulta ao CNJ",
+          description: resultado.motivo || "Não encontrado na base pública.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Falha ao consultar o CNJ",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setConsultando(false)
+    }
+  }
+
   const handleSync = async () => {
     if (!processoId) return
     if (cnjDirty) {
@@ -81,21 +153,24 @@ export function CaseAndamentosTab({
     setSyncing(true)
     try {
       const resultado = await andamentosApi.sincronizar(processoId)
+      onConsultaChange?.(snapshotDeSync(resultado))
       await carregar()
+      setPreview(null)
       if (resultado.inseridos > 0) {
         toast({
-          title: "Andamentos sincronizados",
-          description: `${resultado.inseridos} novo(s) andamento(s) encontrado(s).`,
+          title: "Andamentos importados",
+          description: resultado.mensagem,
         })
-      } else if (resultado.motivo) {
+      } else if (!resultado.ok) {
         toast({
-          title: "Nenhum andamento novo",
-          description: resultado.motivo,
+          title: "Consulta sem andamentos novos",
+          description: resultado.motivo || resultado.mensagem,
+          variant: "destructive",
         })
       } else {
         toast({
           title: "Sincronização concluída",
-          description: "Nenhum andamento novo desde a última consulta.",
+          description: resultado.mensagem,
         })
       }
     } catch (error) {
@@ -150,6 +225,12 @@ export function CaseAndamentosTab({
     }
   }
 
+  const ultimoTexto =
+    consulta?.ultimoMovimento?.descricao ||
+    preview?.movimentos[0]?.descricao ||
+    andamentos.find((a) => !a.manual)?.descricao ||
+    ""
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -157,23 +238,38 @@ export function CaseAndamentosTab({
           <History className="w-4 h-4 text-muted-foreground" />
           Andamentos
         </h4>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={syncing || savingCnj || !processoId}
-          onClick={() => void handleSync()}
-        >
-          {syncing ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-1" />
-          ) : (
-            <RefreshCw className="w-4 h-4 mr-1" />
-          )}
-          Sincronizar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={consultando || savingCnj || !cnjDraft.trim()}
+            onClick={() => void handleConsultar()}
+          >
+            {consultando ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <Search className="w-4 h-4 mr-1" />
+            )}
+            Consultar CNJ
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={syncing || savingCnj || !processoId}
+            onClick={() => void handleSync()}
+          >
+            {syncing ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-1" />
+            )}
+            Importar
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground rounded-md border border-border bg-secondary/40 px-3 py-2">
-        A sincronização consulta a base pública do CNJ (DataJud). Não há garantia de completude nem de atualização em tempo real — registre o andamento interno quando o tribunal atrasar ou o movimento não aparecer.
+        Consulta gratuita à base pública do CNJ (DataJud) — uso não comercial. Não é o Jusbrasil: a base pode estar incompleta ou atrasada. Andamento interno continua valendo quando o tribunal não devolver o movimento.
       </p>
 
       <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
@@ -200,11 +296,69 @@ export function CaseAndamentosTab({
               </Button>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Consulta pública do CNJ (DataJud). Sem garantia de completude; não substitui o andamento interno do escritório.
-          </p>
+          {consulta?.tribunalNome || preview?.tribunalNome ? (
+            <p className="text-xs text-muted-foreground">
+              Tribunal: {preview?.tribunalNome || consulta?.tribunalNome}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              O tribunal é identificado pelos dígitos do CNJ (ex.: 8.26 = TJSP).
+            </p>
+          )}
         </div>
+        {consulta?.em ? (
+          <p className="text-xs text-muted-foreground">
+            Última consulta: {formatDateTimePt(consulta.em)}
+            {consulta.mensagem ? ` — ${consulta.mensagem}` : ""}
+          </p>
+        ) : null}
+        {parecePrazo(ultimoTexto) ? (
+          <p className="text-xs rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
+            Há movimento de intimação, citação ou audiência. Confira a aba Prazos se ainda não lançou o vencimento.
+          </p>
+        ) : null}
       </section>
+
+      {preview ? (
+        <section className="rounded-lg border border-border p-4 space-y-2">
+          <p className="text-sm font-medium">
+            {preview.ok
+              ? `Base pública (${preview.tribunalNome || "CNJ"})`
+              : "Resultado da consulta"}
+          </p>
+          {!preview.ok ? (
+            <p className="text-sm text-muted-foreground">{preview.motivo}</p>
+          ) : preview.movimentos.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum movimento devolvido.</p>
+          ) : (
+            <ol className="space-y-2 max-h-64 overflow-auto">
+              {preview.movimentos.map((item, index) => (
+                <li key={`${item.data}-${index}`} className="text-sm">
+                  <span className="text-xs text-muted-foreground mr-2">
+                    {formatDatePt(item.data)}
+                  </span>
+                  {item.descricao}
+                  {item.explicacao ? (
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                      {item.explicacao}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          )}
+          {preview.ok ? (
+            <p className="text-xs text-muted-foreground">
+              Use Importar para gravar no caso só o que ainda não está na timeline.
+            </p>
+          ) : null}
+          {preview.caso ? (
+            <p className="text-xs text-muted-foreground">
+              Este número já está no caso {preview.caso.titulo || preview.caso.numero}.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {canCreate && (
         <section className="rounded-lg border border-border bg-secondary/40 p-4 space-y-3">
@@ -253,7 +407,7 @@ export function CaseAndamentosTab({
         </div>
       ) : andamentos.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-4">
-          Nenhum andamento ainda. Sincronize o tribunal ou registre um movimento interno.
+          Nenhum andamento neste caso. Consulte o CNJ, importe ou registre um movimento interno.
         </p>
       ) : (
         <ol className="relative space-y-0 border-l border-border ml-2">

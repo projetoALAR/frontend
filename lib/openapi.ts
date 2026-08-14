@@ -83,6 +83,18 @@ export type ProcessoRespostaDto = {
   prazo?: string | null
   tags?: string[] | null
   concluido: boolean
+  tribunalSigla?: string | null
+  andamentosConsulta?: {
+    em?: string
+    status?: string
+    mensagem?: string
+    tribunalSigla?: string | null
+    tribunalNome?: string | null
+    inseridos?: number
+    jaExistentes?: number
+    totalNaFonte?: number
+    ultimoMovimento?: { data: string; descricao: string } | null
+  } | null
   clienteId: string
   responsavelId?: string | null
   coResponsavelId?: string | null

@@ -942,6 +942,12 @@ export function CasePanel({
               onSaveCnj={handleSaveCnj}
               savingCnj={savingCnj}
               cnjDirty={cnjDraft.trim() !== (localCase?.numero || "")}
+              consulta={localCase?.andamentosConsulta}
+              onConsultaChange={(andamentosConsulta) => {
+                setLocalCase((atual) =>
+                  atual ? { ...atual, andamentosConsulta } : atual,
+                )
+              }}
             />
           </TabsContent>
 
