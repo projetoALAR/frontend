@@ -46,6 +46,22 @@ export type CreateClienteDto = {
 
 export type UpdateClienteDto = Partial<CreateClienteDto>
 
+export type DadosClienteExtraidos = {
+  nome?: string | null
+  tipo?: "PF" | "PJ" | null
+  cpf?: string | null
+  cnpj?: string | null
+  nomeFantasia?: string | null
+  rg?: string | null
+  email?: string | null
+  telefone?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  uf?: string | null
+  cep?: string | null
+  avisos?: string[]
+}
+
 export type UsuarioResumoDto = {
   id: string
   nome: string
@@ -150,6 +166,7 @@ export type components = {
     ClienteCountDto: ClienteCountDto
     CreateClienteDto: CreateClienteDto
     UpdateClienteDto: UpdateClienteDto
+    DadosClienteExtraidos: DadosClienteExtraidos
     ProcessoRespostaDto: ProcessoRespostaDto
     CreateProcessoDto: CreateProcessoDto
     DocumentoRespostaDto: DocumentoRespostaDto

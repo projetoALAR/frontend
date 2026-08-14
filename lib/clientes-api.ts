@@ -4,6 +4,7 @@ import type { components } from "@/lib/openapi"
 export type ClienteApi = components["schemas"]["ClienteRespostaDto"]
 export type ClienteFormData = components["schemas"]["CreateClienteDto"]
 export type ClienteTipo = "PF" | "PJ"
+export type DadosClienteExtraidos = components["schemas"]["DadosClienteExtraidos"]
 
 export type ClienteCard = {
   id: string
@@ -65,4 +66,9 @@ export const clientesApi = {
       processos: unknown[]
     }>(`/clientes/${id}/export`),
   anonimizar: (id: string) => api.post<ClienteApi>(`/clientes/${id}/anonimizar`),
+  extrairDados: (arquivo: File) => {
+    const formData = new FormData()
+    formData.append("arquivo", arquivo)
+    return api.upload<DadosClienteExtraidos>("/clientes/extrair-dados", formData)
+  },
 }

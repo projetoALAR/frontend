@@ -111,6 +111,7 @@ export function AuditoriaContent() {
               <SelectItem value="CRIAR">Criou</SelectItem>
               <SelectItem value="EDITAR">Editou</SelectItem>
               <SelectItem value="EXCLUIR">Excluiu</SelectItem>
+              <SelectItem value="EXTRACAO_IA">Extraiu dados (IA)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -131,7 +132,7 @@ export function AuditoriaContent() {
               <TableHead>Quando</TableHead>
               <TableHead>Quem</TableHead>
               <TableHead>Ação</TableHead>
-              <TableHead>O quê</TableHead>
+              <TableHead>Log</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

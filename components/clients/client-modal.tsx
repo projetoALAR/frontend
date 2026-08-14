@@ -13,10 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import { Loader2, Sparkles, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { ClienteCard, ClienteFormData, ClienteTipo } from "@/lib/clientes-api"
+import { AiDisclaimer } from "@/components/ai-disclaimer"
+import { clientesApi, type ClienteCard, type ClienteFormData, type ClienteTipo } from "@/lib/clientes-api"
 import { maskCep, maskCnpj, maskCpf, maskPhone, onlyDigits } from "@/lib/masks"
+
+const EXTRACAO_MIME_ALLOWLIST = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"]
 
 const UFS = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
@@ -48,6 +52,9 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
   const [observacoes, setObservacoes] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [isExtraindo, setIsExtraindo] = useState(false)
+  const [preenchidoPorIa, setPreenchidoPorIa] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen && clientData) {
@@ -65,6 +72,7 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
       setCep(maskCep(clientData.cep || ""))
       setObservacoes(clientData.observacoes || "")
       setErrors({})
+      setPreenchidoPorIa(false)
     } else if (isOpen) {
       setTipo("PF")
       setName("")
@@ -80,12 +88,78 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
       setCep("")
       setObservacoes("")
       setErrors({})
+      setPreenchidoPorIa(false)
     }
   }, [isOpen, clientData])
 
   const validateEmail = (value: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return re.test(value)
+  }
+
+  const handleArquivoSelecionado = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0]
+    e.target.value = ""
+    if (!arquivo) return
+
+    if (!EXTRACAO_MIME_ALLOWLIST.includes(arquivo.type)) {
+      toast({
+        title: "Formato não suportado",
+        description: "Envie um PDF, JPG, PNG ou WEBP.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsExtraindo(true)
+    try {
+      const dados = await clientesApi.extrairDados(arquivo)
+
+      if (dados.avisos?.includes("pdf_sem_texto")) {
+        toast({
+          title: "Não consegui ler esse PDF",
+          description: "Parece ser um PDF escaneado sem texto. Tente enviar uma foto ou print do documento.",
+          variant: "destructive",
+        })
+        return
+      }
+      if (dados.avisos?.includes("ia_resposta_invalida")) {
+        toast({
+          title: "Não consegui extrair os dados",
+          description: "A IA não conseguiu ler esse documento com segurança. Preencha manualmente.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (dados.tipo === "PF" || dados.tipo === "PJ") setTipo(dados.tipo)
+      if (dados.nome) setName(dados.nome)
+      if (dados.nomeFantasia) setNomeFantasia(dados.nomeFantasia)
+      if (dados.email) setEmail(dados.email)
+      if (dados.telefone) setPhone(maskPhone(dados.telefone))
+      if (dados.cpf) setCpf(maskCpf(dados.cpf))
+      if (dados.cnpj) setCnpj(maskCnpj(dados.cnpj))
+      if (dados.rg) setRg(dados.rg)
+      if (dados.endereco) setEndereco(dados.endereco)
+      if (dados.cidade) setCidade(dados.cidade)
+      if (dados.uf) setUf(dados.uf)
+      if (dados.cep) setCep(maskCep(dados.cep))
+      setErrors({})
+      setPreenchidoPorIa(true)
+
+      toast({
+        title: "Documento lido",
+        description: "Confira os dados preenchidos antes de salvar.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao ler o documento",
+        description: error instanceof Error ? error.message : "Não foi possível processar o arquivo",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExtraindo(false)
+    }
   }
 
   const handleSave = async () => {
@@ -163,6 +237,41 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
           <DialogTitle>{isEditing ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {!isEditing ? (
+            <div className="space-y-2 rounded-lg border border-dashed border-border p-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={EXTRACAO_MIME_ALLOWLIST.join(",")}
+                className="hidden"
+                onChange={(e) => void handleArquivoSelecionado(e)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isExtraindo || isSaving}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {isExtraindo ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-1" />
+                )}
+                {isExtraindo ? "Lendo documento..." : "Preencher automaticamente com um documento"}
+              </Button>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Upload className="w-3 h-3" />
+                RG, CNH, cartão CNPJ, contrato social... (PDF, JPG, PNG ou WEBP)
+              </p>
+              {preenchidoPorIa ? (
+                <AiDisclaimer compact>
+                  Dados preenchidos automaticamente por IA — confira antes de salvar.
+                </AiDisclaimer>
+              ) : null}
+            </div>
+          ) : null}
+
           <div>
             <Label>Tipo *</Label>
             <div className="mt-1 grid grid-cols-2 gap-2">
