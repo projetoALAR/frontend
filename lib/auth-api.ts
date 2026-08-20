@@ -113,5 +113,16 @@ export const authApi = {
 
   listUsers: () => api.get<AuthUser[]>("/auth/usuarios"),
 
+  adminEnviarLinkReset: (userId: string) =>
+    api.post<{ ok: boolean; devResetLink?: string }>(
+      `/auth/usuarios/${userId}/enviar-reset`,
+      {},
+    ),
+
+  adminDefinirSenhaTemporaria: (userId: string, senha: string) =>
+    api.post<{ ok: boolean }>(`/auth/usuarios/${userId}/senha-temporaria`, {
+      senha,
+    }),
+
   me: () => api.get<AuthUser>("/auth/me"),
 }

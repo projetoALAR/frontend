@@ -73,7 +73,7 @@ const faqs = [
   {
     question: "Como convidar membros da equipe?",
     answer:
-      "Acesse Equipe (admin). Dá para adicionar um a um ou usar Importar: envie a planilha do escritório, mapeie Nome/E-mail/Papel e defina uma senha temporária padrão. Limite: 100 por arquivo. Cada pessoa recebe e-mail de convite e, no primeiro login, é obrigada a trocar a senha.",
+      "Acesse Equipe (admin). Dá para adicionar um a um ou usar Importar: envie a planilha do escritório, mapeie Nome/E-mail/Papel e defina uma senha temporária padrão. Limite: 100 por arquivo. Cada pessoa recebe e-mail de convite e, no primeiro login, é obrigada a trocar a senha. Em Configurações → Usuários, o admin vê quem ainda tem troca pendente e pode enviar link de redefinição ou nova senha temporária.",
   },
   {
     question: "Esqueci minha senha. O que faço?",
