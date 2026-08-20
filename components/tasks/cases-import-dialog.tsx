@@ -28,6 +28,13 @@ export function CasesImportDialog({
         processosApi.importarCsv(arquivo, mapeamento)
       }
       dicaObrigatoria="Obrigatório: número do processo + CPF, CNPJ ou documento do cliente já cadastrado."
+      maxLinhas={500}
+      exigirUmDe={[
+        {
+          chaves: ["clienteCpf", "clienteCnpj", "clienteDocumento"],
+          rotulo: "CPF, CNPJ ou Documento do cliente",
+        },
+      ]}
     />
   )
 }

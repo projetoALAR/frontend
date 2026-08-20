@@ -53,17 +53,17 @@ const faqs = [
   {
     question: "Como importar vários clientes de uma planilha?",
     answer:
-      "Em Clientes, use Importar. Envie a planilha do escritório (.xlsx/.csv) — o Alar sugere o mapeamento das colunas (Nome, CPF, etc.). Confirme e importe. Também dá para baixar o modelo Excel Alar. Limite: 500 linhas. Só admin e advogado.",
+      "Em Clientes, use Importar. Envie a planilha (.xlsx/.csv) — o Alar sugere o mapeamento e só libera Confirmar quando o obrigatório estiver mapeado. No final, o relatório filtra erros/duplicados e permite baixar os problemas em CSV. Limite: 500 linhas. Só admin e advogado.",
   },
   {
     question: "Como importar vários casos de uma planilha?",
     answer:
-      "Primeiro importe os clientes. Em Casos, use Importar com a planilha de processos: mapeie número do processo e CPF/CNPJ do cliente. Status e prioridade podem vir do arquivo. Limite: 500 linhas. Só admin e advogado.",
+      "Primeiro importe os clientes. Em Casos, use Importar: mapeie número do processo e CPF, CNPJ ou Documento do cliente. Sem isso o botão de importar fica bloqueado. Relatório com filtros e CSV de problemas. Limite: 500 linhas. Só admin e advogado.",
   },
   {
     question: "A planilha do meu sistema tem nomes de colunas diferentes. E agora?",
     answer:
-      "Não precisa reescrever. Ao enviar o arquivo, a tela de mapeamento mostra cada coluna do seu Excel e o campo correspondente no Alar. Ajuste o que precisar e confirme. Se CPF e CNPJ estão na mesma coluna, use 'Documento (CPF ou CNPJ)'.",
+      "Não precisa reescrever. Ao enviar o arquivo, a tela de mapeamento mostra cada coluna do seu Excel e o campo no Alar. Ajuste o que precisar. Se CPF e CNPJ estão na mesma coluna, use 'Documento (CPF ou CNPJ)'. Linhas com problema aparecem no relatório e podem ser baixadas em CSV para corrigir.",
   },
   {
     question: "Como abrir a página de um caso?",
@@ -78,12 +78,17 @@ const faqs = [
   {
     question: "Esqueci minha senha. O que faço?",
     answer:
-      "Na tela de login, use Esqueci minha senha. Informe o e-mail da conta: se existir, chega um link válido por 1 hora. Depois defina uma senha forte (mínimo 10 caracteres, com maiúscula, minúscula e número).",
+      "Na tela de login, use Esqueci minha senha. Informe o e-mail da conta: se existir, chega um link válido por 1 hora. Depois defina uma senha forte (mínimo 10 caracteres, com maiúscula, minúscula e número). Em desenvolvimento, se o SMTP não estiver configurado, o próprio Alar mostra o link na tela.",
   },
   {
     question: "Por que o Alar pede troca de senha no primeiro acesso?",
     answer:
       "Contas criadas ou importadas pela equipe usam senha temporária. Até trocar, só a tela de troca de senha fica liberada. Depois disso o app funciona normalmente.",
+  },
+  {
+    question: "Como ativar o envio de e-mails (convite e reset)?",
+    answer:
+      "No backend, configure SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM e APP_URL (URL do front). Admin vê o status em Configurações → E-mail transacional. Sem SMTP, as mensagens aparecem só no inbox; em desenvolvimento o link de reset também aparece na tela.",
   },
   {
     question: "Como usar o filtro de datas nos casos?",

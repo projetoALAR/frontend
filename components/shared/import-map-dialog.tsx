@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type ReactNode } from "react"
+import { useMemo, useRef, useState, type ReactNode } from "react"
 import { Download, FileSpreadsheet, Loader2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,6 +29,8 @@ type RelatorioLinha = {
   motivo?: string
   nome?: string
   numero?: string
+  email?: string
+  clienteNome?: string
 }
 
 type RelatorioImportacao = {
@@ -38,6 +40,8 @@ type RelatorioImportacao = {
   erros: number
   resultados: RelatorioLinha[]
 }
+
+type ExigirUmDe = { chaves: string[]; rotulo: string }
 
 type ImportMapDialogProps = {
   open: boolean
@@ -53,11 +57,77 @@ type ImportMapDialogProps = {
     mapeamento: Record<string, string | null>,
   ) => Promise<RelatorioImportacao>
   dicaObrigatoria: string
+  /** Limite de linhas (clientes/casos 500, equipe 100). */
+  maxLinhas?: number
+  /** Grupos em que ao menos um campo deve estar mapeado. */
+  exigirUmDe?: ExigirUmDe[]
   /** Conteúdo extra na etapa de mapeamento (ex.: senha padrão). */
   extras?: ReactNode
 }
 
 type Passo = "upload" | "mapear" | "resultado"
+type FiltroResultado = "todos" | "problemas" | "erros" | "duplicados"
+
+function rotuloStatus(status: string): string {
+  if (status === "criado") return "Criado"
+  if (status === "duplicado") return "Duplicado"
+  if (status === "erro") return "Erro"
+  return status
+}
+
+function validarMapeamentoUi(
+  mapeamento: Record<string, string | null>,
+  preview: PreviewImportacao,
+  exigirUmDe?: ExigirUmDe[],
+): string | null {
+  const usados = new Set(
+    Object.values(mapeamento).filter((v): v is string => !!v),
+  )
+  for (const campo of preview.camposAlvo) {
+    if (!campo.obrigatorio || campo.documentoFlexivel) continue
+    if (!usados.has(campo.chave)) {
+      return `Mapeie a coluna obrigatória: ${campo.rotulo}`
+    }
+  }
+  for (const grupo of exigirUmDe ?? []) {
+    if (!grupo.chaves.some((k) => usados.has(k))) {
+      return `Mapeie ao menos uma coluna: ${grupo.rotulo}`
+    }
+  }
+  return null
+}
+
+function rotuloLinha(r: RelatorioLinha): string {
+  const partes = [r.nome, r.numero, r.email, r.clienteNome].filter(Boolean)
+  return partes.length ? partes.join(" · ") : ""
+}
+
+function csvEscapar(valor: string): string {
+  if (/[;"\n]/.test(valor)) return `"${valor.replace(/"/g, '""')}"`
+  return valor
+}
+
+function baixarProblemasCsv(resultado: RelatorioImportacao, titulo: string) {
+  const linhas = resultado.resultados.filter((r) => r.status !== "criado")
+  const header = "linha;status;identificacao;motivo"
+  const body = linhas
+    .map((r) =>
+      [
+        String(r.linha),
+        rotuloStatus(r.status),
+        rotuloLinha(r),
+        r.motivo ?? "",
+      ]
+        .map(csvEscapar)
+        .join(";"),
+    )
+    .join("\n")
+  const blob = new Blob(["\uFEFF" + header + "\n" + body], {
+    type: "text/csv;charset=utf-8",
+  })
+  const safe = titulo.toLowerCase().replace(/\s+/g, "-")
+  downloadBlob(blob, `importacao-${safe}-problemas.csv`)
+}
 
 export function ImportMapDialog({
   open,
@@ -70,6 +140,8 @@ export function ImportMapDialog({
   preview,
   importar,
   dicaObrigatoria,
+  maxLinhas = 500,
+  exigirUmDe,
   extras,
 }: ImportMapDialogProps) {
   const { toast } = useToast()
@@ -81,6 +153,7 @@ export function ImportMapDialog({
   const [previewData, setPreviewData] = useState<PreviewImportacao | null>(null)
   const [mapeamento, setMapeamento] = useState<Record<string, string | null>>({})
   const [resultado, setResultado] = useState<RelatorioImportacao | null>(null)
+  const [filtro, setFiltro] = useState<FiltroResultado>("problemas")
 
   const reset = () => {
     setPasso("upload")
@@ -88,8 +161,14 @@ export function ImportMapDialog({
     setPreviewData(null)
     setMapeamento({})
     setResultado(null)
+    setFiltro("problemas")
     setBusy(false)
   }
+
+  const erroMapeamento = useMemo(() => {
+    if (!previewData) return null
+    return validarMapeamentoUi(mapeamento, previewData, exigirUmDe)
+  }, [mapeamento, previewData, exigirUmDe])
 
   const handleBaixarModelo = async () => {
     setBaixando(true)
@@ -126,11 +205,26 @@ export function ImportMapDialog({
     setResultado(null)
     try {
       const res = await preview(file)
+      if (res.totalLinhas === 0) {
+        toast({
+          title: "Arquivo sem dados",
+          description: "Não há linhas para importar. Verifique a aba Dados.",
+          variant: "destructive",
+        })
+        return
+      }
+      if (res.totalLinhas > maxLinhas) {
+        toast({
+          title: "Arquivo grande demais",
+          description: `Limite de ${maxLinhas} linhas por importação. Divida o arquivo.`,
+          variant: "destructive",
+        })
+        return
+      }
       const map: Record<string, string | null> = {}
       res.sugestoes.forEach((s, i) => {
         map[String(i)] = s
       })
-      // evita sugerir o mesmo campo duas vezes
       const vistos = new Set<string>()
       for (const [k, v] of Object.entries(map)) {
         if (!v) continue
@@ -158,15 +252,29 @@ export function ImportMapDialog({
 
   const handleImportar = async () => {
     if (!arquivo || !previewData) return
+    const erro = validarMapeamentoUi(mapeamento, previewData, exigirUmDe)
+    if (erro) {
+      toast({
+        title: "Mapeamento incompleto",
+        description: erro,
+        variant: "destructive",
+      })
+      return
+    }
     setBusy(true)
     try {
       const res = await importar(arquivo, mapeamento)
       setResultado(res)
       setPasso("resultado")
-      onImported()
+      setFiltro(res.erros + res.duplicados > 0 ? "problemas" : "todos")
+      if (res.criados > 0) onImported()
       toast({
-        title: "Importação concluída",
+        title:
+          res.criados > 0
+            ? "Importação concluída"
+            : "Nenhuma linha criada",
         description: `${res.criados} criado(s), ${res.duplicados} duplicado(s), ${res.erros} erro(s).`,
+        variant: res.criados > 0 ? "default" : "destructive",
       })
     } catch (error) {
       toast({
@@ -182,6 +290,16 @@ export function ImportMapDialog({
   const camposUsados = new Set(
     Object.values(mapeamento).filter((v): v is string => !!v),
   )
+
+  const linhasFiltradas = useMemo(() => {
+    if (!resultado) return []
+    return resultado.resultados.filter((r) => {
+      if (filtro === "todos") return true
+      if (filtro === "problemas") return r.status !== "criado"
+      if (filtro === "erros") return r.status === "erro"
+      return r.status === "duplicado"
+    })
+  }, [resultado, filtro])
 
   return (
     <Dialog
@@ -209,7 +327,7 @@ export function ImportMapDialog({
                 Já tem planilha do escritório? Envie direto — o sistema sugere o
                 mapeamento das colunas.
               </li>
-              <li>Confirme o mapeamento e importe (até 500 linhas).</li>
+              <li>Confirme o mapeamento e importe (até {maxLinhas} linhas).</li>
             </ol>
 
             <div className="flex flex-wrap gap-2">
@@ -263,6 +381,16 @@ export function ImportMapDialog({
               {" · "}
               {previewData.totalLinhas} linha(s). {dicaObrigatoria}
             </p>
+
+            {erroMapeamento ? (
+              <p className="text-sm text-amber-700 dark:text-amber-300 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                {erroMapeamento}
+              </p>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                Mapeamento pronto para importar.
+              </p>
+            )}
 
             <div className="rounded-lg border border-border overflow-hidden">
               <div className="grid grid-cols-[1fr_1fr] gap-0 text-xs font-medium bg-muted/50 px-3 py-2 border-b">
@@ -351,7 +479,7 @@ export function ImportMapDialog({
               <Button
                 type="button"
                 size="sm"
-                disabled={busy}
+                disabled={busy || Boolean(erroMapeamento)}
                 onClick={() => void handleImportar()}
               >
                 {busy ? (
@@ -365,43 +493,97 @@ export function ImportMapDialog({
 
         {passo === "resultado" && resultado && (
           <div className="space-y-4">
-            <div className="rounded-lg border border-border p-3 space-y-2">
+            <div className="rounded-lg border border-border p-3 space-y-3">
               <p className="text-sm font-medium">
                 Relatório: {resultado.criados} criado(s) · {resultado.duplicados}{" "}
-                duplicado(s) · {resultado.erros} erro(s) · {resultado.total} linha(s)
+                duplicado(s) · {resultado.erros} erro(s) · {resultado.total}{" "}
+                linha(s)
               </p>
-              {resultado.resultados.some((r) => r.status !== "criado") ? (
-                <ul className="max-h-48 overflow-auto text-xs space-y-1">
-                  {resultado.resultados
-                    .filter((r) => r.status !== "criado")
-                    .map((r) => (
-                      <li key={`${r.linha}-${r.status}-${r.numero ?? r.nome ?? ""}`}>
-                        Linha {r.linha}
-                        {r.nome || r.numero ? ` (${r.nome || r.numero})` : ""}:{" "}
-                        {r.status}
+
+              <div className="flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["problemas", "Problemas"],
+                    ["erros", "Erros"],
+                    ["duplicados", "Duplicados"],
+                    ["todos", "Todos"],
+                  ] as const
+                ).map(([id, label]) => (
+                  <Button
+                    key={id}
+                    type="button"
+                    size="sm"
+                    variant={filtro === id ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setFiltro(id)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+
+              {linhasFiltradas.length > 0 ? (
+                <ul className="max-h-48 overflow-auto text-xs space-y-1.5">
+                  {linhasFiltradas.map((r) => {
+                    const id = rotuloLinha(r)
+                    return (
+                      <li
+                        key={`${r.linha}-${r.status}-${id}`}
+                        className="border-b border-border/60 pb-1 last:border-0"
+                      >
+                        <span className="font-medium">Linha {r.linha}</span>
+                        {id ? ` · ${id}` : ""}:{" "}
+                        <span
+                          className={
+                            r.status === "erro"
+                              ? "text-destructive"
+                              : r.status === "duplicado"
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-emerald-700 dark:text-emerald-400"
+                          }
+                        >
+                          {rotuloStatus(r.status)}
+                        </span>
                         {r.motivo ? ` — ${r.motivo}` : ""}
                       </li>
-                    ))}
+                    )
+                  })}
                 </ul>
               ) : (
-                <p className="text-xs text-muted-foreground">Todas as linhas foram criadas.</p>
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma linha neste filtro.
+                </p>
               )}
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap justify-between gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  reset()
-                  setPasso("upload")
-                }}
+                disabled={
+                  !resultado.resultados.some((r) => r.status !== "criado")
+                }
+                onClick={() => baixarProblemasCsv(resultado, titulo)}
               >
-                Importar outro
+                <Download className="w-4 h-4 mr-1" />
+                Baixar problemas (CSV)
               </Button>
-              <Button type="button" size="sm" onClick={() => onOpenChange(false)}>
-                Fechar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    reset()
+                    setPasso("upload")
+                  }}
+                >
+                  Importar outro
+                </Button>
+                <Button type="button" size="sm" onClick={() => onOpenChange(false)}>
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         )}

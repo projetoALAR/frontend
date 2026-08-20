@@ -16,6 +16,7 @@ import { canCreateUsers, canUseTwoFactor, ROLE_LABELS } from "@/lib/roles"
 import { AdminUsersPanel } from "@/components/settings/admin-users-panel"
 import { ChangePasswordCard } from "@/components/settings/change-password-card"
 import { TwoFactorCard } from "@/components/settings/two-factor-card"
+import { EmailStatusCard } from "@/components/settings/email-status-card"
 
 const defaultNotifications: NotificacoesPrefs = {
   email: true,
@@ -250,6 +251,7 @@ export function SettingsContent() {
         </div>
       </Card>
 
+      {canCreateUsers(user?.role) && <EmailStatusCard />}
       {canCreateUsers(user?.role) && <AdminUsersPanel />}
     </div>
   )

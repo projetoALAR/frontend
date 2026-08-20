@@ -97,7 +97,9 @@ export const authApi = {
     }),
 
   forgotPassword: (email: string) =>
-    api.post<{ ok: boolean }>("/auth/forgot-password", { email }),
+    api.post<{ ok: boolean; devResetLink?: string }>("/auth/forgot-password", {
+      email,
+    }),
 
   resetPassword: (token: string, novaSenha: string) =>
     api.post<{ ok: boolean }>("/auth/reset-password", { token, novaSenha }),

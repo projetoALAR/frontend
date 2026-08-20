@@ -36,6 +36,7 @@ export function TeamImportDialog({
         equipeApi.importar(arquivo, mapeamento, senhaPadrao)
       }
       dicaObrigatoria="Obrigatório: Nome e E-mail. Papel padrão: ASSISTENTE. Peça troca de senha no 1º acesso."
+      maxLinhas={100}
       extras={
         <div className="space-y-1.5 rounded-lg border border-border p-3">
           <Label htmlFor="senha-padrao-equipe" className="text-sm">

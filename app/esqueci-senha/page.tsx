@@ -15,17 +15,27 @@ export default function EsqueciSenhaPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [enviado, setEnviado] = useState(false)
+  const [devResetLink, setDevResetLink] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setDevResetLink(null)
     try {
-      await authApi.forgotPassword(email)
+      const result = await authApi.forgotPassword(email)
       setEnviado(true)
-      toast({
-        title: "Se o e-mail existir, enviamos o link",
-        description: "Verifique a caixa de entrada (e o spam).",
-      })
+      if (result.devResetLink) {
+        setDevResetLink(result.devResetLink)
+        toast({
+          title: "Modo desenvolvimento",
+          description: "SMTP off — use o link abaixo para redefinir a senha.",
+        })
+      } else {
+        toast({
+          title: "Se o e-mail existir, enviamos o link",
+          description: "Verifique a caixa de entrada (e o spam).",
+        })
+      }
     } catch (error) {
       toast({
         title: "Não foi possível enviar",
@@ -45,9 +55,25 @@ export default function EsqueciSenhaPage() {
         </div>
         <h1 className="text-xl font-semibold text-center">Esqueci minha senha</h1>
         {enviado ? (
-          <p className="text-sm text-muted-foreground text-center">
-            Se houver conta com esse e-mail, você receberá um link válido por 1 hora.
-          </p>
+          <div className="space-y-3 text-sm text-muted-foreground text-center">
+            <p>
+              Se houver conta com esse e-mail, você receberá um link válido por 1
+              hora.
+            </p>
+            {devResetLink ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-left space-y-2">
+                <p className="text-amber-800 dark:text-amber-200 font-medium">
+                  Desenvolvimento (SMTP não configurado)
+                </p>
+                <a
+                  href={devResetLink}
+                  className="text-primary underline break-all text-xs"
+                >
+                  {devResetLink}
+                </a>
+              </div>
+            ) : null}
+          </div>
         ) : (
           <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div className="space-y-2">

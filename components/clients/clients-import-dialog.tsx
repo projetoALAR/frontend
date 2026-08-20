@@ -28,6 +28,7 @@ export function ClientsImportDialog({
         clientesApi.importarCsv(arquivo, mapeamento)
       }
       dicaObrigatoria="Obrigatório mapear Nome. CPF/CNPJ podem ser colunas separadas ou uma só (Documento)."
+      maxLinhas={500}
     />
   )
 }
