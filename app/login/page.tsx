@@ -91,19 +91,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div id="main-content" className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-6 space-y-6">
+    <div
+      id="main-content"
+      className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.88 0.06 250 / 0.55), transparent), oklch(0.97 0.005 240)",
+      }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "linear-gradient(oklch(0.42 0.18 250 / 0.06) 1px, transparent 1px), linear-gradient(90deg, oklch(0.42 0.18 250 / 0.06) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      <Card className="relative w-full max-w-md p-6 sm:p-8 space-y-6 shadow-lg border-border/80">
         <div className="space-y-3 text-center">
           <AlarLogo variant="full" size="lg" className="justify-center" />
-          <h1 className="sr-only">
-            {preAuthToken ? "Verificação em duas etapas" : isRegister ? "Criar conta no Alar" : "Entrar no Alar"}
+          <h1 className="text-xl font-semibold text-foreground tracking-tight">
+            {preAuthToken
+              ? "Verificação em duas etapas"
+              : isRegister
+                ? "Criar conta no Alar"
+                : "Entrar no Alar"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {preAuthToken
               ? "Digite o código do autenticador"
               : isRegister
-                ? "Crie uma nova conta"
-                : "Entre na sua conta"}
+                ? "Crie uma nova conta para o escritório"
+                : "Acesse a gestão jurídica do escritório"}
           </p>
         </div>
 

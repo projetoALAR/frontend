@@ -454,11 +454,15 @@ export function CasePanel({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 {isPage ? (
-                  <h1 className="text-left text-base leading-snug font-semibold">{localCase.title}</h1>
+                  <h1 className="text-left text-xl md:text-2xl leading-snug font-semibold tracking-tight">
+                    {localCase.title}
+                  </h1>
                 ) : (
                   <SheetTitle className="text-left text-base leading-snug">{localCase.title}</SheetTitle>
                 )}
-                <p className="text-xs text-muted-foreground mt-1 font-mono">{formatCnj(localCase.numero)}</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 font-mono">
+                  {formatCnj(localCase.numero)}
+                </p>
                 <div className="flex gap-2 mt-2.5 flex-wrap">
                   <Badge variant={localCase.priority === "Alta" ? "destructive" : localCase.priority === "Baixa" ? "secondary" : "default"}>
                     {localCase.priority}
@@ -502,26 +506,26 @@ export function CasePanel({
           className="flex-1 flex flex-col min-h-0 overflow-hidden gap-0"
         >
           <TabsList className="mx-4 mt-3 flex w-[calc(100%-2rem)] overflow-x-auto shrink-0 justify-start h-auto p-1 gap-1">
-            <TabsTrigger value="info" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Informações">
-              <Briefcase className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Info</span>
+            <TabsTrigger value="info" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Informações">
+              <Briefcase className="w-4 h-4" /><span>Info</span>
             </TabsTrigger>
-            <TabsTrigger value="tarefas" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Checklist">
-              <ListTodo className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Checklist</span>
+            <TabsTrigger value="tarefas" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Checklist">
+              <ListTodo className="w-4 h-4" /><span>Check</span>
             </TabsTrigger>
-            <TabsTrigger value="docs" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Documentos">
-              <FolderOpen className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Docs</span>
+            <TabsTrigger value="docs" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Documentos">
+              <FolderOpen className="w-4 h-4" /><span>Docs</span>
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Timeline">
-              <Clock className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Timeline</span>
+            <TabsTrigger value="timeline" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Timeline">
+              <Clock className="w-4 h-4" /><span>Time</span>
             </TabsTrigger>
-            <TabsTrigger value="prazos" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Prazos">
-              <AlertCircle className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Prazos</span>
+            <TabsTrigger value="prazos" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Prazos">
+              <AlertCircle className="w-4 h-4" /><span>Prazos</span>
             </TabsTrigger>
-            <TabsTrigger value="andamentos" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Andamentos">
-              <History className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Andamentos</span>
+            <TabsTrigger value="andamentos" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Andamentos">
+              <History className="w-4 h-4" /><span className="hidden sm:inline">Andam.</span>
             </TabsTrigger>
-            <TabsTrigger value="chat" className="shrink-0 px-2 sm:px-3 min-h-10" aria-label="Chat IA">
-              <MessageCircle className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Chat</span>
+            <TabsTrigger value="chat" className="shrink-0 gap-1 px-2 sm:px-3 min-h-10 text-[11px] sm:text-sm" aria-label="Chat IA">
+              <MessageCircle className="w-4 h-4" /><span>Chat</span>
             </TabsTrigger>
           </TabsList>
 

@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Sidebar } from "@/components/dashboard/sidebar"
-import { MobileNav } from "@/components/dashboard/mobile-nav"
-import { GlobalSearch } from "@/components/search/global-search"
+import { AppShell } from "@/components/layout/app-shell"
+import { Header } from "@/components/dashboard/header"
 import { CasePanel } from "@/components/tasks/case-panel"
 import { Button } from "@/components/ui/button"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
+import { ListEmptyState } from "@/components/shared/list-empty-state"
 import { processosApi } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
 import { rotas } from "@/lib/app-routes"
+import { FolderKanban } from "lucide-react"
 
 export default function CasoPage() {
   const params = useParams<{ id: string }>()
@@ -44,36 +45,35 @@ export default function CasoPage() {
   }, [id])
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main
-        id="main-content"
-        className="flex-1 min-w-0 p-4 md:p-6 md:ml-64 overflow-x-hidden flex flex-col min-h-screen"
-      >
-        <header className="flex items-center gap-2 mb-4 shrink-0">
-          <MobileNav />
-          <GlobalSearch />
-        </header>
+    <AppShell mainClassName="flex flex-col min-h-screen">
+      <div className="shrink-0 mb-4">
+        <Header
+          title="Caso"
+          description="Ficha do processo — prazos, documentos e andamentos."
+        />
+      </div>
 
-        {loading ? (
-          <ListSkeleton variant="detail" />
-        ) : error || !caseData ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
-            <p className="text-sm text-muted-foreground">{error || "Caso não encontrado"}</p>
-            <Button variant="outline" onClick={() => router.push(rotas.casos)}>
-              Voltar aos casos
-            </Button>
-          </div>
-        ) : (
-          <CasePanel
-            layout="page"
-            isOpen
-            caseData={caseData}
-            onClose={() => router.push(rotas.casos)}
-            onUpdated={setCaseData}
-          />
-        )}
-      </main>
-    </div>
+      {loading ? (
+        <ListSkeleton variant="detail" />
+      ) : error || !caseData ? (
+        <ListEmptyState
+          icon={FolderKanban}
+          title="Caso não encontrado"
+          description={error || "Este caso não existe ou você não tem acesso."}
+        >
+          <Button variant="outline" onClick={() => router.push(rotas.casos)}>
+            Voltar aos casos
+          </Button>
+        </ListEmptyState>
+      ) : (
+        <CasePanel
+          layout="page"
+          isOpen
+          caseData={caseData}
+          onClose={() => router.push(rotas.casos)}
+          onUpdated={setCaseData}
+        />
+      )}
+    </AppShell>
   )
 }

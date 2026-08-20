@@ -4,9 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Download, Loader2, Mail, Pencil, Phone, UserX, Trash2 } from "lucide-react"
-import { Sidebar } from "@/components/dashboard/sidebar"
-import { MobileNav } from "@/components/dashboard/mobile-nav"
-import { GlobalSearch } from "@/components/search/global-search"
+import { AppShell } from "@/components/layout/app-shell"
+import { Header } from "@/components/dashboard/header"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -151,13 +150,8 @@ export default function ClientePage() {
   const anonimizado = client ? isClienteAnonimizado(client) : false
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main id="main-content" className="flex-1 min-w-0 p-4 md:p-6 md:ml-64 overflow-x-hidden">
-        <header className="flex items-center gap-2 mb-4">
-          <MobileNav />
-          <GlobalSearch />
-        </header>
+    <AppShell>
+      <Header title="Cliente" description="Ficha e casos vinculados." />
 
         {loading ? (
           <ListSkeleton variant="detail" />
@@ -169,7 +163,7 @@ export default function ClientePage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 mt-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="min-w-0">
                 <Button variant="ghost" size="sm" className="mb-2 -ml-2" asChild>
@@ -309,7 +303,6 @@ export default function ClientePage() {
             </section>
           </div>
         )}
-      </main>
 
       {client && (
         <ClientModal
@@ -359,6 +352,6 @@ export default function ClientePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AppShell>
   )
 }

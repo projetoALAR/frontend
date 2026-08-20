@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { History } from "lucide-react"
-import { Sidebar } from "@/components/dashboard/sidebar"
+import { AppShell } from "@/components/layout/app-shell"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { ChatInterface } from "@/components/chat/chat-interface"
 import { ChatHistory } from "@/components/chat/chat-history"
@@ -218,40 +218,37 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main id="main-content" className="flex-1 flex flex-col md:flex-row md:ml-64 h-[100dvh] min-h-0 min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 md:hidden">
-          <MobileNav />
-          <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>
-          {activeConversationId && messages.length > 0 ? (
-            <ChatExportButton conversacaoId={activeConversationId} size="sm" />
-          ) : null}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
-                <History className="w-4 h-4" />
-                Conversas
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="p-0 w-80 max-w-[90vw]">
-              <SheetTitle className="sr-only">Histórico de conversas</SheetTitle>
-              <ChatHistory {...historyProps} className="border-l-0" />
-            </SheetContent>
-          </Sheet>
-        </div>
-        <ChatInterface
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onFeedback={handleFeedback}
-          conversacaoId={activeConversationId || undefined}
-          quota={quota}
-          isLoading={loadingList || sending}
-        />
-        <div className="hidden md:flex h-full min-h-0 shrink-0">
-          <ChatHistory {...historyProps} />
-        </div>
-      </main>
-    </div>
+    <AppShell mainClassName="flex flex-col md:flex-row h-[100dvh] min-h-0 p-0 md:p-0 overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 md:hidden">
+        <MobileNav />
+        <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>
+        {activeConversationId && messages.length > 0 ? (
+          <ChatExportButton conversacaoId={activeConversationId} size="sm" />
+        ) : null}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" className="shrink-0 gap-1.5">
+              <History className="w-4 h-4" />
+              Conversas
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="p-0 w-80 max-w-[90vw]">
+            <SheetTitle className="sr-only">Histórico de conversas</SheetTitle>
+            <ChatHistory {...historyProps} className="border-l-0" />
+          </SheetContent>
+        </Sheet>
+      </div>
+      <ChatInterface
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        onFeedback={handleFeedback}
+        conversacaoId={activeConversationId || undefined}
+        quota={quota}
+        isLoading={loadingList || sending}
+      />
+      <div className="hidden md:flex h-full min-h-0 shrink-0">
+        <ChatHistory {...historyProps} />
+      </div>
+    </AppShell>
   )
 }

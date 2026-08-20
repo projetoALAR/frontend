@@ -273,8 +273,8 @@ export function ClientsContent() {
           {filteredClients.map((client, index) => (
             <Card
               key={client.id}
-              className="p-6 hover:shadow-lg transition-all duration-300 animate-slide-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
+              className="p-4 hover:shadow-md transition-shadow duration-200 animate-slide-in-up"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex items-start justify-between mb-4">
                 <Avatar className="w-12 h-12 border-2 border-primary/20">
@@ -292,6 +292,7 @@ export function ClientsContent() {
                         disabled={exportingId === client.id}
                         className="h-8 w-8 p-0"
                         title="Exportar dados (LGPD)"
+                        aria-label="Exportar dados do cliente"
                       >
                         {exportingId === client.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -306,6 +307,7 @@ export function ClientsContent() {
                       onClick={() => handleEditClient(client)}
                       className="h-8 w-8 p-0"
                       disabled={isClienteAnonimizado(client)}
+                      aria-label="Editar cliente"
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -317,6 +319,7 @@ export function ClientsContent() {
                         disabled={deletingId === client.id}
                         className="h-8 w-8 p-0"
                         title="Anonimizar (LGPD)"
+                        aria-label="Anonimizar cliente"
                       >
                         <UserX className="w-4 h-4" />
                       </Button>
@@ -328,6 +331,7 @@ export function ClientsContent() {
                       disabled={deletingId === client.id}
                       className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                       title="Excluir cliente"
+                      aria-label="Excluir cliente"
                     >
                       {deletingId === client.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

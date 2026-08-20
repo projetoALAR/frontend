@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import { Sidebar } from "@/components/dashboard/sidebar"
+import { AppShell } from "@/components/layout/app-shell"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -39,11 +39,8 @@ export default function LogoutPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-
-      <main id="main-content" className="flex-1 min-w-0 p-4 md:p-6 md:ml-64 flex items-center justify-center overflow-x-hidden">
-        <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
+    <AppShell mainClassName="flex items-center justify-center">
+      <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
           <div className="flex justify-center">
             <div
               className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}
@@ -75,7 +72,6 @@ export default function LogoutPage() {
             </Button>
           </div>
         </Card>
-      </main>
-    </div>
+    </AppShell>
   )
 }

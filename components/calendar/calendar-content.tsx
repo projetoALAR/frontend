@@ -326,7 +326,9 @@ export function CalendarContent() {
           <Button type="button" variant="secondary" size="sm" onClick={goToToday}>
             Hoje
           </Button>
-          <div className="flex rounded-md border border-border p-0.5" role="group" aria-label="Visão da agenda">
+        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex rounded-md border border-border p-0.5 order-first sm:order-none mr-auto sm:mr-0" role="group" aria-label="Visão da agenda">
             <Button
               type="button"
               size="sm"
@@ -348,13 +350,11 @@ export function CalendarContent() {
               Lista
             </Button>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
           <Select
             value={filtroVinculo}
             onValueChange={(v) => setFiltroVinculo(v as FiltroVinculo)}
           >
-            <SelectTrigger className="w-[160px]" aria-label="Filtrar por vínculo com caso">
+            <SelectTrigger className="w-[140px] sm:w-[160px]" aria-label="Filtrar por vínculo com caso">
               <SelectValue placeholder="Filtro" />
             </SelectTrigger>
             <SelectContent>

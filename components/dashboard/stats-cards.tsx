@@ -1,16 +1,14 @@
 "use client"
 
-import { ArrowUpRight, TrendingUp } from "lucide-react"
 import { Card } from "@/components/ui/card"
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { DashboardResumoError } from "@/components/dashboard/dashboard-resumo-error"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { casosListaHref, rotas } from "@/lib/app-routes"
+import { ArrowUpRight, TrendingUp } from "lucide-react"
 
 export function StatsCards() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
   const router = useRouter()
   const { data, loading, error, reload } = useDashboardResumo()
 
@@ -61,30 +59,24 @@ export function StatsCards() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {stats.map((stat, index) => (
+      {stats.map((stat) => (
         <Card
           key={stat.title}
-          onMouseEnter={() => setHoveredCard(index)}
-          onMouseLeave={() => setHoveredCard(null)}
           onClick={() => handleCardClick(stat.filter)}
           style={{ animationDelay: stat.delay }}
-          className={`${stat.bgColor} ${stat.textColor} p-4 transition-all duration-500 ease-out animate-slide-in-up cursor-pointer ${
-            hoveredCard === index ? "scale-105 shadow-2xl" : "shadow-lg"
-          }`}
+          className={`${stat.bgColor} ${stat.textColor} p-4 transition-shadow duration-200 ease-out animate-slide-in-up cursor-pointer shadow-sm hover:shadow-md`}
         >
           <div className="flex items-start justify-between mb-3">
             <h3 className="text-xs font-medium opacity-90">{stat.title}</h3>
             <div
               className={`w-6 h-6 rounded-full ${
                 stat.bgColor === "bg-primary" ? "bg-primary-foreground/20" : "bg-primary"
-              } flex items-center justify-center transition-transform duration-300 ${
-                hoveredCard === index ? "rotate-45" : ""
-              }`}
+              } flex items-center justify-center`}
             >
               <ArrowUpRight className="w-3 h-3 text-primary-foreground" />
             </div>
           </div>
-          <p className="text-3xl font-bold mb-2">{stat.value}</p>
+          <p className="text-3xl font-bold mb-2 tabular-nums">{stat.value}</p>
           <div className="flex items-center gap-1.5 text-xs opacity-80">
             <TrendingUp className="w-3 h-3" />
             <span>{stat.increase}</span>

@@ -106,7 +106,7 @@ export function Header({ title, description, actions }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 min-h-11 min-w-11"
+            className="relative hover:bg-secondary transition-colors min-h-11 min-w-11"
             aria-label={inboxUnread > 0 ? `Mensagens, ${inboxUnread} não lidas` : "Mensagens"}
             onClick={() => router.push(rotas.mensagens)}
           >
@@ -124,7 +124,7 @@ export function Header({ title, description, actions }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-secondary transition-all duration-300 hover:scale-110 min-h-11 min-w-11"
+                className="relative hover:bg-secondary transition-colors min-h-11 min-w-11"
                 aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : "Notificações"}
               >
                 <Bell className="w-4 h-4" />
