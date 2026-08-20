@@ -37,6 +37,19 @@ export const processosApi = {
     api.put<ProcessoApi>(`/processos/${id}`, dados),
   remover: (id: string) => api.delete<ProcessoApi>(`/processos/${id}`),
   baixarCapa: (id: string) => api.getBlob(`/processos/${id}/capa`),
+  baixarRelatorioPdf: (payload: {
+    filtrosResumo?: string
+    linhas: Array<{
+      numero: string
+      titulo?: string
+      status: string
+      prioridade?: string
+      prazo?: string
+      situacao?: string
+      cliente?: string
+      responsavel?: string
+    }>
+  }) => api.postBlob("/processos/relatorio/pdf", payload),
   baixarModeloImportacao: () => api.getBlob("/processos/importacao/modelo"),
   previewImportacao: (arquivo: File) => {
     const formData = new FormData()

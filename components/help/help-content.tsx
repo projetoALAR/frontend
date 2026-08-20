@@ -118,7 +118,7 @@ const faqs = [
   {
     question: "Como exportar um relatório de casos?",
     answer:
-      "Em Relatórios (admin), filtre por status, prazo, responsável ou busca e use Exportar CSV. O arquivo traz só o recorte filtrado.",
+      "Em Relatórios (admin), use filtros ou atalhos de prazo (hoje, 7 dias, vencidos…). O resumo mostra contagens por status e responsável. Exportar CSV ou PDF usa o mesmo recorte; o PDF limita a 500 linhas.",
   },
   {
     question: "Como ativar a autenticação em dois fatores?",

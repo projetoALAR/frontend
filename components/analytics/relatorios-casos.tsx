@@ -25,8 +25,15 @@ import { useToast } from "@/hooks/use-toast"
 import { processosApi, type ProcessoApi } from "@/lib/processos-api"
 import {
   RELATORIO_FILTROS_VAZIOS,
+  aplicarPresetPrazo,
+  contarPorResponsavel,
+  contarPorStatus,
+  contarSemPrazo,
   filtrarProcessosRelatorio,
   processosParaCsv,
+  processosParaLinhasPdf,
+  resumoFiltrosTexto,
+  type PresetPrazo,
   type RelatorioFiltros,
 } from "@/lib/relatorios-casos"
 import { downloadBlob } from "@/lib/download"
@@ -35,11 +42,21 @@ import { formatCnj } from "@/lib/masks"
 import { casoHref } from "@/lib/app-routes"
 import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
 
+const PRESETS_PRAZO: { id: PresetPrazo; rotulo: string }[] = [
+  { id: "hoje", rotulo: "Hoje" },
+  { id: "7d", rotulo: "7 dias" },
+  { id: "30d", rotulo: "30 dias" },
+  { id: "mes", rotulo: "Este mês" },
+  { id: "vencidos", rotulo: "Vencidos" },
+  { id: "limpar", rotulo: "Limpar prazo" },
+]
+
 export function RelatoriosCasos() {
   const { toast } = useToast()
   const [processos, setProcessos] = useState<ProcessoApi[]>([])
   const [loading, setLoading] = useState(true)
-  const [exporting, setExporting] = useState(false)
+  const [exportingCsv, setExportingCsv] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
   const [filtros, setFiltros] = useState<RelatorioFiltros>(RELATORIO_FILTROS_VAZIOS)
 
   useEffect(() => {
@@ -70,6 +87,13 @@ export function RelatoriosCasos() {
     [processos, filtros],
   )
 
+  const porStatus = useMemo(() => contarPorStatus(filtrados), [filtrados])
+  const porResponsavel = useMemo(
+    () => contarPorResponsavel(filtrados).slice(0, 8),
+    [filtrados],
+  )
+  const semPrazo = useMemo(() => contarSemPrazo(filtrados), [filtrados])
+
   const statusOptions = useMemo(() => {
     const extras = processos
       .map((p) => p.status)
@@ -91,20 +115,63 @@ export function RelatoriosCasos() {
     setFiltros((atual) => ({ ...atual, ...partial }))
   }
 
-  const exportar = async () => {
-    setExporting(true)
+  const exportarCsv = async () => {
+    setExportingCsv(true)
     try {
       const csv = processosParaCsv(filtrados)
       const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" })
       downloadBlob(blob, `relatorio-casos-${new Date().toISOString().slice(0, 10)}.csv`)
       toast({
-        title: "Relatório exportado",
-        description: `${filtrados.length} caso(s) no CSV`,
+        title: "CSV exportado",
+        description: `${filtrados.length} caso(s) no arquivo`,
       })
     } finally {
-      setExporting(false)
+      setExportingCsv(false)
     }
   }
+
+  const exportarPdf = async () => {
+    if (filtrados.length === 0) {
+      toast({
+        title: "Nada para exportar",
+        description: "Ajuste os filtros — o PDF usa o mesmo recorte da tabela.",
+        variant: "destructive",
+      })
+      return
+    }
+    setExportingPdf(true)
+    try {
+      const nomeResponsavel =
+        filtros.responsavelId !== "ALL" && filtros.responsavelId !== "__none__"
+          ? responsaveis.find(([id]) => id === filtros.responsavelId)?.[1]
+          : undefined
+      const { blob, filename } = await processosApi.baixarRelatorioPdf({
+        filtrosResumo: resumoFiltrosTexto(filtros, { nomeResponsavel }),
+        linhas: processosParaLinhasPdf(filtrados).slice(0, 500),
+      })
+      downloadBlob(
+        blob,
+        filename || `relatorio-casos-${new Date().toISOString().slice(0, 10)}.pdf`,
+      )
+      toast({
+        title: "PDF exportado",
+        description:
+          filtrados.length > 500
+            ? `PDF limitado a 500 linhas (${filtrados.length} no filtro).`
+            : `${filtrados.length} caso(s) no PDF`,
+      })
+    } catch (error) {
+      toast({
+        title: "Erro ao gerar PDF",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setExportingPdf(false)
+    }
+  }
+
+  const ocupado = exportingCsv || exportingPdf || loading
 
   return (
     <Card className="p-4 sm:p-6 space-y-4">
@@ -112,10 +179,10 @@ export function RelatoriosCasos() {
         <div>
           <h2 className="font-semibold text-lg">Casos do relatório</h2>
           <p className="text-sm text-muted-foreground">
-            Filtre e exporte só o recorte que precisa — o CSV segue os filtros abaixo.
+            Filtre o recorte, veja o resumo e exporte CSV ou PDF com os mesmos filtros.
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button
             type="button"
             variant="outline"
@@ -125,10 +192,18 @@ export function RelatoriosCasos() {
           </Button>
           <Button
             type="button"
-            disabled={exporting || loading}
-            onClick={() => void exportar()}
+            variant="outline"
+            disabled={ocupado}
+            onClick={() => void exportarCsv()}
           >
-            {exporting ? "Exportando..." : "Exportar CSV"}
+            {exportingCsv ? "CSV..." : "Exportar CSV"}
+          </Button>
+          <Button
+            type="button"
+            disabled={ocupado}
+            onClick={() => void exportarPdf()}
+          >
+            {exportingPdf ? "PDF..." : "Exportar PDF"}
           </Button>
         </div>
       </div>
@@ -231,6 +306,55 @@ export function RelatoriosCasos() {
           />
         </div>
       </div>
+
+      <div className="space-y-1.5">
+        <Label>Atalhos de prazo</Label>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS_PRAZO.map((p) => (
+            <Button
+              key={p.id}
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setFiltros((f) => aplicarPresetPrazo(f, p.id))}
+            >
+              {p.rotulo}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {!loading && filtrados.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 border-t border-border pt-4">
+          <div>
+            <p className="text-sm font-medium mb-2">Por status</p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {porStatus.map((item) => (
+                <li key={item.rotulo} className="flex justify-between gap-4">
+                  <span className="truncate">{item.rotulo}</span>
+                  <span className="tabular-nums text-foreground shrink-0">{item.total}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium mb-2">Por responsável</p>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {porResponsavel.map((item) => (
+                <li key={item.rotulo} className="flex justify-between gap-4">
+                  <span className="truncate">{item.rotulo}</span>
+                  <span className="tabular-nums text-foreground shrink-0">{item.total}</span>
+                </li>
+              ))}
+            </ul>
+            {semPrazo > 0 ? (
+              <p className="text-xs text-muted-foreground mt-3">
+                {semPrazo} caso(s) sem prazo no recorte (não entram em filtro de data).
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <p className="text-sm text-muted-foreground">
         {loading

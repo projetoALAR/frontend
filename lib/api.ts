@@ -103,6 +103,32 @@ async function getBlob(path: string): Promise<{ blob: Blob; filename: string | n
   }
 }
 
+async function postBlob(
+  path: string,
+  body?: unknown,
+): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  if (response.status === 401) {
+    handleUnauthorized()
+    throw new Error("Não autenticado")
+  }
+
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: filenameFromDisposition(response.headers.get("content-disposition")),
+  }
+}
+
 async function uploadFormData<T>(path: string, formData: FormData): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
@@ -130,6 +156,7 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   upload: <T>(path: string, formData: FormData) => uploadFormData<T>(path, formData),
   getBlob,
+  postBlob,
 }
 
 /** @deprecated Preferir rotas same-origin; mantido para help/config. */
