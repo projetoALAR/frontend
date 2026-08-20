@@ -113,7 +113,7 @@ const faqs = [
   {
     question: "Como registrar uma intimação ou prazo?",
     answer:
-      "Abra o caso na aba Prazos. Ali ficam o prazo principal, compromissos e tarefas com data. Use Registrar intimação para lançar o andamento e, se quiser, um compromisso de lembrete.",
+      "Abra o caso na aba Prazos. Ali ficam o prazo principal, compromissos e tarefas com data. Use Registrar intimação para lançar o andamento e, se quiser, um compromisso de lembrete. Nos compromissos do caso dá para editar; admin e advogado também podem excluir (com confirmação).",
   },
   {
     question: "Como baixar a capa do processo?",

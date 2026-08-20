@@ -1,18 +1,32 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertCircle, Calendar, Loader2, Plus } from "lucide-react"
+import { AlertCircle, Calendar, Edit2, Loader2, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { formatDatePt, formatDateTimePt } from "@/lib/format"
 import { tarefasApi, type ProcessoTarefaApi } from "@/lib/tarefas-api"
-import { compromissosApi, type CompromissoApi, type CompromissoFormData } from "@/lib/compromissos-api"
+import {
+  compromissosApi,
+  type CompromissoApi,
+  type CompromissoFormData,
+} from "@/lib/compromissos-api"
 import { andamentosApi } from "@/lib/andamentos-api"
-import { EventModal } from "@/components/calendar/event-modal"
+import { EventModal, type CalendarEventView } from "@/components/calendar/event-modal"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 
 type CasePrazosTabProps = {
@@ -35,6 +49,18 @@ function fimDoDiaIso(dateYmd: string) {
   return new Date(`${dateYmd}T18:00:00`).toISOString()
 }
 
+function toEventView(c: CompromissoApi): CalendarEventView {
+  return {
+    id: c.id,
+    titulo: c.titulo,
+    descricao: c.descricao,
+    dataHora: c.dataHora,
+    processoId: c.processoId,
+    processoNumero: c.processo?.numero ?? null,
+    processoTitulo: c.processo?.titulo ?? null,
+  }
+}
+
 export function CasePrazosTab({
   processoId,
   prazoIso,
@@ -50,6 +76,9 @@ export function CasePrazosTab({
   const [prazoDraft, setPrazoDraft] = useState("")
   const [savingPrazo, setSavingPrazo] = useState(false)
   const [eventOpen, setEventOpen] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<CalendarEventView | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<CompromissoApi | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const [intimacaoDesc, setIntimacaoDesc] = useState("")
   const [intimacaoData, setIntimacaoData] = useState("")
   const [intimacaoPrazo, setIntimacaoPrazo] = useState("")
@@ -98,15 +127,58 @@ export function CasePrazosTab({
     }
   }
 
+  const openNovo = () => {
+    setEditingEvent(null)
+    setEventOpen(true)
+  }
+
+  const openEditar = (item: CompromissoApi) => {
+    setEditingEvent(toEventView(item))
+    setEventOpen(true)
+  }
+
   const handleSaveEvento = async (data: CompromissoFormData) => {
-    const criado = await compromissosApi.criar({
-      ...data,
-      processoId: processoId,
-    })
-    setCompromissos((atual) =>
-      [...atual, criado].sort((a, b) => a.dataHora.localeCompare(b.dataHora)),
-    )
+    if (editingEvent) {
+      const atualizado = await compromissosApi.atualizar(editingEvent.id, {
+        ...data,
+        processoId: processoId,
+      })
+      setCompromissos((atual) =>
+        [...atual.map((c) => (c.id === editingEvent.id ? atualizado : c))].sort(
+          (a, b) => a.dataHora.localeCompare(b.dataHora),
+        ),
+      )
+    } else {
+      const criado = await compromissosApi.criar({
+        ...data,
+        processoId: processoId,
+      })
+      setCompromissos((atual) =>
+        [...atual, criado].sort((a, b) => a.dataHora.localeCompare(b.dataHora)),
+      )
+    }
     invalidateDashboardCache()
+    setEditingEvent(null)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      await compromissosApi.remover(pendingDelete.id)
+      setCompromissos((atual) => atual.filter((c) => c.id !== pendingDelete.id))
+      invalidateDashboardCache()
+      toast({ title: "Compromisso removido" })
+      setPendingDelete(null)
+    } catch (error) {
+      toast({
+        title: "Erro ao remover",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleIntimacao = async () => {
@@ -198,7 +270,8 @@ export function CasePrazosTab({
             Registrar intimação
           </h4>
           <p className="text-xs text-muted-foreground">
-            Grava um andamento interno. Se informar o prazo de resposta, também cria o compromisso na agenda (lembrete do sistema).
+            Grava um andamento interno. Se informar o prazo de resposta, também cria o
+            compromisso na agenda (lembrete do sistema).
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -238,7 +311,11 @@ export function CasePrazosTab({
             disabled={!processoId || enviando || !intimacaoDesc.trim()}
             onClick={() => void handleIntimacao()}
           >
-            {enviando ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
+            {enviando ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <Plus className="w-4 h-4 mr-1" />
+            )}
             Registrar
           </Button>
         </section>
@@ -254,7 +331,12 @@ export function CasePrazosTab({
             <div className="flex items-center justify-between gap-2">
               <h4 className="font-medium">Compromissos deste caso</h4>
               {canRegistrar && (
-                <Button size="sm" variant="outline" disabled={!processoId} onClick={() => setEventOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!processoId}
+                  onClick={openNovo}
+                >
                   <Plus className="w-4 h-4 mr-1" />
                   Agendar
                 </Button>
@@ -265,12 +347,45 @@ export function CasePrazosTab({
             ) : (
               <ul className="space-y-2">
                 {compromissos.map((item) => (
-                  <li key={item.id} className="rounded-lg border border-border p-3">
-                    <p className="text-sm font-medium">{item.titulo}</p>
-                    <p className="text-xs text-muted-foreground">{formatDateTimePt(item.dataHora)}</p>
-                    {item.descricao ? (
-                      <p className="text-xs text-muted-foreground mt-1">{item.descricao}</p>
-                    ) : null}
+                  <li
+                    key={item.id}
+                    className="rounded-lg border border-border p-3 flex items-start justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{item.titulo}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDateTimePt(item.dataHora)}
+                      </p>
+                      {item.descricao ? (
+                        <p className="text-xs text-muted-foreground mt-1">{item.descricao}</p>
+                      ) : null}
+                    </div>
+                    {(canRegistrar || canWritePrazo) && (
+                      <div className="flex gap-1 shrink-0">
+                        {canRegistrar ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            aria-label="Editar compromisso"
+                            onClick={() => openEditar(item)}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                        ) : null}
+                        {canWritePrazo ? (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            aria-label="Excluir compromisso"
+                            onClick={() => setPendingDelete(item)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -280,12 +395,19 @@ export function CasePrazosTab({
           <section className="space-y-2">
             <h4 className="font-medium">Tarefas com prazo</h4>
             {tarefasComPrazo.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma tarefa com data no checklist.</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhuma tarefa com data no checklist.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {tarefasComPrazo.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
-                    <p className={`text-sm ${item.concluida ? "line-through text-muted-foreground" : ""}`}>
+                  <li
+                    key={item.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-border p-3"
+                  >
+                    <p
+                      className={`text-sm ${item.concluida ? "line-through text-muted-foreground" : ""}`}
+                    >
                       {item.titulo}
                     </p>
                     <Badge variant={item.concluida ? "secondary" : "outline"}>
@@ -301,10 +423,46 @@ export function CasePrazosTab({
 
       <EventModal
         isOpen={eventOpen}
-        onClose={() => setEventOpen(false)}
+        onClose={() => {
+          setEventOpen(false)
+          setEditingEvent(null)
+        }}
         onSave={handleSaveEvento}
+        event={editingEvent}
+        isEditing={!!editingEvent}
         lockedProcessoId={processoId}
       />
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir compromisso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `“${pendingDelete.titulo}” será removido deste caso e da agenda. Esta ação não pode ser desfeita.`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault()
+                void confirmDelete()
+              }}
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
