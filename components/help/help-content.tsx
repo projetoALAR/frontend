@@ -106,6 +106,11 @@ const faqs = [
       "Na aba Andamentos, use Consultar CNJ para ver os movimentos na base pública e Importar para gravar no caso. Também dá para registrar um andamento interno. Só a equipe exclui o que lançou à mão — o que veio do tribunal permanece.",
   },
   {
+    question: "Como usar a Agenda?",
+    answer:
+      "Em Agenda, navegue pelo mês ou use Hoje. Clique num dia para ver os eventos; o número do caso aparece quando houver vínculo. Filtre por com/sem caso. Novo Evento (ou Agendar neste dia) já preenche a data selecionada. Exclusão pede confirmação.",
+  },
+  {
     question: "Como registrar uma intimação ou prazo?",
     answer:
       "Abra o caso na aba Prazos. Ali ficam o prazo principal, compromissos e tarefas com data. Use Registrar intimação para lançar o andamento e, se quiser, um compromisso de lembrete.",

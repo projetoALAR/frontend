@@ -3,33 +3,81 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ChevronLeft, ChevronRight, Edit2, Trash2, Calendar } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { EventModal, type CalendarEventView } from "./event-modal"
 import { MonthYearPicker } from "./month-year-picker"
-import { compromissosApi, type CompromissoFormData } from "@/lib/compromissos-api"
+import {
+  compromissosApi,
+  type CompromissoApi,
+  type CompromissoFormData,
+} from "@/lib/compromissos-api"
 import { useToast } from "@/hooks/use-toast"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { casoHref } from "@/lib/app-routes"
+import { formatDateTimeLocalInput } from "@/lib/format"
+import { formatCnj } from "@/lib/masks"
 import Link from "next/link"
 
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
 
-function toEventView(c: {
-  id: string
-  titulo: string
-  descricao: string | null
-  dataHora: string
-  processoId: string | null
-}): CalendarEventView {
+type FiltroVinculo = "ALL" | "com_caso" | "sem_caso"
+
+function toEventView(c: CompromissoApi): CalendarEventView {
   return {
     id: c.id,
     titulo: c.titulo,
     descricao: c.descricao,
     dataHora: c.dataHora,
     processoId: c.processoId,
+    processoNumero: c.processo?.numero ?? null,
+    processoTitulo: c.processo?.titulo ?? null,
   }
+}
+
+function defaultDataHoraParaDia(year: number, month: number, day: number): string {
+  const agora = new Date()
+  const mesmoDia =
+    agora.getFullYear() === year &&
+    agora.getMonth() === month &&
+    agora.getDate() === day
+  if (mesmoDia) {
+    const d = new Date(agora)
+    d.setMinutes(d.getMinutes() + 30)
+    d.setSeconds(0, 0)
+    return formatDateTimeLocalInput(d)
+  }
+  return formatDateTimeLocalInput(new Date(year, month, day, 9, 0, 0, 0))
+}
+
+function passaFiltroVinculo(event: CalendarEventView, filtro: FiltroVinculo): boolean {
+  if (filtro === "com_caso") return Boolean(event.processoId)
+  if (filtro === "sem_caso") return !event.processoId
+  return true
+}
+
+function rotuloCaso(event: CalendarEventView): string | null {
+  if (!event.processoId) return null
+  if (event.processoNumero) return formatCnj(event.processoNumero)
+  return "Caso vinculado"
 }
 
 export function CalendarContent() {
@@ -41,6 +89,9 @@ export function CalendarContent() {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<CalendarEventView | null>(null)
+  const [filtroVinculo, setFiltroVinculo] = useState<FiltroVinculo>("ALL")
+  const [pendingDelete, setPendingDelete] = useState<CalendarEventView | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const loadEvents = useCallback(async () => {
     setIsLoading(true)
@@ -67,32 +118,48 @@ export function CalendarContent() {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const firstDayOfWeek = new Date(year, month, 1).getDay()
 
+  const eventsFiltrados = useMemo(
+    () => events.filter((e) => passaFiltroVinculo(e, filtroVinculo)),
+    [events, filtroVinculo],
+  )
+
   const eventsForSelectedDay = useMemo(() => {
-    return events.filter((event) => {
+    return eventsFiltrados.filter((event) => {
       const d = new Date(event.dataHora)
       return d.getFullYear() === year && d.getMonth() === month && d.getDate() === selectedDay
     })
-  }, [events, year, month, selectedDay])
+  }, [eventsFiltrados, year, month, selectedDay])
 
   const daysWithEvents = useMemo(() => {
     const set = new Set<number>()
-    events.forEach((event) => {
+    eventsFiltrados.forEach((event) => {
       const d = new Date(event.dataHora)
       if (d.getFullYear() === year && d.getMonth() === month) set.add(d.getDate())
     })
     return set
-  }, [events, year, month])
+  }, [eventsFiltrados, year, month])
 
   const upcomingEvents = useMemo(() => {
     const agora = Date.now()
-    return events
+    return eventsFiltrados
       .filter((event) => new Date(event.dataHora).getTime() >= agora)
       .sort(
         (a, b) =>
           new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime(),
       )
       .slice(0, 5)
-  }, [events])
+  }, [eventsFiltrados])
+
+  const goToToday = () => {
+    const hoje = new Date()
+    setCurrentDate(new Date(hoje.getFullYear(), hoje.getMonth(), 1))
+    setSelectedDay(hoje.getDate())
+  }
+
+  const openNewEvent = () => {
+    setEditingEvent(null)
+    setIsEventModalOpen(true)
+  }
 
   const goToEventDate = (event: CalendarEventView) => {
     const d = new Date(event.dataHora)
@@ -103,7 +170,9 @@ export function CalendarContent() {
   const handleSaveEvent = async (data: CompromissoFormData) => {
     if (editingEvent) {
       const updated = await compromissosApi.atualizar(editingEvent.id, data)
-      setEvents((prev) => prev.map((e) => (e.id === editingEvent.id ? toEventView(updated) : e)))
+      setEvents((prev) =>
+        prev.map((e) => (e.id === editingEvent.id ? toEventView(updated) : e)),
+      )
     } else {
       const created = await compromissosApi.criar(data)
       setEvents((prev) => [...prev, toEventView(created)])
@@ -112,40 +181,55 @@ export function CalendarContent() {
     setEditingEvent(null)
   }
 
-  const handleDeleteEvent = async (eventId: string) => {
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
     try {
-      await compromissosApi.remover(eventId)
-      setEvents((prev) => prev.filter((e) => e.id !== eventId))
+      await compromissosApi.remover(pendingDelete.id)
+      setEvents((prev) => prev.filter((e) => e.id !== pendingDelete.id))
       invalidateDashboardCache()
       toast({ title: "Evento removido" })
+      setPendingDelete(null)
     } catch (error) {
       toast({
         title: "Erro ao remover",
         description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
+    } finally {
+      setDeleting(false)
     }
   }
 
-  const monthLabel = currentDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+  const monthLabel = currentDate.toLocaleDateString("pt-BR", {
+    month: "long",
+    year: "numeric",
+  })
 
   const hoje = new Date()
   const hojeNoMesVisivel =
     hoje.getFullYear() === year && hoje.getMonth() === month ? hoje.getDate() : null
 
+  const defaultDataHora = defaultDataHoraParaDia(year, month, selectedDay)
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="icon"
             className="bg-transparent"
             onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
+            aria-label="Mês anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" onClick={() => setIsMonthPickerOpen(true)} className="capitalize min-w-0 flex-1 sm:flex-none sm:min-w-[160px]">
+          <Button
+            variant="ghost"
+            onClick={() => setIsMonthPickerOpen(true)}
+            className="capitalize min-w-0 flex-1 sm:flex-none sm:min-w-[160px]"
+          >
             {monthLabel}
           </Button>
           <Button
@@ -153,18 +237,32 @@ export function CalendarContent() {
             size="icon"
             className="bg-transparent"
             onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
+            aria-label="Próximo mês"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          <Button type="button" variant="secondary" size="sm" onClick={goToToday}>
+            Hoje
+          </Button>
         </div>
-        <Button
-          onClick={() => {
-            setEditingEvent(null)
-            setIsEventModalOpen(true)
-          }}
-        >
-          + Novo Evento
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={filtroVinculo}
+            onValueChange={(v) => setFiltroVinculo(v as FiltroVinculo)}
+          >
+            <SelectTrigger className="w-[160px]" aria-label="Filtrar por vínculo com caso">
+              <SelectValue placeholder="Filtro" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos</SelectItem>
+              <SelectItem value="com_caso">Com caso</SelectItem>
+              <SelectItem value="sem_caso">Sem caso</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button type="button" onClick={openNewEvent}>
+            + Novo Evento
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -175,7 +273,10 @@ export function CalendarContent() {
             <Card className="p-2 sm:p-4 overflow-x-auto">
               <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 min-w-[280px]">
                 {weekDays.map((d) => (
-                  <div key={d} className="text-center text-xs font-medium text-muted-foreground py-2">
+                  <div
+                    key={d}
+                    className="text-center text-xs font-medium text-muted-foreground py-2"
+                  >
                     {d}
                   </div>
                 ))}
@@ -205,7 +306,9 @@ export function CalendarContent() {
                     >
                       {day}
                       {hasEvents && (
-                        <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selected ? "bg-primary-foreground" : isToday ? "bg-sky-600 dark:bg-sky-300" : "bg-primary"}`} />
+                        <span
+                          className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${selected ? "bg-primary-foreground" : isToday ? "bg-sky-600 dark:bg-sky-300" : "bg-primary"}`}
+                        />
                       )}
                     </button>
                   )
@@ -220,6 +323,7 @@ export function CalendarContent() {
               {upcomingEvents.length === 0 ? (
                 <p className="text-xs text-muted-foreground/80 py-1">
                   Nenhum evento futuro
+                  {filtroVinculo !== "ALL" ? " com este filtro" : ""}
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -229,6 +333,7 @@ export function CalendarContent() {
                       d.getFullYear() === year &&
                       d.getMonth() === month &&
                       d.getDate() === selectedDay
+                    const caso = rotuloCaso(event)
                     return (
                       <li key={event.id}>
                         <button
@@ -249,7 +354,14 @@ export function CalendarContent() {
                               minute: "2-digit",
                             })}
                           </span>
-                          <span className="truncate font-medium">{event.titulo}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">{event.titulo}</span>
+                            {caso ? (
+                              <span className="block truncate text-xs text-muted-foreground font-mono">
+                                {caso}
+                              </span>
+                            ) : null}
+                          </span>
                         </button>
                       </li>
                     )
@@ -267,53 +379,72 @@ export function CalendarContent() {
               </h3>
             </div>
             {eventsForSelectedDay.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum evento neste dia</p>
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum evento neste dia
+                  {filtroVinculo !== "ALL" ? " com este filtro" : ""}.
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={openNewEvent}>
+                  Agendar neste dia
+                </Button>
+              </div>
             ) : (
-              eventsForSelectedDay.map((event) => (
-                <div key={event.id} className="p-3 border rounded-lg space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-sm">{event.titulo}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(event.dataHora).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {event.descricao && (
-                        <p className="text-xs text-muted-foreground mt-1">{event.descricao}</p>
-                      )}
+              eventsForSelectedDay.map((event) => {
+                const caso = rotuloCaso(event)
+                return (
+                  <div key={event.id} className="p-3 border rounded-lg space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm">{event.titulo}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(event.dataHora).toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {event.descricao && (
+                          <p className="text-xs text-muted-foreground mt-1">{event.descricao}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          aria-label="Editar evento"
+                          onClick={() => {
+                            setEditingEvent(event)
+                            setIsEventModalOpen(true)
+                          }}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          aria-label="Excluir evento"
+                          onClick={() => setPendingDelete(event)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => {
-                          setEditingEvent(event)
-                          setIsEventModalOpen(true)
-                        }}
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
+                    {caso ? (
+                      <Badge variant="secondary" className="font-mono text-xs max-w-full truncate">
+                        {caso}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline">Sem caso</Badge>
+                    )}
+                    {event.processoId ? (
+                      <Button variant="outline" size="sm" className="w-full" asChild>
+                        <Link href={casoHref(event.processoId)}>Abrir caso</Link>
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive"
-                        onClick={() => void handleDeleteEvent(event.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                    ) : null}
                   </div>
-                  <Badge variant="secondary">Compromisso</Badge>
-                  {event.processoId ? (
-                    <Button variant="outline" size="sm" className="w-full" asChild>
-                      <Link href={casoHref(event.processoId)}>Abrir caso</Link>
-                    </Button>
-                  ) : null}
-                </div>
-              ))
+                )
+              })
             )}
           </Card>
         </div>
@@ -328,6 +459,7 @@ export function CalendarContent() {
         onSave={handleSaveEvent}
         event={editingEvent}
         isEditing={!!editingEvent}
+        defaultDataHora={editingEvent ? undefined : defaultDataHora}
       />
 
       <MonthYearPicker
@@ -340,6 +472,37 @@ export function CalendarContent() {
           setIsMonthPickerOpen(false)
         }}
       />
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir evento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `“${pendingDelete.titulo}” será removido da agenda. Esta ação não pode ser desfeita.`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault()
+                void confirmDelete()
+              }}
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

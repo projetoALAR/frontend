@@ -23,6 +23,8 @@ export type CalendarEventView = {
   descricao?: string | null
   dataHora: string
   processoId?: string | null
+  processoNumero?: string | null
+  processoTitulo?: string | null
 }
 
 interface EventModalProps {
@@ -32,9 +34,19 @@ interface EventModalProps {
   event?: CalendarEventView | null
   isEditing?: boolean
   lockedProcessoId?: string | null
+  /** Prefill datetime-local when creating (ignored if editing). */
+  defaultDataHora?: string
 }
 
-export function EventModal({ isOpen, onClose, onSave, event, isEditing, lockedProcessoId }: EventModalProps) {
+export function EventModal({
+  isOpen,
+  onClose,
+  onSave,
+  event,
+  isEditing,
+  lockedProcessoId,
+  defaultDataHora,
+}: EventModalProps) {
   const { toast } = useToast()
   const [titulo, setTitulo] = useState("")
   const [dataHora, setDataHora] = useState("")
@@ -66,11 +78,11 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing, lockedPr
       setProcessoId(lockedProcessoId || event.processoId || "")
     } else if (isOpen) {
       setTitulo("")
-      setDataHora("")
+      setDataHora(defaultDataHora || "")
       setDescricao("")
       setProcessoId(lockedProcessoId || "")
     }
-  }, [isOpen, event, lockedProcessoId])
+  }, [isOpen, event, lockedProcessoId, defaultDataHora])
 
   const handleSave = async () => {
     if (!titulo.trim()) {
@@ -136,26 +148,26 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing, lockedPr
             />
           </div>
           {!lockedProcessoId && (
-          <div>
-            <Label htmlFor="event-processo">Processo vinculado</Label>
-            <Select
-              value={processoId || "__none__"}
-              onValueChange={(value) => setProcessoId(value === "__none__" ? "" : value)}
-              disabled={isSaving}
-            >
-              <SelectTrigger id="event-processo" className="mt-1 w-full">
-                <SelectValue placeholder="Nenhum" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Nenhum</SelectItem>
-                {processos.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <Label htmlFor="event-processo">Processo vinculado</Label>
+              <Select
+                value={processoId || "__none__"}
+                onValueChange={(value) => setProcessoId(value === "__none__" ? "" : value)}
+                disabled={isSaving}
+              >
+                <SelectTrigger id="event-processo" className="mt-1 w-full">
+                  <SelectValue placeholder="Nenhum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {processos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
           <div>
             <Label htmlFor="event-desc">Descrição</Label>
@@ -170,7 +182,9 @@ export function EventModal({ isOpen, onClose, onSave, event, isEditing, lockedPr
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancelar</Button>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Cancelar
+          </Button>
           <Button onClick={() => void handleSave()} disabled={isSaving}>
             {isSaving ? "Salvando..." : isEditing ? "Atualizar" : "Criar"}
           </Button>
