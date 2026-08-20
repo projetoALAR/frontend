@@ -108,7 +108,12 @@ const faqs = [
   {
     question: "Como usar a Agenda?",
     answer:
-      "Em Agenda, navegue pelo mês ou use Hoje. Clique num dia para ver os eventos; o número do caso aparece quando houver vínculo. Filtre por com/sem caso. Novo Evento (ou Agendar neste dia) já preenche a data selecionada. Exclusão pede confirmação.",
+      "Em Agenda, alterne Mês e Lista. No mês, clique num dia; na lista veja todos os eventos do mês com editar/excluir. Use Hoje, filtre com/sem caso e Agendar — a data selecionada já vem preenchida. Exclusão pede confirmação.",
+  },
+  {
+    question: "O que são as Mensagens?",
+    answer:
+      "Em Mensagens fica a caixa do sistema (lembretes de prazo, avisos). Clique na mensagem para marcar como lida e, quando houver link, abrir o caso ou a agenda.",
   },
   {
     question: "Como registrar uma intimação ou prazo?",

@@ -4,12 +4,21 @@ import { Sidebar } from "@/components/dashboard/sidebar"
 import { Header } from "@/components/dashboard/header"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { useCallback, useEffect, useState } from "react"
 import { inboxApi, type InboxItemApi } from "@/lib/inbox-api"
 import { formatDatePt } from "@/lib/format"
-import { Loader2, MailOpen } from "lucide-react"
+import { ExternalLink, Loader2, MailOpen } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+
+function rotuloTipo(tipo: string): string {
+  if (tipo === "prazo-lembrete") return "Prazo"
+  if (tipo === "sistema") return "Sistema"
+  if (tipo === "reminders") return "Lembrete"
+  if (tipo === "teamUpdates") return "Equipe"
+  return tipo
+}
 
 export default function MensagensPage() {
   const [items, setItems] = useState<InboxItemApi[]>([])
@@ -41,13 +50,25 @@ export default function MensagensPage() {
     setItems((prev) => prev.map((i) => ({ ...i, lida: true })))
   }
 
+  const abrirItem = async (item: InboxItemApi) => {
+    try {
+      await inboxApi.marcarLida(item.id)
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, lida: true } : i)),
+      )
+    } catch {
+      // ainda tenta navegar
+    }
+    if (item.link) router.push(item.link)
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main id="main-content" className="flex-1 min-w-0 p-4 md:p-6 md:ml-64 overflow-x-hidden">
         <Header
           title="Mensagens"
-          description="Caixa de entrada do sistema: alertas, contatos e avisos."
+          description="Alertas e lembretes. Clique para abrir o caso ou a agenda quando houver link."
           actions={
             <Button variant="outline" onClick={() => void marcarTodas()}>
               <MailOpen className="w-4 h-4 mr-2" />
@@ -63,24 +84,44 @@ export default function MensagensPage() {
               Carregando...
             </div>
           ) : items.length === 0 ? (
-            <Card className="p-8 text-center text-muted-foreground">Nenhuma mensagem ainda.</Card>
+            <Card className="p-8 text-center text-muted-foreground">
+              Nenhuma mensagem ainda. Lembretes de prazo e avisos do sistema aparecem aqui.
+            </Card>
           ) : (
             items.map((item) => (
               <Card
                 key={item.id}
-                className={`p-4 cursor-pointer transition-colors ${!item.lida ? "border-primary/40 bg-secondary/30" : ""}`}
-                onClick={() => {
-                  void inboxApi.marcarLida(item.id)
-                  setItems((prev) =>
-                    prev.map((i) => (i.id === item.id ? { ...i, lida: true } : i)),
-                  )
-                  if (item.link) router.push(item.link)
+                role="button"
+                tabIndex={0}
+                className={`p-4 transition-colors ${!item.lida ? "border-primary/40 bg-secondary/30" : ""} ${item.link ? "cursor-pointer hover:bg-secondary/50" : "cursor-default"}`}
+                onClick={() => void abrirItem(item)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    void abrirItem(item)
+                  }
                 }}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{item.titulo}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{item.corpo}</p>
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{item.titulo}</p>
+                      <Badge variant="outline" className="text-xs font-normal">
+                        {rotuloTipo(item.tipo)}
+                      </Badge>
+                      {!item.lida ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Nova
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{item.corpo}</p>
+                    {item.link ? (
+                      <p className="text-xs text-primary inline-flex items-center gap-1 pt-1">
+                        Abrir destino
+                        <ExternalLink className="w-3 h-3" />
+                      </p>
+                    ) : null}
                   </div>
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     {formatDatePt(item.criadoEm)}
