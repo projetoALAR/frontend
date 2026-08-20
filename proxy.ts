@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { AUTH_COOKIE } from "@/lib/auth-session"
 
-const PUBLIC_PATHS = ["/login"]
+const PUBLIC_PATHS = [
+  "/login",
+  "/sentry-test",
+  "/esqueci-senha",
+  "/redefinir-senha",
+]
 
 /**
  * Proxy (Next.js 16): checagem otimista de sessão.
@@ -20,7 +25,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (hasSession && pathname === "/login") {
+  if (
+    hasSession &&
+    (pathname === "/login" ||
+      pathname === "/esqueci-senha" ||
+      pathname.startsWith("/esqueci-senha/"))
+  ) {
     return NextResponse.redirect(new URL("/", request.url))
   }
 

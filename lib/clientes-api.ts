@@ -71,4 +71,49 @@ export const clientesApi = {
     formData.append("arquivo", arquivo)
     return api.upload<DadosClienteExtraidos>("/clientes/extrair-dados", formData)
   },
+  baixarModeloImportacao: () => api.getBlob("/clientes/importacao/modelo"),
+  previewImportacao: (arquivo: File) => {
+    const formData = new FormData()
+    formData.append("arquivo", arquivo)
+    return api.upload<PreviewImportacao>("/clientes/importar/preview", formData)
+  },
+  importarCsv: (arquivo: File, mapeamento?: Record<string, string | null>) => {
+    const formData = new FormData()
+    formData.append("arquivo", arquivo)
+    if (mapeamento) {
+      formData.append("mapeamento", JSON.stringify(mapeamento))
+    }
+    return api.upload<ResultadoImportacaoClientes>("/clientes/importar", formData)
+  },
+}
+
+export type CampoAlvoImportacao = {
+  chave: string
+  rotulo: string
+  obrigatorio?: boolean
+  documentoFlexivel?: boolean
+}
+
+export type PreviewImportacao = {
+  cabecalhos: string[]
+  sugestoes: (string | null)[]
+  amostra: string[][]
+  totalLinhas: number
+  camposAlvo: CampoAlvoImportacao[]
+}
+
+export type ResultadoLinhaImportacao = {
+  linha: number
+  status: "criado" | "duplicado" | "erro"
+  nome?: string
+  clienteId?: string
+  motivo?: string
+}
+
+export type ResultadoImportacaoClientes = {
+  total: number
+  criados: number
+  duplicados: number
+  erros: number
+  resultados: ResultadoLinhaImportacao[]
 }

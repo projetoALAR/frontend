@@ -5,10 +5,11 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Search, Filter, Tag, Eye, Trash2, Pencil, X, Calendar, Briefcase } from "lucide-react"
+import { Search, Filter, Tag, Eye, Trash2, Pencil, X, Calendar, Briefcase, FileSpreadsheet } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
 import Link from "next/link"
 import { CaseModal } from "./case-modal"
+import { CasesImportDialog } from "./cases-import-dialog"
 import { FilterModal, countActiveFilters, EMPTY_FILTERS, type FilterOptions } from "./filter-modal"
 import { processosApi, type ProcessoFormData } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
@@ -44,6 +45,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   const [filter, setFilter] = useState(initialFilter)
   const [searchTerm, setSearchTerm] = useState("")
   const [isCaseModalOpen, setIsCaseModalOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [selectedCase, setSelectedCase] = useState<CaseView | null>(null)
   const [filters, setFilters] = useState<FilterOptions>(EMPTY_FILTERS)
@@ -85,8 +87,13 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       setSelectedCase(null)
       setIsCaseModalOpen(true)
     }
+    const handleOpenImport = () => setIsImportOpen(true)
     window.addEventListener("openNewCaseModal", handleOpenNewCase)
-    return () => window.removeEventListener("openNewCaseModal", handleOpenNewCase)
+    window.addEventListener("openImportCasesModal", handleOpenImport)
+    return () => {
+      window.removeEventListener("openNewCaseModal", handleOpenNewCase)
+      window.removeEventListener("openImportCasesModal", handleOpenImport)
+    }
   }, [canWrite])
 
   const extraStatuses = useMemo(() => {
@@ -375,17 +382,23 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
               <ListEmptyState
                 icon={Briefcase}
                 title="Nenhum caso ainda"
-                description="Crie o primeiro caso para acompanhar prazos, checklist, documentos, timeline e andamentos processuais."
+                description="Crie o primeiro caso ou importe um CSV após cadastrar os clientes. Acompanhe prazos, checklist, documentos, timeline e andamentos."
               >
                 {canWrite && (
-                  <Button
-                    onClick={() => {
-                      setSelectedCase(null)
-                      setIsCaseModalOpen(true)
-                    }}
-                  >
-                    + Novo caso
-                  </Button>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+                      <FileSpreadsheet className="w-4 h-4 mr-1" />
+                      Importar
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedCase(null)
+                        setIsCaseModalOpen(true)
+                      }}
+                    >
+                      + Novo caso
+                    </Button>
+                  </div>
                 )}
               </ListEmptyState>
             ) : (
@@ -404,6 +417,15 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
         onSave={handleSaveCase}
         caseData={selectedCase}
         isEditing={!!selectedCase}
+      />
+
+      <CasesImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onImported={() => {
+          invalidateDashboardCache()
+          void loadTasks()
+        }}
       />
 
       <FilterModal

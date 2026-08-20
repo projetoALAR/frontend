@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users } from "lucide-react"
+import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users, FileSpreadsheet } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ClientModal } from "./client-modal"
+import { ClientsImportDialog } from "./clients-import-dialog"
 import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -48,6 +49,7 @@ export function ClientsContent() {
   const [clients, setClients] = useState<ClienteCard[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<ClienteCard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -245,12 +247,22 @@ export function ClientsContent() {
           />
         </div>
         {canWrite && (
-          <Button
-            onClick={handleNewClient}
-            className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
-          >
-            + Novo Cliente
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="w-full sm:w-auto h-9 text-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-1" />
+              Importar
+            </Button>
+            <Button
+              onClick={handleNewClient}
+              className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+            >
+              + Novo Cliente
+            </Button>
+          </div>
         )}
       </div>
 
@@ -391,17 +403,23 @@ export function ClientsContent() {
           <ListEmptyState
             icon={Users}
             title="Nenhum cliente cadastrado"
-            description="Adicione clientes para vincular casos, documentos e prazos. Você pode importar dados depois via exportação LGPD."
+            description="Adicione clientes um a um, por documento (IA) ou importe um CSV na migração do escritório."
           >
             {canWrite && (
-              <Button
-                onClick={() => {
-                  setSelectedClient(null)
-                  setIsModalOpen(true)
-                }}
-              >
-                + Novo cliente
-              </Button>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button variant="outline" onClick={() => setImportOpen(true)}>
+                  <FileSpreadsheet className="w-4 h-4 mr-1" />
+                  Importar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSelectedClient(null)
+                    setIsModalOpen(true)
+                  }}
+                >
+                  + Novo cliente
+                </Button>
+              </div>
             )}
           </ListEmptyState>
         ) : (
@@ -429,6 +447,15 @@ export function ClientsContent() {
         onSave={handleSaveClient}
         clientData={selectedClient}
         isEditing={!!selectedClient}
+      />
+
+      <ClientsImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => {
+          invalidateDashboardCache()
+          void loadClients()
+        }}
       />
 
       {contact && (

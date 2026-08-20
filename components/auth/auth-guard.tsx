@@ -5,14 +5,25 @@ import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAccessPath } from "@/lib/roles"
 
-const PUBLIC_PATHS = ["/login", "/sentry-test"]
+const PUBLIC_PATHS = [
+  "/login",
+  "/sentry-test",
+  "/esqueci-senha",
+  "/redefinir-senha",
+]
+
+const FORCE_PASSWORD_PATH = "/trocar-senha"
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
-  const forbidden = Boolean(user && !isPublic && !canAccessPath(pathname, user.role))
+  const needsPasswordChange = Boolean(user?.mustChangePassword)
+  const onForcePassword = pathname === FORCE_PASSWORD_PATH
+  const forbidden = Boolean(
+    user && !isPublic && !onForcePassword && !canAccessPath(pathname, user.role),
+  )
 
   useEffect(() => {
     if (loading) return
@@ -22,15 +33,33 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       return
     }
 
-    if (user && pathname === "/login") {
+    if (user && needsPasswordChange && !onForcePassword) {
+      router.replace(FORCE_PASSWORD_PATH)
+      return
+    }
+
+    if (user && !needsPasswordChange && onForcePassword) {
       router.replace("/")
       return
     }
 
-    if (user && !isPublic && !canAccessPath(pathname, user.role)) {
+    if (user && isPublic && !needsPasswordChange) {
+      router.replace("/")
+      return
+    }
+
+    if (user && !isPublic && !onForcePassword && !canAccessPath(pathname, user.role)) {
       router.replace("/")
     }
-  }, [user, loading, isPublic, pathname, router])
+  }, [
+    user,
+    loading,
+    isPublic,
+    pathname,
+    router,
+    needsPasswordChange,
+    onForcePassword,
+  ])
 
   if (loading) {
     return (
@@ -48,7 +77,15 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     )
   }
 
-  if (user && pathname === "/login") {
+  if (user && needsPasswordChange && !onForcePassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Redirecionando para trocar senha...</p>
+      </div>
+    )
+  }
+
+  if (user && isPublic && !needsPasswordChange) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Entrando...</p>

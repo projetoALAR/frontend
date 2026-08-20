@@ -90,8 +90,17 @@ export const authApi = {
     })
   },
 
-  changePassword: (senhaAtual: string, novaSenha: string) =>
-    api.post<{ ok: boolean }>("/auth/change-password", { senhaAtual, novaSenha }),
+  changePassword: (senhaAtual: string | undefined, novaSenha: string) =>
+    api.post<{ ok: boolean }>("/auth/change-password", {
+      ...(senhaAtual ? { senhaAtual } : {}),
+      novaSenha,
+    }),
+
+  forgotPassword: (email: string) =>
+    api.post<{ ok: boolean }>("/auth/forgot-password", { email }),
+
+  resetPassword: (token: string, novaSenha: string) =>
+    api.post<{ ok: boolean }>("/auth/reset-password", { token, novaSenha }),
 
   createUser: (dados: {
     nome: string

@@ -153,6 +153,7 @@ export type UsuarioAuthDto = {
   fotoUrl?: string | null
   criadoEm: string
   totpEnabled?: boolean
+  mustChangePassword?: boolean
 }
 
 export type LoginDto = {

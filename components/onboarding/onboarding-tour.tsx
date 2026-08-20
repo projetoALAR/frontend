@@ -68,6 +68,7 @@ export function OnboardingTour() {
 
   useEffect(() => {
     if (loading || !user) return
+    if (user.mustChangePassword) return
     if (isOnboardingDone(user.id)) return
     const timer = window.setTimeout(() => setOpen(true), 800)
     return () => window.clearTimeout(timer)

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useRef, useCallback, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import { FileSpreadsheet } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos } from "@/lib/roles"
 import { casoHref, rotas } from "@/lib/app-routes"
@@ -57,6 +58,10 @@ function CasosPageContent() {
     window.dispatchEvent(new CustomEvent("openNewCaseModal"))
   }
 
+  const handleImportCases = () => {
+    window.dispatchEvent(new CustomEvent("openImportCasesModal"))
+  }
+
   if (caseId) {
     return (
       <main id="main-content" className="flex-1 min-w-0 p-4 md:p-6 md:ml-64">
@@ -74,12 +79,22 @@ function CasosPageContent() {
             <GlobalSearch />
           </div>
           {canWrite && (
-            <Button
-              className="shrink-0 h-10 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30"
-              onClick={handleNewCase}
-            >
-              + Novo Caso
-            </Button>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                variant="outline"
+                className="h-10 text-sm bg-transparent"
+                onClick={handleImportCases}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-1" />
+                Importar
+              </Button>
+              <Button
+                className="h-10 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30"
+                onClick={handleNewCase}
+              >
+                + Novo Caso
+              </Button>
+            </div>
           )}
         </div>
         <div>

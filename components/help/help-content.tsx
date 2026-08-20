@@ -48,7 +48,22 @@ const faqs = [
   {
     question: "Como adicionar um novo cliente?",
     answer:
-      "Clique em '+ Cliente'. Escolha pessoa física (CPF) ou jurídica (CNPJ). Preencha nome/razão social, contato e, se quiser, endereço e observações internas.",
+      "Clique em '+ Cliente'. Escolha pessoa física (CPF) ou jurídica (CNPJ). Preencha nome/razão social, contato e, se quiser, endereço e observações internas. No cadastro novo dá para preencher com um documento (IA) ou importar vários de uma vez com CSV.",
+  },
+  {
+    question: "Como importar vários clientes de uma planilha?",
+    answer:
+      "Em Clientes, use Importar. Envie a planilha do escritório (.xlsx/.csv) — o Alar sugere o mapeamento das colunas (Nome, CPF, etc.). Confirme e importe. Também dá para baixar o modelo Excel Alar. Limite: 500 linhas. Só admin e advogado.",
+  },
+  {
+    question: "Como importar vários casos de uma planilha?",
+    answer:
+      "Primeiro importe os clientes. Em Casos, use Importar com a planilha de processos: mapeie número do processo e CPF/CNPJ do cliente. Status e prioridade podem vir do arquivo. Limite: 500 linhas. Só admin e advogado.",
+  },
+  {
+    question: "A planilha do meu sistema tem nomes de colunas diferentes. E agora?",
+    answer:
+      "Não precisa reescrever. Ao enviar o arquivo, a tela de mapeamento mostra cada coluna do seu Excel e o campo correspondente no Alar. Ajuste o que precisar e confirme. Se CPF e CNPJ estão na mesma coluna, use 'Documento (CPF ou CNPJ)'.",
   },
   {
     question: "Como abrir a página de um caso?",
@@ -58,7 +73,17 @@ const faqs = [
   {
     question: "Como convidar membros da equipe?",
     answer:
-      "Acesse Equipe (admin) e clique em '+ Adicionar Membro'. Preencha nome, e-mail e cargo. Você pode registrar e enviar e-mail pelo botão no card do membro.",
+      "Acesse Equipe (admin). Dá para adicionar um a um ou usar Importar: envie a planilha do escritório, mapeie Nome/E-mail/Papel e defina uma senha temporária padrão. Limite: 100 por arquivo. Cada pessoa recebe e-mail de convite e, no primeiro login, é obrigada a trocar a senha.",
+  },
+  {
+    question: "Esqueci minha senha. O que faço?",
+    answer:
+      "Na tela de login, use Esqueci minha senha. Informe o e-mail da conta: se existir, chega um link válido por 1 hora. Depois defina uma senha forte (mínimo 10 caracteres, com maiúscula, minúscula e número).",
+  },
+  {
+    question: "Por que o Alar pede troca de senha no primeiro acesso?",
+    answer:
+      "Contas criadas ou importadas pela equipe usam senha temporária. Até trocar, só a tela de troca de senha fica liberada. Depois disso o app funciona normalmente.",
   },
   {
     question: "Como usar o filtro de datas nos casos?",

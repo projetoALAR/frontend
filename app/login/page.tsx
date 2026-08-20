@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -203,6 +204,13 @@ export default function LoginPage() {
                   autoComplete={isRegister ? "new-password" : "current-password"}
                 />
                 {isRegister ? <PasswordHints senha={senha} /> : null}
+                {!isRegister ? (
+                  <p className="text-right text-xs">
+                    <Link href="/esqueci-senha" className="text-muted-foreground underline">
+                      Esqueci minha senha
+                    </Link>
+                  </p>
+                ) : null}
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Aguarde..." : isRegister ? "Cadastrar" : "Entrar"}

@@ -7,7 +7,12 @@ const API_BASE = "/api/backend/v1"
 
 function handleUnauthorized() {
   if (typeof window === "undefined") return
-  if (!window.location.pathname.startsWith("/login")) {
+  const path = window.location.pathname
+  const publicAuth =
+    path.startsWith("/login") ||
+    path.startsWith("/esqueci-senha") ||
+    path.startsWith("/redefinir-senha")
+  if (!publicAuth) {
     // Fora do ciclo de renderização do React (helper de fetch puro): um reload
     // completo é intencional aqui para limpar todo o estado do app/cache.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination

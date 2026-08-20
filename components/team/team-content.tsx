@@ -50,9 +50,17 @@ export function TeamContent() {
       setSelectedMember(null)
       setIsModalOpen(true)
     }
+    const handleReload = () => {
+      invalidateDashboardCache()
+      void load()
+    }
     window.addEventListener("openNewTeamMemberModal", handleOpen)
-    return () => window.removeEventListener("openNewTeamMemberModal", handleOpen)
-  }, [canManage])
+    window.addEventListener("reloadEquipe", handleReload)
+    return () => {
+      window.removeEventListener("openNewTeamMemberModal", handleOpen)
+      window.removeEventListener("reloadEquipe", handleReload)
+    }
+  }, [canManage, load])
 
   const handleSaveMember = async (data: MembroFormData) => {
     if (selectedMember) {
