@@ -2,10 +2,12 @@
 
 import { FileText, ImageIcon, File } from "lucide-react"
 import type { ChatFonteApi } from "@/lib/chat-api"
+import { Button } from "@/components/ui/button"
 
 type ChatCitationsProps = {
   fontes: ChatFonteApi[]
   compact?: boolean
+  onOpenDocumento?: (documentoId: string, nome: string) => void
 }
 
 function iconFor(tipo: ChatFonteApi["tipo"]) {
@@ -14,7 +16,11 @@ function iconFor(tipo: ChatFonteApi["tipo"]) {
   return File
 }
 
-export function ChatCitations({ fontes, compact }: ChatCitationsProps) {
+export function ChatCitations({
+  fontes,
+  compact,
+  onOpenDocumento,
+}: ChatCitationsProps) {
   if (!fontes?.length) return null
 
   return (
@@ -29,12 +35,26 @@ export function ChatCitations({ fontes, compact }: ChatCitationsProps) {
       <ul className="space-y-2">
         {fontes.map((fonte) => {
           const Icon = iconFor(fonte.tipo)
+          const clicavel = !!onOpenDocumento
           return (
             <li key={fonte.documentoId} className="text-xs">
               <div className="flex items-start gap-1.5">
                 <Icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" />
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{fonte.nome}</p>
+                  {clicavel ? (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 text-xs font-medium truncate max-w-full justify-start"
+                      onClick={() =>
+                        onOpenDocumento(fonte.documentoId, fonte.nome)
+                      }
+                    >
+                      {fonte.nome}
+                    </Button>
+                  ) : (
+                    <p className="font-medium truncate">{fonte.nome}</p>
+                  )}
                   {fonte.trecho ? (
                     <p className="text-muted-foreground mt-0.5 leading-relaxed line-clamp-3">
                       “{fonte.trecho}”

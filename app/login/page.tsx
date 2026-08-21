@@ -107,7 +107,7 @@ export default function LoginPage() {
           backgroundSize: "28px 28px",
         }}
       />
-      <Card className="relative w-full max-w-md p-6 sm:p-8 space-y-6 shadow-lg border-border/80">
+      <Card className="relative w-full max-w-md space-y-6 border-border/70 bg-card/95 p-6 shadow-none backdrop-blur-sm sm:p-8">
         <div className="space-y-3 text-center">
           <AlarLogo variant="full" size="lg" className="justify-center" />
           <h1 className="text-xl font-semibold text-foreground tracking-tight">

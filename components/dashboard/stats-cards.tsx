@@ -1,12 +1,11 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { DashboardResumoError } from "@/components/dashboard/dashboard-resumo-error"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { casosListaHref, rotas } from "@/lib/app-routes"
-import { ArrowUpRight, TrendingUp } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function StatsCards() {
   const router = useRouter()
@@ -14,31 +13,25 @@ export function StatsCards() {
 
   const stats = [
     {
-      title: "Total de Casos",
+      title: "Total de casos",
       value: String(data?.totalProcessos ?? 0),
-      increase: `${data?.totalClientes ?? 0} clientes`,
-      bgColor: "bg-primary",
-      textColor: "text-primary-foreground",
-      delay: "0ms",
+      hint: `${data?.totalClientes ?? 0} clientes`,
       filter: null as string | null,
+      emphasis: true,
     },
     {
-      title: "Casos Concluídos",
+      title: "Concluídos",
       value: String(data?.processosConcluidos ?? 0),
-      increase: `${data?.percentualConclusao ?? 0}% do total`,
-      bgColor: "bg-card",
-      textColor: "text-foreground",
-      delay: "100ms",
+      hint: `${data?.percentualConclusao ?? 0}% do total`,
       filter: "concluidas",
+      emphasis: false,
     },
     {
-      title: "Em Andamento",
+      title: "Em andamento",
       value: String(data?.processosAtivos ?? 0),
-      increase: "Casos ativos",
-      bgColor: "bg-card",
-      textColor: "text-foreground",
-      delay: "200ms",
+      hint: "Casos ativos",
       filter: "ativas",
+      emphasis: false,
     },
   ]
 
@@ -58,30 +51,32 @@ export function StatsCards() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 divide-y divide-border/70 overflow-hidden rounded-xl border border-border/70 bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       {stats.map((stat) => (
-        <Card
+        <button
           key={stat.title}
+          type="button"
           onClick={() => handleCardClick(stat.filter)}
-          style={{ animationDelay: stat.delay }}
-          className={`${stat.bgColor} ${stat.textColor} p-4 transition-shadow duration-200 ease-out animate-slide-in-up cursor-pointer shadow-sm hover:shadow-md`}
+          className={cn(
+            "group p-4 text-left transition-colors hover:bg-secondary/50 sm:p-5",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          )}
         >
-          <div className="flex items-start justify-between mb-3">
-            <h3 className="text-xs font-medium opacity-90">{stat.title}</h3>
-            <div
-              className={`w-6 h-6 rounded-full ${
-                stat.bgColor === "bg-primary" ? "bg-primary-foreground/20" : "bg-primary"
-              } flex items-center justify-center`}
-            >
-              <ArrowUpRight className="w-3 h-3 text-primary-foreground" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold mb-2 tabular-nums">{stat.value}</p>
-          <div className="flex items-center gap-1.5 text-xs opacity-80">
-            <TrendingUp className="w-3 h-3" />
-            <span>{stat.increase}</span>
-          </div>
-        </Card>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {stat.title}
+          </p>
+          <p
+            className={cn(
+              "mt-2 text-3xl font-semibold tabular-nums tracking-tight",
+              stat.emphasis ? "text-primary" : "text-foreground",
+            )}
+          >
+            {stat.value}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground group-hover:text-foreground/70 transition-colors">
+            {stat.hint}
+          </p>
+        </button>
       ))}
     </div>
   )

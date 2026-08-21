@@ -32,14 +32,14 @@ export default function DashboardPage() {
             <>
               <Button
                 onClick={() => router.push(casosListaHref({ novo: true }))}
-                className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-9 w-full text-sm sm:w-auto"
               >
-                + Casos
+                + Novo caso
               </Button>
               <Button
                 variant="outline"
                 onClick={() => router.push(clientesListaHref({ novo: true }))}
-                className="w-full sm:w-auto h-9 text-sm"
+                className="h-9 w-full border-border/80 bg-transparent text-sm sm:w-auto"
               >
                 + Cliente
               </Button>
@@ -48,17 +48,17 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="mt-6 space-y-4 md:space-y-5">
+      <div className="mt-6 space-y-5">
         <DashboardWelcomeCard />
         <StatsCards />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-4 min-w-0">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
+          <div className="min-w-0 space-y-4 lg:col-span-2">
             {showGestaoWidgets && <ProjectAnalytics />}
             <ProjectList />
           </div>
 
-          <div className="space-y-4 min-w-0">
+          <div className="min-w-0 space-y-4">
             <Reminders />
             <ProjectProgress />
             {showGestaoWidgets && <TeamSummaryCard />}

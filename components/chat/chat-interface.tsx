@@ -7,6 +7,8 @@ import { ChatMessage } from "./chat-message"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { Send } from "lucide-react"
 import { ChatExportButton } from "./chat-export-button"
+import { documentosApi } from "@/lib/documentos-api"
+import { useToast } from "@/hooks/use-toast"
 
 interface Message {
   id: string
@@ -20,7 +22,12 @@ interface Message {
 interface ChatInterfaceProps {
   messages: Message[]
   onSendMessage: (content: string) => Promise<void>
-  onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
+  onFeedback?: (
+    messageId: string,
+    util: boolean,
+    motivo?: string,
+  ) => void | Promise<void>
+  onOpenDocumento?: (documentoId: string, nome: string) => void
   conversacaoId?: string
   quota?: { usados: number; limite: number; restantes: number } | null
   isLoading?: boolean
@@ -30,16 +37,34 @@ export function ChatInterface({
   messages,
   onSendMessage,
   onFeedback,
+  onOpenDocumento,
   conversacaoId,
   quota,
   isLoading = false,
 }: ChatInterfaceProps) {
+  const { toast } = useToast()
   const [inputValue, setInputValue] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef(0)
   const loadingListEmpty = isLoading && messages.length === 0 && !isProcessing
+
+  const abrirDocumento =
+    onOpenDocumento ??
+    (async (documentoId: string, nome: string) => {
+      try {
+        const doc = await documentosApi.obter(documentoId)
+        if (!doc.urlArquivo) throw new Error("URL indisponível")
+        window.open(doc.urlArquivo, "_blank", "noopener,noreferrer")
+      } catch (error) {
+        toast({
+          title: `Não abriu ${nome}`,
+          description: error instanceof Error ? error.message : "Falha na API",
+          variant: "destructive",
+        })
+      }
+    })
 
   const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
     const container = scrollContainerRef.current
@@ -131,6 +156,7 @@ export function ChatInterface({
                 fontes={message.fontes}
                 feedback={message.feedback}
                 onFeedback={onFeedback}
+                onOpenDocumento={(id, nome) => void abrirDocumento(id, nome)}
               />
             ))}
             {(isProcessing || isLoading) && (

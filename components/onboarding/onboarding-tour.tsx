@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Briefcase,
+  Calendar,
   MessageCircle,
   Search,
-  UserPlus,
+  Shield,
   Sparkles,
+  UserPlus,
+  Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,51 +23,89 @@ import {
 } from "@/components/ui/dialog"
 import { useAuth } from "@/components/auth/auth-provider"
 import { isOnboardingDone, markOnboardingDone } from "@/lib/onboarding"
-import { canWriteClientesProcessos } from "@/lib/roles"
+import { canCreateUsers, canWriteClientesProcessos, type Role } from "@/lib/roles"
 import { rotas } from "@/lib/app-routes"
 
-const STEPS = [
-  {
-    icon: Sparkles,
-    title: "Bem-vindo ao Alar",
-    description:
-      "Centralize clientes, casos, prazos e documentos do escritório em um só lugar. Este tour leva menos de um minuto.",
-  },
-  {
-    icon: UserPlus,
-    title: "Cadastre clientes",
-    description:
-      "Comece pela aba Clientes. Cada cliente pode ter vários casos vinculados com CPF e contato.",
-    action: { label: "Ir para Clientes", href: rotas.clientes },
-  },
-  {
-    icon: Briefcase,
-    title: "Abra casos e prazos",
-    description:
-      "Em Casos, crie processos, defina responsável, anexe documentos e acompanhe a timeline do andamento.",
-    action: { label: "Ir para Casos", href: rotas.casos },
-  },
-  {
-    icon: Search,
-    title: "Busca e mensagens",
-    description:
-      "Use Ctrl+K para buscar por nome, CPF ou CNJ. Lembretes de prazo aparecem em Mensagens e no sino do topo.",
-    action: { label: "Abrir Mensagens", href: rotas.mensagens },
-  },
-  {
-    icon: MessageCircle,
-    title: "Pronto para começar",
-    description:
-      "O assistente de IA em cada caso ajuda a resumir documentos — sempre com revisão humana. Boas-vindas!",
-  },
-] as const
+type Step = {
+  icon: typeof Sparkles
+  title: string
+  description: string
+  action?: { label: string; href: string }
+}
+
+function stepsForRole(role: Role | undefined): Step[] {
+  const comum: Step[] = [
+    {
+      icon: Sparkles,
+      title: "Bem-vindo ao Alar",
+      description:
+        "Centralize clientes, casos, prazos e documentos do escritório em um só lugar. Este tour leva menos de um minuto.",
+    },
+    {
+      icon: Briefcase,
+      title: "Casos e prazos",
+      description:
+        "Em Casos você acompanha processos atribuídos a você, anexa documentos e usa a aba Prazos.",
+      action: { label: "Ir para Casos", href: rotas.casos },
+    },
+    {
+      icon: Calendar,
+      title: "Agenda do escritório",
+      description:
+        "Compromissos e audiências ficam na Agenda — com link para o caso quando houver vínculo.",
+      action: { label: "Abrir Agenda", href: rotas.agenda },
+    },
+    {
+      icon: Search,
+      title: "Busca rápida",
+      description:
+        "Use Ctrl+K para achar cliente, CPF/CNPJ ou número CNJ sem sair da tela.",
+    },
+    {
+      icon: MessageCircle,
+      title: "IA com revisão humana",
+      description:
+        "O chat do caso resume anexos e cita fontes. Sempre revise antes de usar em peça oficial.",
+    },
+  ]
+
+  if (canWriteClientesProcessos(role)) {
+    comum.splice(1, 0, {
+      icon: UserPlus,
+      title: "Cadastre clientes",
+      description:
+        "Comece pela aba Clientes. Cada cliente pode ter vários casos com CPF/CNPJ e contato.",
+      action: { label: "Ir para Clientes", href: rotas.clientes },
+    })
+  } else {
+    comum.splice(1, 0, {
+      icon: Users,
+      title: "Seu papel de assistente",
+      description:
+        "Você vê os casos em que é responsável ou co-responsável. Peça ao advogado a atribuição se faltar algum.",
+      action: { label: "Ver meus casos", href: rotas.casos },
+    })
+  }
+
+  if (canCreateUsers(role)) {
+    comum.splice(comum.length - 1, 0, {
+      icon: Shield,
+      title: "Equipe e segurança",
+      description:
+        "Em Configurações você convida a equipe, acompanha SMTP e ativa 2FA. Em Relatórios exporta o recorte do escritório.",
+      action: { label: "Abrir Configurações", href: rotas.configuracoes },
+    })
+  }
+
+  return comum
+}
 
 export function OnboardingTour() {
   const router = useRouter()
   const { user, loading } = useAuth()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
-  const canWrite = canWriteClientesProcessos(user?.role)
+  const steps = useMemo(() => stepsForRole(user?.role), [user?.role])
 
   useEffect(() => {
     if (loading || !user) return
@@ -83,17 +124,21 @@ export function OnboardingTour() {
     return () => window.removeEventListener("openOnboardingTour", reopen)
   }, [])
 
+  useEffect(() => {
+    setStep(0)
+  }, [user?.role])
+
   const finish = () => {
     if (user) markOnboardingDone(user.id)
     setOpen(false)
   }
 
-  const current = STEPS[step]
+  const current = steps[step] ?? steps[0]
   const Icon = current.icon
-  const isLast = step === STEPS.length - 1
+  const isLast = step >= steps.length - 1
 
   const handleAction = () => {
-    if ("action" in current && current.action) {
+    if (current.action) {
       finish()
       router.push(current.action.href)
       return
@@ -117,50 +162,43 @@ export function OnboardingTour() {
             {current.description}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="flex justify-center gap-1.5 py-2">
-          {STEPS.map((_, i) => (
+        <div className="flex justify-center gap-1.5 py-1">
+          {steps.map((_, i) => (
             <span
               key={i}
-              className={`h-1.5 rounded-full transition-all ${
-                i === step ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
+              className={`h-1.5 w-1.5 rounded-full ${
+                i === step ? "bg-primary" : "bg-muted-foreground/30"
               }`}
             />
           ))}
         </div>
-
-        <DialogFooter className="flex-col sm:flex-col gap-2">
-          {"action" in current && current.action && canWrite ? (
-            <Button className="w-full" onClick={handleAction}>
-              {current.action.label}
-            </Button>
-          ) : null}
-          <div className="flex w-full gap-2">
-            {step > 0 && (
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between">
+          <Button type="button" variant="ghost" onClick={finish}>
+            Pular tour
+          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            {step > 0 ? (
               <Button
+                type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 sm:flex-none"
                 onClick={() => setStep((s) => s - 1)}
               >
                 Voltar
               </Button>
-            )}
+            ) : null}
             <Button
-              className="flex-1"
-              variant={isLast ? "default" : "secondary"}
-              onClick={() => {
-                if (isLast) finish()
-                else setStep((s) => s + 1)
-              }}
+              type="button"
+              className="flex-1 sm:flex-none"
+              onClick={handleAction}
             >
-              {isLast ? "Começar" : "Próximo"}
+              {current.action?.label
+                ? current.action.label
+                : isLast
+                  ? "Concluir"
+                  : "Próximo"}
             </Button>
           </div>
-          {!isLast && (
-            <Button variant="ghost" size="sm" className="w-full" onClick={finish}>
-              Pular tour
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

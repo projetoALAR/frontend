@@ -20,7 +20,7 @@ export function DashboardWelcomeCard() {
   if (data.totalProcessos > 0 && data.totalClientes > 0) return null
 
   return (
-    <Card className="p-4 md:p-6 border-dashed bg-secondary/30">
+    <Card className="border-dashed border-border/80 bg-secondary/40 p-4 shadow-none md:p-5">
       <ListEmptyState
         icon={Briefcase}
         title={

@@ -14,25 +14,24 @@ export function TeamSummaryCard() {
   const productivity = data?.percentualConclusao ?? 0
 
   return (
-    <Card
-      className="p-4 transition-all duration-500 hover:shadow-xl animate-slide-in-up overflow-hidden"
-      style={{ animationDelay: "900ms" }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Resumo da Equipe</h2>
+    <Card className="overflow-hidden border-border/80 p-5 gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold tracking-tight text-foreground">
+          Resumo da equipe
+        </h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="mb-1 grid grid-cols-3 gap-2">
         {teamStats.map((stat) => (
-          <div key={stat.label} className="bg-secondary rounded-lg p-2.5 text-center">
-            <p className="text-xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{stat.label}</p>
+          <div key={stat.label} className="rounded-lg bg-secondary/70 p-2.5 text-center">
+            <p className="text-lg font-semibold tabular-nums text-foreground">{stat.value}</p>
+            <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="mb-3">
-        <div className="flex items-center justify-between mb-1.5">
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground">Taxa de conclusão</p>
           <div className="flex items-center gap-1 text-primary">
             <TrendingUp className="w-3 h-3" />

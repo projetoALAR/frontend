@@ -4,6 +4,7 @@ import type { components } from "@/lib/openapi"
 export type DocumentoApi = components["schemas"]["DocumentoRespostaDto"]
 
 export const documentosApi = {
+  obter: (id: string) => api.get<DocumentoApi>(`/documentos/${id}`),
   listarPorProcesso: (processoId: string) =>
     api.get<DocumentoApi[]>(`/documentos/processo/${processoId}`),
   upload: (processoId: string, arquivo: File) => {

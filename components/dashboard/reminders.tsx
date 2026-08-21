@@ -1,7 +1,7 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { Clock, AlertCircle } from "lucide-react"
+import { Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
@@ -35,20 +35,21 @@ export function Reminders() {
   ].slice(0, 5)
 
   return (
-    <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up"
-      style={{ animationDelay: "500ms" }}
-    >
-      <h2 className="text-xl font-semibold text-foreground mb-6">Prazos Próximos</h2>
-      <div className="space-y-3">
+    <Card className="border-border/80 p-5 gap-4">
+      <h2 className="text-base font-semibold tracking-tight text-foreground">
+        Prazos próximos
+      </h2>
+      <div className="space-y-1">
         {deadlines.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nenhum prazo pendente.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhum prazo pendente.
+          </p>
         ) : (
           deadlines.map((item) => (
             <button
               type="button"
               key={item.id}
-              className="w-full text-left bg-secondary rounded-xl p-4 transition-all duration-300 hover:shadow-md hover:scale-[1.02] cursor-pointer"
+              className="flex w-full items-start gap-3 rounded-lg px-2.5 py-2.5 text-left transition-colors hover:bg-secondary/70"
               onClick={() => {
                 if (item.tipo === "processo") {
                   router.push(casoHref(item.entityId))
@@ -59,18 +60,17 @@ export function Reminders() {
                 }
               }}
             >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{item.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.project}</p>
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <AlertCircle className="w-3 h-3 text-primary" />
-                    <p className="text-xs font-medium text-primary">Prazo: {item.dueDate}</p>
-                  </div>
-                </div>
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-medium leading-tight text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{item.project}</p>
+                <p className="mt-1 text-xs font-medium text-primary">
+                  {item.dueDate}
+                </p>
               </div>
             </button>
           ))

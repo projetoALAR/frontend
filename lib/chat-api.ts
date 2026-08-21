@@ -69,8 +69,15 @@ export const chatApi = {
       { conteudo },
     ),
   obterQuota: () => api.get<ChatQuotaApi>("/chat/quota"),
-  registrarFeedback: (mensagemId: string, util: boolean) =>
-    api.post<MensagemApi>(`/chat/mensagens/${mensagemId}/feedback`, { util }),
+  registrarFeedback: (
+    mensagemId: string,
+    util: boolean,
+    motivo?: string,
+  ) =>
+    api.post<MensagemApi>(`/chat/mensagens/${mensagemId}/feedback`, {
+      util,
+      ...(motivo ? { motivo } : {}),
+    }),
   exportar: (conversacaoId: string, formato: "markdown" | "json" = "markdown") =>
     api.get<ChatExportApi>(
       `/chat/conversas/${conversacaoId}/export?formato=${formato}`,

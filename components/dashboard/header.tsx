@@ -23,6 +23,7 @@ import { preferenciasApi } from "@/lib/preferencias-api"
 import { inboxApi } from "@/lib/inbox-api"
 import { usePushNotifications } from "@/hooks/use-push-notifications"
 import type { ReactNode } from "react"
+import { ROLE_LABELS } from "@/lib/roles"
 
 interface HeaderProps {
   title: string
@@ -54,24 +55,25 @@ export function Header({ title, description, actions }: HeaderProps) {
   }, [])
 
   const deadlines = useMemo(
-    () => [
-      ...(data?.proximosPrazos?.processos ?? []).map((p) => ({
-        id: `p-${p.id}`,
-        tipo: "processo" as const,
-        entityId: p.id,
-        processoId: p.id as string | null,
-        title: p.titulo || p.numero,
-        dueDate: formatDatePt(p.prazo),
-      })),
-      ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
-        id: `c-${c.id}`,
-        tipo: "compromisso" as const,
-        entityId: c.processoId || c.id,
-        processoId: c.processoId,
-        title: c.titulo,
-        dueDate: formatDatePt(c.dataHora),
-      })),
-    ].slice(0, 3),
+    () =>
+      [
+        ...(data?.proximosPrazos?.processos ?? []).map((p) => ({
+          id: `p-${p.id}`,
+          tipo: "processo" as const,
+          entityId: p.id,
+          processoId: p.id as string | null,
+          title: p.titulo || p.numero,
+          dueDate: formatDatePt(p.prazo),
+        })),
+        ...(data?.proximosPrazos?.compromissos ?? []).map((c) => ({
+          id: `c-${c.id}`,
+          tipo: "compromisso" as const,
+          entityId: c.processoId || c.id,
+          processoId: c.processoId,
+          title: c.titulo,
+          dueDate: formatDatePt(c.dataHora),
+        })),
+      ].slice(0, 3),
     [data],
   )
 
@@ -87,33 +89,52 @@ export function Header({ title, description, actions }: HeaderProps) {
     }
   }, [deadlines, lidas])
 
-  const iniciais = (user?.nome || "U")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
-    .join("") || "U"
+  const iniciais =
+    (user?.nome || "U")
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? "")
+      .join("") || "U"
+
+  const roleLabel = user?.role ? ROLE_LABELS[user.role] : null
 
   return (
-    <header className="space-y-3 md:space-y-4 animate-slide-in-up">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+    <header className="animate-fade-in space-y-4 pb-1">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-2 min-w-0">
           <MobileNav />
-          <GlobalSearch />
+          <div className="min-w-0 pt-0.5">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-[1.75rem]">
+              {title}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+              {description}
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 md:gap-2">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 self-end sm:self-start">
+          <div className="mr-1 hidden min-w-[12rem] max-w-xs flex-1 sm:block lg:min-w-[16rem]">
+            <GlobalSearch />
+          </div>
+          <div className="sm:hidden flex-1 min-w-0">
+            <GlobalSearch />
+          </div>
+
           <Button
             variant="ghost"
             size="icon"
-            className="relative hover:bg-secondary transition-colors min-h-11 min-w-11"
-            aria-label={inboxUnread > 0 ? `Mensagens, ${inboxUnread} não lidas` : "Mensagens"}
+            className="relative min-h-10 min-w-10 text-muted-foreground hover:text-foreground"
+            aria-label={
+              inboxUnread > 0 ? `Mensagens, ${inboxUnread} não lidas` : "Mensagens"
+            }
             onClick={() => router.push(rotas.mensagens)}
           >
             <Mail className="w-4 h-4" />
             {inboxUnread > 0 && (
               <>
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-destructive rounded-full" />
                 <span className="sr-only">{inboxUnread} mensagens não lidas</span>
               </>
             )}
@@ -124,13 +145,17 @@ export function Header({ title, description, actions }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-secondary transition-colors min-h-11 min-w-11"
-                aria-label={unreadCount > 0 ? `Notificações, ${unreadCount} não lidas` : "Notificações"}
+                className="relative min-h-10 min-w-10 text-muted-foreground hover:text-foreground"
+                aria-label={
+                  unreadCount > 0
+                    ? `Notificações, ${unreadCount} não lidas`
+                    : "Notificações"
+                }
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
                   <>
-                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full animate-pulse" />
+                    <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-destructive rounded-full" />
                     <span className="sr-only">{unreadCount} notificações não lidas</span>
                   </>
                 )}
@@ -152,7 +177,9 @@ export function Header({ title, description, actions }: HeaderProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {deadlines.length === 0 ? (
-                <div className="p-3 text-xs text-muted-foreground text-center">Nenhuma notificação.</div>
+                <div className="p-3 text-xs text-muted-foreground text-center">
+                  Nenhuma notificação.
+                </div>
               ) : (
                 deadlines.map((item) => (
                   <DropdownMenuItem
@@ -171,7 +198,9 @@ export function Header({ title, description, actions }: HeaderProps) {
                     }}
                   >
                     <span className="text-sm font-medium leading-tight">{item.title}</span>
-                    <span className="text-xs text-muted-foreground">Prazo: {item.dueDate}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Prazo: {item.dueDate}
+                    </span>
                   </DropdownMenuItem>
                 ))
               )}
@@ -192,32 +221,29 @@ export function Header({ title, description, actions }: HeaderProps) {
               router.push(rotas.configuracoes)
             }}
             aria-label={`Conta de ${user?.nome || "usuário"}`}
-            className="flex items-center gap-2 pl-2 md:pl-3 border-l border-border hover:opacity-80 transition-opacity cursor-pointer min-h-11"
+            className="ml-1 flex items-center gap-2.5 border-l border-border/70 pl-2.5 min-h-10 hover:opacity-90 transition-opacity cursor-pointer"
           >
-            <Avatar className="w-7 h-7 md:w-8 md:h-8 ring-2 ring-primary/20 transition-all duration-300 hover:ring-primary/40">
+            <Avatar className="w-8 h-8 ring-1 ring-border">
               <AvatarImage src={user?.fotoUrl || undefined} alt={user?.nome || "Conta"} />
-              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+              <AvatarFallback className="text-[11px] bg-primary/10 text-primary font-medium">
                 {iniciais}
               </AvatarFallback>
             </Avatar>
-            <div className="text-xs hidden md:block text-left max-w-[10rem] lg:max-w-[14rem]">
-              <p className="font-semibold text-foreground truncate">{user?.nome || "Minha Conta"}</p>
-              <p className="text-muted-foreground text-[10px] truncate">
-                {user?.role
-                  ? `${user.role === "ADMIN" ? "Administrador" : user.role === "ADVOGADO" ? "Advogado" : "Assistente"} · ${user.email}`
-                  : user?.email || ""}
+            <div className="hidden text-left lg:block max-w-[9rem]">
+              <p className="text-sm font-medium text-foreground truncate leading-tight">
+                {user?.nome || "Conta"}
               </p>
+              {roleLabel ? (
+                <p className="text-xs text-muted-foreground truncate">{roleLabel}</p>
+              ) : null}
             </div>
           </button>
         </div>
       </div>
 
-      <div>
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground mb-1">{title}</h1>
-        <p className="text-xs md:text-sm text-muted-foreground">{description}</p>
-      </div>
-
-      {actions && <div className="flex flex-col sm:flex-row gap-2">{actions}</div>}
+      {actions ? (
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">{actions}</div>
+      ) : null}
     </header>
   )
 }

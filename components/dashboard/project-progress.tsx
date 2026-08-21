@@ -26,13 +26,12 @@ export function ProjectProgress() {
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <Card
-      className="p-4 transition-all duration-500 hover:shadow-xl animate-slide-in-up overflow-hidden"
-      style={{ animationDelay: "800ms" }}
-    >
-      <h2 className="text-lg font-semibold text-foreground mb-4">Progresso Geral de Casos</h2>
+    <Card className="overflow-hidden border-border/80 p-5 gap-4">
+      <h2 className="text-base font-semibold tracking-tight text-foreground">
+        Progresso geral
+      </h2>
       <div className="flex flex-col items-center">
-        <div className="relative w-40 h-40 mb-4">
+        <div className="relative mb-3 h-36 w-36">
           <svg className="w-full h-full -rotate-90 relative z-10" viewBox="0 0 160 160">
             <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="none" className="text-muted/30" />
             <circle

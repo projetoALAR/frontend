@@ -7,7 +7,7 @@ export default function ModelosPage() {
     <AppShell>
       <Header
         title="Modelos de documentos"
-        description="Biblioteca de petições, contratos e procurações com preenchimento automático."
+        description="Petições, contratos e procurações com preenchimento automático."
       />
       <div className="mt-6">
         <TemplatesContent />

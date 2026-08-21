@@ -261,7 +261,7 @@ export function ClientsContent() {
             </Button>
             <Button
               onClick={handleNewClient}
-              className="w-full sm:w-auto h-9 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:scale-105"
+              className="w-full sm:w-auto h-9 text-sm"
             >
               + Novo Cliente
             </Button>
@@ -272,16 +272,15 @@ export function ClientsContent() {
       {isLoading ? (
         <ListSkeleton variant="cards" count={6} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clients.map((client, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {clients.map((client) => (
             <Card
               key={client.id}
-              className="p-4 hover:shadow-md transition-shadow duration-200 animate-slide-in-up"
-              style={{ animationDelay: `${index * 50}ms` }}
+              className="border-border/80 p-5 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-start justify-between mb-4">
-                <Avatar className="w-12 h-12 border-2 border-primary/20">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                <Avatar className="w-11 h-11 ring-1 ring-border">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                     {getInitials(client.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -460,18 +459,17 @@ export function ClientsContent() {
             )}
           </ListEmptyState>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum cliente encontrado</p>
-            {searchTerm && (
-              <Button
-                variant="link"
-                onClick={() => setSearchTerm("")}
-                className="text-primary mt-2"
-              >
+          <ListEmptyState
+            icon={Users}
+            title="Nenhum cliente encontrado"
+            description="Tente outro nome, CPF/CNPJ ou limpe a busca."
+          >
+            {searchTerm ? (
+              <Button variant="outline" size="sm" onClick={() => setSearchTerm("")}>
                 Limpar busca
               </Button>
-            )}
-          </div>
+            ) : null}
+          </ListEmptyState>
         )
       )}
 

@@ -45,7 +45,7 @@ export default function CasoPage() {
   }, [id])
 
   return (
-    <AppShell mainClassName="flex flex-col min-h-screen">
+    <AppShell fullWidth mainClassName="flex flex-col min-h-screen">
       <div className="shrink-0 mb-4">
         <Header
           title="Caso"

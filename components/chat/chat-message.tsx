@@ -12,7 +12,12 @@ interface ChatMessageProps {
   /** No chat do caso: avisa quando a IA não citou anexos. */
   avisoSemFontes?: boolean
   feedback?: "util" | "nao_util" | null
-  onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
+  onFeedback?: (
+    messageId: string,
+    util: boolean,
+    motivo?: string,
+  ) => void | Promise<void>
+  onOpenDocumento?: (documentoId: string, nome: string) => void
 }
 
 export function ChatMessage({
@@ -24,6 +29,7 @@ export function ChatMessage({
   avisoSemFontes = false,
   feedback,
   onFeedback,
+  onOpenDocumento,
 }: ChatMessageProps) {
   const temFontes = !!(fontes && fontes.length > 0)
 
@@ -38,7 +44,13 @@ export function ChatMessage({
         )}
       >
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
-        {!isUser && temFontes ? <ChatCitations fontes={fontes!} compact /> : null}
+        {!isUser && temFontes ? (
+          <ChatCitations
+            fontes={fontes!}
+            compact
+            onOpenDocumento={onOpenDocumento}
+          />
+        ) : null}
         {!isUser && avisoSemFontes && !temFontes ? (
           <p className="mt-2 text-[11px] text-muted-foreground border-t border-border/60 pt-2">
             Sem fontes citadas nos anexos — confira se a resposta se baseia no

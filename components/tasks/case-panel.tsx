@@ -306,9 +306,13 @@ export function CasePanel({
     }
   }
 
-  const handleChatFeedback = async (messageId: string, util: boolean) => {
+  const handleChatFeedback = async (
+    messageId: string,
+    util: boolean,
+    motivo?: string,
+  ) => {
     try {
-      const updated = await chatApi.registrarFeedback(messageId, util)
+      const updated = await chatApi.registrarFeedback(messageId, util, motivo)
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
       )
@@ -319,6 +323,23 @@ export function CasePanel({
     } catch (error) {
       toast({
         title: "Erro ao avaliar",
+        description: error instanceof Error ? error.message : "Falha na API",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const abrirFonteDocumento = async (documentoId: string, nome: string) => {
+    try {
+      const local = documents.find((d) => d.id === documentoId)
+      const url =
+        local?.urlArquivo ||
+        (await documentosApi.obter(documentoId)).urlArquivo
+      if (!url) throw new Error("URL do documento indisponível")
+      window.open(url, "_blank", "noopener,noreferrer")
+    } catch (error) {
+      toast({
+        title: `Não abriu ${nome}`,
         description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
@@ -990,7 +1011,13 @@ export function CasePanel({
                         {msg.conteudo}
                       </div>
                       {!msg.isUser && msg.fontes && msg.fontes.length > 0 ? (
-                        <ChatCitations fontes={msg.fontes} compact />
+                        <ChatCitations
+                          fontes={msg.fontes}
+                          compact
+                          onOpenDocumento={(id, nome) =>
+                            void abrirFonteDocumento(id, nome)
+                          }
+                        />
                       ) : !msg.isUser ? (
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
                           Sem fontes citadas nos anexos — confira se a resposta se

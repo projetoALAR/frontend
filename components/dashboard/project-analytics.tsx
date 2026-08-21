@@ -37,16 +37,15 @@ export function ProjectAnalytics() {
   }
 
   return (
-    <Card
-      className="p-6 transition-all duration-500 hover:shadow-xl animate-slide-in-up bg-card"
-      style={{ animationDelay: "400ms" }}
-    >
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground">Volume de Processos por Status</h2>
+    <Card className="border-border/80 bg-card p-5 gap-4">
+      <div>
+        <h2 className="text-base font-semibold tracking-tight text-foreground">
+          Volume por status
+        </h2>
       </div>
 
       <div className="flex flex-col items-center justify-center">
-        <div className="w-full h-72 mb-4 relative">
+        <div className="relative mb-2 h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 40, right: 20, left: -25, bottom: 20 }}>
               <CartesianGrid strokeDasharray="0" stroke="currentColor" vertical={false} className="text-muted/10" />

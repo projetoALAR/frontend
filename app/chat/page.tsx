@@ -194,9 +194,13 @@ export default function ChatPage() {
     }
   }
 
-  const handleFeedback = async (messageId: string, util: boolean) => {
+  const handleFeedback = async (
+    messageId: string,
+    util: boolean,
+    motivo?: string,
+  ) => {
     try {
-      const updated = await chatApi.registrarFeedback(messageId, util)
+      const updated = await chatApi.registrarFeedback(messageId, util, motivo)
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
       )
@@ -222,7 +226,10 @@ export default function ChatPage() {
   }
 
   return (
-    <AppShell mainClassName="flex flex-col md:flex-row h-[100dvh] min-h-0 p-0 md:p-0 overflow-hidden">
+    <AppShell
+      fullWidth
+      mainClassName="flex flex-col md:flex-row h-[100dvh] min-h-0 overflow-hidden"
+    >
       <div className="flex items-center gap-2 border-b border-border px-2 py-2 bg-card shrink-0 md:hidden">
         <MobileNav />
         <span className="text-sm font-semibold text-foreground flex-1 truncate">Chat IA</span>

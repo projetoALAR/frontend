@@ -73,7 +73,7 @@ export function GlobalSearch() {
       <Button
         variant="outline"
         size="sm"
-        className="hidden md:flex h-10 gap-2 text-muted-foreground md:max-w-sm lg:max-w-md flex-1 justify-start px-2.5 min-w-0"
+        className="hidden md:flex h-9 gap-2 text-muted-foreground md:max-w-sm lg:max-w-md flex-1 justify-start px-2.5 min-w-0 border-border/70 bg-card/80 shadow-none"
         aria-label="Buscar clientes e casos"
         onClick={() => setOpen(true)}
       >
