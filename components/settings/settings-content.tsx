@@ -17,6 +17,7 @@ import { AdminUsersPanel } from "@/components/settings/admin-users-panel"
 import { ChangePasswordCard } from "@/components/settings/change-password-card"
 import { TwoFactorCard } from "@/components/settings/two-factor-card"
 import { EmailStatusCard } from "@/components/settings/email-status-card"
+import { AiMetricsCard } from "@/components/settings/ai-metrics-card"
 
 const defaultNotifications: NotificacoesPrefs = {
   email: true,
@@ -252,6 +253,7 @@ export function SettingsContent() {
       </Card>
 
       {canCreateUsers(user?.role) && <EmailStatusCard />}
+      {canCreateUsers(user?.role) && <AiMetricsCard />}
       {canCreateUsers(user?.role) && <AdminUsersPanel />}
     </div>
   )

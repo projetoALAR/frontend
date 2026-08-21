@@ -312,6 +312,10 @@ export function CasePanel({
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
       )
+      toast({
+        title: util ? "Marcado como útil" : "Marcado como não útil",
+        description: "Obrigado — isso ajuda a acompanhar a qualidade da IA.",
+      })
     } catch (error) {
       toast({
         title: "Erro ao avaliar",
@@ -987,6 +991,11 @@ export function CasePanel({
                       </div>
                       {!msg.isUser && msg.fontes && msg.fontes.length > 0 ? (
                         <ChatCitations fontes={msg.fontes} compact />
+                      ) : !msg.isUser ? (
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                          Sem fontes citadas nos anexos — confira se a resposta se
+                          baseia no contexto do caso.
+                        </p>
                       ) : null}
                       {!msg.isUser ? (
                         <ChatMessageFeedback

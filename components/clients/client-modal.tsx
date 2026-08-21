@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { clientesApi, type ClienteCard, type ClienteFormData, type ClienteTipo } from "@/lib/clientes-api"
 import { maskCep, maskCnpj, maskCpf, maskPhone, onlyDigits } from "@/lib/masks"
+import { validarCnpj, validarCpf } from "@/lib/documento-br"
 
 const EXTRACAO_MIME_ALLOWLIST = ["application/pdf", "image/jpeg", "image/jpg", "image/png", "image/webp"]
 
@@ -172,8 +173,11 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
     if (tipo === "PF") {
       if (!cpf.trim()) newErrors.cpf = "CPF é obrigatório"
       else if (!cpfAnon && cpfDigits.length !== 11) newErrors.cpf = "CPF deve ter 11 dígitos"
+      else if (!cpfAnon && !validarCpf(cpf)) newErrors.cpf = "CPF inválido (dígito verificador)"
     } else if (cnpjDigits.length !== 14) {
       newErrors.cnpj = "CNPJ deve ter 14 dígitos"
+    } else if (!validarCnpj(cnpj)) {
+      newErrors.cnpj = "CNPJ inválido (dígito verificador)"
     }
     if (email.trim() && !validateEmail(email.trim())) {
       newErrors.email = "Email inválido"
@@ -192,6 +196,16 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
         description: "Preencha todos os campos corretamente",
         variant: "destructive",
       })
+      const idMap: Record<string, string> = {
+        name: "client-name",
+        cpf: "client-cpf",
+        cnpj: "client-cnpj",
+        email: "client-email",
+        phone: "client-phone",
+        cep: "client-cep",
+      }
+      const first = Object.keys(newErrors)[0]
+      document.getElementById(idMap[first] ?? "client-name")?.focus()
       return
     }
 
@@ -308,8 +322,14 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
               placeholder={tipo === "PJ" ? "Ex: Silva Advogados Ltda" : "Ex: Matheus Silva"}
               className={`mt-1 ${errors.name ? "border-destructive" : ""}`}
               disabled={isSaving}
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "client-name-error" : undefined}
             />
-            {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p id="client-name-error" role="alert" className="text-xs text-destructive mt-1">
+                {errors.name}
+              </p>
+            )}
           </div>
 
           {tipo === "PJ" ? (
@@ -338,8 +358,14 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
                   placeholder="00.000.000/0000-00"
                   className={`mt-1 font-mono ${errors.cnpj ? "border-destructive" : ""}`}
                   disabled={isSaving}
+                  aria-invalid={!!errors.cnpj}
+                  aria-describedby={errors.cnpj ? "client-cnpj-error" : undefined}
                 />
-                {errors.cnpj && <p className="text-xs text-destructive mt-1">{errors.cnpj}</p>}
+                {errors.cnpj && (
+                  <p id="client-cnpj-error" role="alert" className="text-xs text-destructive mt-1">
+                    {errors.cnpj}
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -357,8 +383,14 @@ export function ClientModal({ isOpen, onClose, onSave, clientData, isEditing }: 
                   placeholder="000.000.000-00"
                   className={`mt-1 font-mono ${errors.cpf ? "border-destructive" : ""}`}
                   disabled={isSaving}
+                  aria-invalid={!!errors.cpf}
+                  aria-describedby={errors.cpf ? "client-cpf-error" : undefined}
                 />
-                {errors.cpf && <p className="text-xs text-destructive mt-1">{errors.cpf}</p>}
+                {errors.cpf && (
+                  <p id="client-cpf-error" role="alert" className="text-xs text-destructive mt-1">
+                    {errors.cpf}
+                  </p>
+                )}
               </div>
               <div>
                 <Label htmlFor="client-rg">RG</Label>

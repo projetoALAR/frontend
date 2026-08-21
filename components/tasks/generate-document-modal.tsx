@@ -117,6 +117,7 @@ export function GenerateDocumentModal({
   }
 
   const foiEditado = texto.trim() !== textoOriginal.trim() && textoOriginal.length > 0
+  const lacunasACompletar = (texto.match(/\[A COMPLETAR\]/gi) ?? []).length
 
   const handleSalvar = async () => {
     if (!texto.trim()) {
@@ -224,6 +225,11 @@ export function GenerateDocumentModal({
                       {foiEditado ? (
                         <span className="ml-2 text-xs font-normal text-muted-foreground">
                           · editado após a geração
+                        </span>
+                      ) : null}
+                      {lacunasACompletar > 0 ? (
+                        <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-400">
+                          · {lacunasACompletar} trecho(s) [A COMPLETAR]
                         </span>
                       ) : null}
                     </Label>

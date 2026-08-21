@@ -24,17 +24,24 @@ export type ChatExportApi = {
   nomeArquivo: string
   conteudo: string
 }
+
 export type ChatQuotaApi = {
   usados: number
   limite: number
   restantes: number
 }
 
-export type ChatExportApi = {
-  formato: "markdown" | "json"
-  titulo: string
-  nomeArquivo: string
-  conteudo: string
+export type ChatMetricasApi = {
+  dia: string
+  tokensTotal: number
+  mensagensIa: number
+  feedbackUtil: number
+  feedbackNaoUtil: number
+  porUsuario: Array<{
+    usuarioId: string
+    tokens: number
+    mensagens: number
+  }>
 }
 
 export type ConversacaoApi = {
@@ -68,5 +75,6 @@ export const chatApi = {
     api.get<ChatExportApi>(
       `/chat/conversas/${conversacaoId}/export?formato=${formato}`,
     ),
+  metricas: () => api.get<ChatMetricasApi>("/chat/metricas"),
   remover: (id: string) => api.delete<ConversacaoApi>(`/chat/conversas/${id}`),
 }

@@ -1,0 +1,24 @@
+{
+  "name": "Alar — Gestão Jurídica",
+  "short_name": "Alar",
+  "description": "Gerencie clientes, casos, equipe e prazos com o Alar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

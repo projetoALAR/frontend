@@ -9,6 +9,8 @@ interface ChatMessageProps {
   isUser: boolean
   timestamp?: string
   fontes?: ChatFonteApi[] | null
+  /** No chat do caso: avisa quando a IA não citou anexos. */
+  avisoSemFontes?: boolean
   feedback?: "util" | "nao_util" | null
   onFeedback?: (messageId: string, util: boolean) => void | Promise<void>
 }
@@ -19,9 +21,12 @@ export function ChatMessage({
   isUser,
   timestamp,
   fontes,
+  avisoSemFontes = false,
   feedback,
   onFeedback,
 }: ChatMessageProps) {
+  const temFontes = !!(fontes && fontes.length > 0)
+
   return (
     <div className={cn("flex gap-3 animate-slide-in-up", isUser ? "justify-end" : "justify-start")}>
       <div
@@ -33,8 +38,12 @@ export function ChatMessage({
         )}
       >
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{content}</p>
-        {!isUser && fontes && fontes.length > 0 ? (
-          <ChatCitations fontes={fontes} compact />
+        {!isUser && temFontes ? <ChatCitations fontes={fontes!} compact /> : null}
+        {!isUser && avisoSemFontes && !temFontes ? (
+          <p className="mt-2 text-[11px] text-muted-foreground border-t border-border/60 pt-2">
+            Sem fontes citadas nos anexos — confira se a resposta se baseia no
+            contexto do caso.
+          </p>
         ) : null}
         {!isUser && messageId && onFeedback ? (
           <ChatMessageFeedback

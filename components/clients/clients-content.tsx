@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users, FileSpreadsheet } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ClientModal } from "./client-modal"
@@ -62,6 +62,8 @@ export function ClientsContent() {
     canal: "email" | "telefone"
     client: ClienteCard
   } | null>(null)
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 12
 
   const loadClients = useCallback(async () => {
     setIsLoading(true)
@@ -122,6 +124,17 @@ export function ClientsContent() {
           onlyDigits(client.cnpj).includes(termDigits)))
     )
   })
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
+  const pageSafe = Math.min(page, totalPages)
+  const pagedClients = useMemo(() => {
+    const start = (pageSafe - 1) * PAGE_SIZE
+    return filteredClients.slice(start, start + PAGE_SIZE)
+  }, [filteredClients, pageSafe, PAGE_SIZE])
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm])
 
   const handleSaveClient = async (clientData: ClienteFormData) => {
     if (selectedClient) {
@@ -270,7 +283,7 @@ export function ClientsContent() {
         <ListSkeleton variant="cards" count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map((client, index) => (
+          {pagedClients.map((client, index) => (
             <Card
               key={client.id}
               className="p-4 hover:shadow-md transition-shadow duration-200 animate-slide-in-up"
@@ -401,6 +414,36 @@ export function ClientsContent() {
           ))}
         </div>
       )}
+
+      {!isLoading && filteredClients.length > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-3 pt-2">
+          <p className="text-sm text-muted-foreground">
+            {filteredClients.length} cliente(s) · página {pageSafe} de {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pageSafe <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Página anterior"
+            >
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pageSafe >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Próxima página"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {!isLoading && filteredClients.length === 0 && (
         clients.length === 0 && !searchTerm ? (

@@ -22,6 +22,7 @@ import { equipeApi, type MembroEquipeApi } from "@/lib/equipe-api"
 import { ROLE_LABELS } from "@/lib/roles"
 import { useAuth } from "@/components/auth/auth-provider"
 import { maskProcessoNumero } from "@/lib/masks"
+import { validarDigitoCnj } from "@/lib/cnj"
 import {
   PROCESSO_STATUS_DEFAULT,
   isProcessoStatusConcluido,
@@ -89,6 +90,10 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
     const newErrors: Record<string, string> = {}
     if (!title.trim()) newErrors.title = "Título é obrigatório"
     if (!numero.trim()) newErrors.numero = "Número do processo é obrigatório"
+    else if (!validarDigitoCnj(numero)) {
+      newErrors.numero =
+        "Número CNJ inválido — confira os 20 dígitos e o dígito verificador"
+    }
     if (!clienteId) newErrors.clienteId = "Cliente é obrigatório"
     if (!dueDate.trim()) newErrors.dueDate = "Prazo é obrigatório"
     if (!status.trim()) newErrors.status = "Status é obrigatório"
@@ -100,6 +105,19 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
         description: "Preencha todos os campos corretamente",
         variant: "destructive",
       })
+      const firstId = Object.keys(newErrors)[0]
+      const el = document.getElementById(
+        firstId === "title"
+          ? "case-title"
+          : firstId === "numero"
+            ? "case-numero"
+            : firstId === "clienteId"
+              ? "case-cliente"
+              : firstId === "dueDate"
+                ? "case-date"
+                : "case-status",
+      )
+      el?.focus()
       return
     }
 
@@ -152,8 +170,14 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
               placeholder="Ex: Análise de Contrato"
               className={`mt-1 ${errors.title ? "border-destructive" : ""}`}
               disabled={isSaving}
+              aria-invalid={!!errors.title}
+              aria-describedby={errors.title ? "case-title-error" : undefined}
             />
-            {errors.title && <p className="text-xs text-destructive mt-1">{errors.title}</p>}
+            {errors.title && (
+              <p id="case-title-error" role="alert" className="text-xs text-destructive mt-1">
+                {errors.title}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="case-descricao">Descrição</Label>
@@ -179,11 +203,19 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
               placeholder="0001234-56.2026.8.26.0100"
               className={`mt-1 font-mono ${errors.numero ? "border-destructive" : ""}`}
               disabled={isSaving}
+              aria-invalid={!!errors.numero}
+              aria-describedby={
+                errors.numero ? "case-numero-error case-numero-hint" : "case-numero-hint"
+              }
             />
-            <p className="text-xs text-muted-foreground mt-1">
+            <p id="case-numero-hint" className="text-xs text-muted-foreground mt-1">
               Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO (necessário para sync DataJud)
             </p>
-            {errors.numero && <p className="text-xs text-destructive mt-1">{errors.numero}</p>}
+            {errors.numero && (
+              <p id="case-numero-error" role="alert" className="text-xs text-destructive mt-1">
+                {errors.numero}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="case-cliente">Cliente *</Label>
@@ -196,6 +228,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
                 id="case-cliente"
                 className={`mt-1 w-full ${errors.clienteId ? "border-destructive" : ""}`}
                 aria-invalid={!!errors.clienteId}
+                aria-describedby={errors.clienteId ? "case-cliente-error" : undefined}
               >
                 <SelectValue placeholder="Selecione um cliente" />
               </SelectTrigger>
@@ -207,7 +240,11 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
                 ))}
               </SelectContent>
             </Select>
-            {errors.clienteId && <p className="text-xs text-destructive mt-1">{errors.clienteId}</p>}
+            {errors.clienteId && (
+              <p id="case-cliente-error" role="alert" className="text-xs text-destructive mt-1">
+                {errors.clienteId}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="case-responsavel">Responsável</Label>

@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { useCallback, useEffect, useState } from "react"
 import { inboxApi, type InboxItemApi } from "@/lib/inbox-api"
 import { formatDatePt } from "@/lib/format"
-import { ExternalLink, Inbox, Loader2, MailOpen } from "lucide-react"
+import { ExternalLink, Inbox, MailOpen } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { ListEmptyState } from "@/components/shared/list-empty-state"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
 
 function rotuloTipo(tipo: string): string {
   if (tipo === "prazo-lembrete") return "Prazo"
@@ -78,10 +79,7 @@ export default function MensagensPage() {
 
       <div className="mt-6 space-y-3 max-w-3xl">
         {loading ? (
-          <div className="flex justify-center py-12 gap-2 text-muted-foreground">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Carregando...
-          </div>
+          <ListSkeleton variant="rows" count={4} />
         ) : items.length === 0 ? (
           <ListEmptyState
             icon={Inbox}
@@ -94,6 +92,7 @@ export default function MensagensPage() {
               key={item.id}
               role="button"
               tabIndex={0}
+              aria-label={`${item.lida ? "" : "Nova. "}${rotuloTipo(item.tipo)}: ${item.titulo}`}
               className={`p-4 transition-colors ${!item.lida ? "border-primary/40 bg-secondary/30" : ""} ${item.link ? "cursor-pointer hover:bg-secondary/50" : "cursor-default"}`}
               onClick={() => void abrirItem(item)}
               onKeyDown={(e) => {

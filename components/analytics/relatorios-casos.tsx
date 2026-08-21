@@ -41,6 +41,9 @@ import { formatDatePt } from "@/lib/format"
 import { formatCnj } from "@/lib/masks"
 import { casoHref } from "@/lib/app-routes"
 import { PROCESSO_STATUS_OPTIONS } from "@/lib/processo-status"
+import { ListEmptyState } from "@/components/shared/list-empty-state"
+import { ListSkeleton } from "@/components/shared/list-skeleton"
+import { FileBarChart } from "lucide-react"
 
 const PRESETS_PRAZO: { id: PresetPrazo; rotulo: string }[] = [
   { id: "hoje", rotulo: "Hoje" },
@@ -362,6 +365,19 @@ export function RelatoriosCasos() {
           : `${filtrados.length} de ${processos.length} caso(s) com os filtros atuais.`}
       </p>
 
+      {loading ? (
+        <ListSkeleton variant="rows" count={5} />
+      ) : filtrados.length === 0 ? (
+        <ListEmptyState
+          icon={FileBarChart}
+          title="Nenhum caso neste recorte"
+          description={
+            processos.length === 0
+              ? "Cadastre casos para gerar relatórios e exportações."
+              : "Ajuste os filtros ou limpe o atalho de prazo para ver resultados."
+          }
+        />
+      ) : (
       <div className="rounded-lg border border-border">
         <Table>
           <TableHeader>
@@ -375,20 +391,7 @@ export function RelatoriosCasos() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : filtrados.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  Nenhum caso com esses filtros.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtrados.map((item) => (
+              {filtrados.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs">
                     <Link href={casoHref(item.id)} className="underline-offset-2 hover:underline">
@@ -405,11 +408,11 @@ export function RelatoriosCasos() {
                   <TableCell>{formatDatePt(item.prazo)}</TableCell>
                   <TableCell>{item.responsavel?.nome || "—"}</TableCell>
                 </TableRow>
-              ))
-            )}
+              ))}
           </TableBody>
         </Table>
       </div>
+      )}
     </Card>
   )
 }

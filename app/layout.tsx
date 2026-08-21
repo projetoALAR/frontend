@@ -22,8 +22,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Alar - Gestão Jurídica",
   description: "Gerencie clientes, casos, equipe e prazos com o Alar",
+  applicationName: "Alar",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Alar",
+    statusBarStyle: "default",
+  },
+  themeColor: "#0f172a",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/logo-mark.svg", type: "image/svg+xml" }],
   },
 }
 

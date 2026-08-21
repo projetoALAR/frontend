@@ -200,6 +200,10 @@ export default function ChatPage() {
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, feedback: updated.feedback ?? null } : m)),
       )
+      toast({
+        title: util ? "Marcado como útil" : "Marcado como não útil",
+        description: "Obrigado — isso ajuda a acompanhar a qualidade da IA.",
+      })
     } catch (error) {
       toast({
         title: "Erro ao avaliar",
