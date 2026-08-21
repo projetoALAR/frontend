@@ -51,8 +51,30 @@ export function isClienteAnonimizado(client: Pick<ClienteCard, "name" | "cpf">) 
   )
 }
 
+export type ListaPaginada<T> = {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+}
+
+export type ListarClientesFiltro = {
+  page: number
+  limit?: number
+  q?: string
+}
+
 export const clientesApi = {
+  /** Lista completa (modais / selects). */
   listar: () => api.get<ClienteApi[]>("/clientes"),
+  /** Lista paginada com busca no servidor. */
+  listarPagina: (filtro: ListarClientesFiltro) => {
+    const params = new URLSearchParams()
+    params.set("page", String(filtro.page))
+    params.set("limit", String(filtro.limit ?? 12))
+    if (filtro.q?.trim()) params.set("q", filtro.q.trim())
+    return api.get<ListaPaginada<ClienteApi>>(`/clientes?${params}`)
+  },
   obter: (id: string) => api.get<ClienteApi>(`/clientes/${id}`),
   criar: (dados: ClienteFormData) => api.post<ClienteApi>("/clientes", dados),
   atualizar: (id: string, dados: ClienteFormData) =>

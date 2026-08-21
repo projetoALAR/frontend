@@ -51,12 +51,42 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   const [filters, setFilters] = useState<FilterOptions>(EMPTY_FILTERS)
   const [checkedCases, setCheckedCases] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [debouncedQ, setDebouncedQ] = useState("")
+  const PAGE_SIZE = 12
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(searchTerm.trim()), 300)
+    return () => window.clearTimeout(t)
+  }, [searchTerm])
+
+  const activeFilterCount = countActiveFilters(filters)
+  const useServerPage = activeFilterCount === 0
 
   const loadTasks = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = await processosApi.listar()
-      setAllTasks(data.map(mapProcessoToCase))
+      if (useServerPage) {
+        const situacao =
+          filter === "concluidas"
+            ? "concluidos"
+            : filter === "ativas"
+              ? "ativos"
+              : undefined
+        const data = await processosApi.listarPagina({
+          page,
+          limit: PAGE_SIZE,
+          q: debouncedQ || undefined,
+          situacao,
+        })
+        setAllTasks(data.items.map(mapProcessoToCase))
+        setTotal(data.total)
+      } else {
+        const data = await processosApi.listar()
+        setAllTasks(data.map(mapProcessoToCase))
+        setTotal(data.length)
+      }
     } catch (error) {
       toast({
         title: "Erro ao carregar casos",
@@ -66,7 +96,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, useServerPage, filter, page, debouncedQ])
 
   useEffect(() => {
     void loadTasks()
@@ -75,6 +105,10 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
   useEffect(() => {
     setFilter(initialFilter)
   }, [initialFilter])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedQ, filter, useServerPage])
 
   const handleSetFilter = (newFilter: string) => {
     setFilter(newFilter)
@@ -107,67 +141,70 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     )
   }, [allTasks])
 
-  const activeFilterCount = countActiveFilters(filters)
+  const filteredTasks = useMemo(() => {
+    if (useServerPage) return allTasks
 
-  const filteredTasks = allTasks.filter((task) => {
-    let situacaoMatch = true
-    if (filter === "concluidas") situacaoMatch = task.completed
-    else if (filter === "ativas") situacaoMatch = !task.completed
+    return allTasks.filter((task) => {
+      let situacaoMatch = true
+      if (filter === "concluidas") situacaoMatch = task.completed
+      else if (filter === "ativas") situacaoMatch = !task.completed
 
-    const term = searchTerm.toLowerCase()
-    const termDigits = onlyDigits(searchTerm)
-    const searchMatch =
-      task.title.toLowerCase().includes(term) ||
-      task.project.toLowerCase().includes(term) ||
-      task.numero.toLowerCase().includes(term) ||
-      (termDigits.length >= 4 && onlyDigits(task.numero).includes(termDigits)) ||
-      (task.cliente?.nome ?? "").toLowerCase().includes(term)
+      const term = searchTerm.toLowerCase()
+      const termDigits = onlyDigits(searchTerm)
+      const searchMatch =
+        task.title.toLowerCase().includes(term) ||
+        task.project.toLowerCase().includes(term) ||
+        task.numero.toLowerCase().includes(term) ||
+        (termDigits.length >= 4 && onlyDigits(task.numero).includes(termDigits)) ||
+        (task.cliente?.nome ?? "").toLowerCase().includes(term)
 
-    let statusMatch = true
-    if (filters.statuses.length > 0) {
-      statusMatch = filters.statuses.includes(task.status || task.project)
-    }
+      let statusMatch = true
+      if (filters.statuses.length > 0) {
+        statusMatch = filters.statuses.includes(task.status || task.project)
+      }
 
-    let priorityMatch = true
-    if (filters.priorities.length > 0) {
-      priorityMatch = filters.priorities.includes(task.priority)
-    }
+      let priorityMatch = true
+      if (filters.priorities.length > 0) {
+        priorityMatch = filters.priorities.includes(task.priority)
+      }
 
-    let dateMatch = true
-    const start = filters.dateRange?.from || ""
-    const end = filters.dateRange?.to || ""
-    if ((start || end) && task.dueDateIso) {
-      const taskDate = new Date(task.dueDateIso)
-      if (start) dateMatch = dateMatch && taskDate >= new Date(start)
-      if (end) dateMatch = dateMatch && taskDate <= new Date(`${end}T23:59:59`)
-    } else if ((start || end) && !task.dueDateIso) {
-      dateMatch = false
-    }
+      let dateMatch = true
+      const start = filters.dateRange?.from || ""
+      const end = filters.dateRange?.to || ""
+      if ((start || end) && task.dueDateIso) {
+        const taskDate = new Date(task.dueDateIso)
+        if (start) dateMatch = dateMatch && taskDate >= new Date(start)
+        if (end) dateMatch = dateMatch && taskDate <= new Date(`${end}T23:59:59`)
+      } else if ((start || end) && !task.dueDateIso) {
+        dateMatch = false
+      }
 
-    return situacaoMatch && searchMatch && statusMatch && priorityMatch && dateMatch
-  })
+      return situacaoMatch && searchMatch && statusMatch && priorityMatch && dateMatch
+    })
+  }, [allTasks, useServerPage, filter, searchTerm, filters])
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const pageSafe = Math.min(page, totalPages)
 
   const handleSaveCase = async (data: ProcessoFormData) => {
     if (selectedCase) {
-      const updated = await processosApi.atualizar(selectedCase.id, data)
-      const mapped = mapProcessoToCase(updated)
-      setAllTasks((prev) => prev.map((t) => (t.id === selectedCase.id ? mapped : t)))
+      await processosApi.atualizar(selectedCase.id, data)
     } else {
-      const created = await processosApi.criar(data)
-      setAllTasks((prev) => [mapProcessoToCase(created), ...prev])
+      await processosApi.criar(data)
     }
     invalidateDashboardCache()
     setSelectedCase(null)
+    await loadTasks()
   }
 
   const handleDeleteChecked = async () => {
     if (checkedCases.length === 0) return
     try {
       await Promise.all(checkedCases.map((id) => processosApi.remover(id)))
-      setAllTasks((prev) => prev.filter((t) => !checkedCases.includes(t.id)))
       setCheckedCases([])
       invalidateDashboardCache()
       toast({ title: "Casos removidos", description: "Seleção excluída com sucesso" })
+      await loadTasks()
     } catch (error) {
       toast({
         title: "Erro ao excluir",
@@ -407,6 +444,36 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
           )}
         </div>
       )}
+
+      {useServerPage && !isLoading && total > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            {total} caso(s) · página {pageSafe} de {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pageSafe <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-label="Página anterior"
+            >
+              Anterior
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pageSafe >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Próxima página"
+            >
+              Próxima
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <CaseModal
         isOpen={isCaseModalOpen}

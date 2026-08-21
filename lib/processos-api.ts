@@ -27,8 +27,32 @@ export type ResultadoImportacaoProcessos = {
   resultados: ResultadoLinhaImportacaoProcesso[]
 }
 
+export type ListaPaginadaProcessos = {
+  items: ProcessoApi[]
+  total: number
+  page: number
+  limit: number
+}
+
+export type ListarProcessosFiltro = {
+  page: number
+  limit?: number
+  q?: string
+  situacao?: "ativos" | "concluidos"
+}
+
 export const processosApi = {
+  /** Lista completa (relatórios). */
   listar: () => api.get<ProcessoApi[]>("/processos"),
+  /** Lista paginada com busca/situação no servidor. */
+  listarPagina: (filtro: ListarProcessosFiltro) => {
+    const params = new URLSearchParams()
+    params.set("page", String(filtro.page))
+    params.set("limit", String(filtro.limit ?? 12))
+    if (filtro.q?.trim()) params.set("q", filtro.q.trim())
+    if (filtro.situacao) params.set("situacao", filtro.situacao)
+    return api.get<ListaPaginadaProcessos>(`/processos?${params}`)
+  },
   obter: (id: string) => api.get<ProcessoApi>(`/processos/${id}`),
   listarPorCliente: (clienteId: string) =>
     api.get<ProcessoApi[]>(`/processos/cliente/${clienteId}`),

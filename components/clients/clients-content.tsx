@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users, FileSpreadsheet } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { ClientModal } from "./client-modal"
@@ -20,7 +20,7 @@ import {
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
-import { formatDocumentoCliente, formatPhone, onlyDigits } from "@/lib/masks"
+import { formatDocumentoCliente, formatPhone } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
 import { invalidateDashboardCache } from "@/hooks/use-dashboard-resumo"
@@ -63,13 +63,25 @@ export function ClientsContent() {
     client: ClienteCard
   } | null>(null)
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [debouncedQ, setDebouncedQ] = useState("")
   const PAGE_SIZE = 12
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(searchTerm.trim()), 300)
+    return () => window.clearTimeout(t)
+  }, [searchTerm])
 
   const loadClients = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = await clientesApi.listar()
-      setClients(data.map(mapClienteToCard))
+      const data = await clientesApi.listarPagina({
+        page,
+        limit: PAGE_SIZE,
+        q: debouncedQ || undefined,
+      })
+      setClients(data.items.map(mapClienteToCard))
+      setTotal(data.total)
     } catch (error) {
       toast({
         title: "Erro ao carregar clientes",
@@ -79,7 +91,7 @@ export function ClientsContent() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [toast, page, debouncedQ])
 
   useEffect(() => {
     void loadClients()
@@ -109,47 +121,26 @@ export function ClientsContent() {
     router.replace(qs ? `${rotas.clientes}?${qs}` : rotas.clientes, { scroll: false })
   }, [searchParams, canWrite, router])
 
-  const filteredClients = clients.filter((client) => {
-    const term = searchTerm.toLowerCase()
-    const termDigits = onlyDigits(searchTerm)
-    return (
-      client.name.toLowerCase().includes(term) ||
-      client.nomeFantasia.toLowerCase().includes(term) ||
-      client.email.toLowerCase().includes(term) ||
-      client.cpf.toLowerCase().includes(term) ||
-      client.cnpj.toLowerCase().includes(term) ||
-      client.cidade.toLowerCase().includes(term) ||
-      (termDigits.length >= 3 &&
-        (onlyDigits(client.cpf).includes(termDigits) ||
-          onlyDigits(client.cnpj).includes(termDigits)))
-    )
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filteredClients.length / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const pageSafe = Math.min(page, totalPages)
-  const pagedClients = useMemo(() => {
-    const start = (pageSafe - 1) * PAGE_SIZE
-    return filteredClients.slice(start, start + PAGE_SIZE)
-  }, [filteredClients, pageSafe, PAGE_SIZE])
 
   useEffect(() => {
     setPage(1)
-  }, [searchTerm])
+  }, [debouncedQ])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const handleSaveClient = async (clientData: ClienteFormData) => {
     if (selectedClient) {
-      const updated = await clientesApi.atualizar(selectedClient.id, clientData)
-      const card = mapClienteToCard({
-        ...updated,
-        _count: { processos: selectedClient.casesCount },
-      })
-      setClients((prev) => prev.map((c) => (c.id === selectedClient.id ? card : c)))
+      await clientesApi.atualizar(selectedClient.id, clientData)
     } else {
-      const created = await clientesApi.criar(clientData)
-      setClients((prev) => [mapClienteToCard(created), ...prev])
+      await clientesApi.criar(clientData)
     }
     invalidateDashboardCache()
     setSelectedClient(null)
+    await loadClients()
   }
 
   const handleExportClient = async (client: ClienteCard) => {
@@ -188,12 +179,12 @@ export function ClientsContent() {
       setDeletingId(client.id)
       try {
         await clientesApi.remover(client.id)
-        setClients((prev) => prev.filter((c) => c.id !== client.id))
         invalidateDashboardCache()
         toast({
           title: "Cliente removido",
           description: "O cliente e os casos vinculados foram excluídos.",
         })
+        await loadClients()
       } catch (error) {
         toast({
           title: "Erro ao remover",
@@ -209,13 +200,12 @@ export function ClientsContent() {
 
     setDeletingId(client.id)
     try {
-      const updated = await clientesApi.anonimizar(client.id)
-      const card = mapClienteToCard(updated)
-      setClients((prev) => prev.map((c) => (c.id === client.id ? card : c)))
+      await clientesApi.anonimizar(client.id)
       toast({
         title: "Cliente anonimizado",
         description: "Dados pessoais removidos. Casos foram mantidos sem identificação.",
       })
+      await loadClients()
     } catch (error) {
       toast({
         title: "Erro ao anonimizar",
@@ -283,7 +273,7 @@ export function ClientsContent() {
         <ListSkeleton variant="cards" count={6} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pagedClients.map((client, index) => (
+          {clients.map((client, index) => (
             <Card
               key={client.id}
               className="p-4 hover:shadow-md transition-shadow duration-200 animate-slide-in-up"
@@ -415,10 +405,10 @@ export function ClientsContent() {
         </div>
       )}
 
-      {!isLoading && filteredClients.length > PAGE_SIZE ? (
+      {!isLoading && total > PAGE_SIZE ? (
         <div className="flex items-center justify-between gap-3 pt-2">
           <p className="text-sm text-muted-foreground">
-            {filteredClients.length} cliente(s) · página {pageSafe} de {totalPages}
+            {total} cliente(s) · página {pageSafe} de {totalPages}
           </p>
           <div className="flex gap-2">
             <Button
@@ -445,8 +435,8 @@ export function ClientsContent() {
         </div>
       ) : null}
 
-      {!isLoading && filteredClients.length === 0 && (
-        clients.length === 0 && !searchTerm ? (
+      {!isLoading && clients.length === 0 && (
+        total === 0 && !searchTerm ? (
           <ListEmptyState
             icon={Users}
             title="Nenhum cliente cadastrado"
