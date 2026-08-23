@@ -39,39 +39,39 @@ export default function LogoutPage() {
   }
 
   return (
-    <AppShell mainClassName="flex items-center justify-center">
-      <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up mx-2">
-          <div className="flex justify-center">
-            <div
-              className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}
-            >
-              <LogOut className="w-8 h-8 text-primary" />
-            </div>
+    <AppShell fullWidth mainClassName="flex items-center justify-center p-4 sm:p-6">
+      <Card className="p-6 sm:p-8 max-w-md w-full text-center space-y-6 animate-slide-in-up">
+        <div className="flex justify-center">
+          <div
+            className={`w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ${isLoggingOut ? "animate-pulse" : ""}`}
+          >
+            <LogOut className="w-8 h-8 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Sair</h1>
-            <p className="text-muted-foreground">
-              {isLoggingOut ? "Saindo da sua conta..." : "Tem certeza que deseja sair?"}
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 bg-transparent"
-              onClick={handleCancel}
-              disabled={isLoggingOut}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50"
-              onClick={() => void handleLogout()}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? "Desconectando..." : "Sair"}
-            </Button>
-          </div>
-        </Card>
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Sair</h1>
+          <p className="text-muted-foreground">
+            {isLoggingOut ? "Saindo da sua conta..." : "Tem certeza que deseja sair?"}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            variant="outline"
+            className="flex-1 bg-transparent"
+            onClick={handleCancel}
+            disabled={isLoggingOut}
+          >
+            Cancelar
+          </Button>
+          <Button
+            className="flex-1 bg-primary hover:bg-primary/90 disabled:opacity-50"
+            onClick={() => void handleLogout()}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? "Desconectando..." : "Sair"}
+          </Button>
+        </div>
+      </Card>
     </AppShell>
   )
 }
