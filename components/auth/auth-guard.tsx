@@ -1,35 +1,66 @@
 "use client"
 
 import { useEffect, type ReactNode } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAccessPath } from "@/lib/roles"
+import {
+  billingEnforceAtivo,
+  usuarioTemAcessoAssinatura,
+} from "@/lib/planos"
+import { rotas } from "@/lib/app-routes"
+import {
+  FORCE_PASSWORD_PATH,
+  MARKETING_PATHS,
+  PUBLIC_AUTH_PATHS,
+  pathMatches,
+} from "@/lib/public-paths"
 
-const PUBLIC_PATHS = [
-  "/login",
-  "/sentry-test",
-  "/esqueci-senha",
-  "/redefinir-senha",
-]
-
-const FORCE_PASSWORD_PATH = "/trocar-senha"
+function destinoSeguroAposLogin(
+  next: string | null,
+  lacksPlan: boolean,
+): string {
+  if (next && next.startsWith("/") && !next.startsWith("//")) {
+    if (lacksPlan && !pathMatches(next, MARKETING_PATHS)) {
+      return rotas.planos
+    }
+    return next
+  }
+  return lacksPlan ? rotas.planos : rotas.painel
+}
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  const isPublic = pathMatches(pathname, PUBLIC_AUTH_PATHS)
+  const isMarketing = pathMatches(pathname, MARKETING_PATHS)
   const needsPasswordChange = Boolean(user?.mustChangePassword)
   const onForcePassword = pathname === FORCE_PASSWORD_PATH
+  const enforceBilling = billingEnforceAtivo()
+  const hasSubscription = usuarioTemAcessoAssinatura(user?.id)
+  const lacksPlan =
+    enforceBilling &&
+    Boolean(user) &&
+    !needsPasswordChange &&
+    !hasSubscription
+
+  const needsPlan = lacksPlan && !isMarketing && !onForcePassword
+
   const forbidden = Boolean(
-    user && !isPublic && !onForcePassword && !canAccessPath(pathname, user.role),
+    user &&
+      !isPublic &&
+      !isMarketing &&
+      !onForcePassword &&
+      !canAccessPath(pathname, user.role),
   )
 
   useEffect(() => {
     if (loading) return
 
-    if (!user && !isPublic) {
-      router.replace("/login")
+    if (!user && !isPublic && !isMarketing) {
+      router.replace(rotas.login)
       return
     }
 
@@ -39,26 +70,47 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     }
 
     if (user && !needsPasswordChange && onForcePassword) {
-      router.replace("/")
+      router.replace(destinoSeguroAposLogin(null, lacksPlan))
       return
     }
 
+    // Logado em /login etc.: honra ?next= (e ?plano= via next já montado no login)
     if (user && isPublic && !needsPasswordChange) {
-      router.replace("/")
+      const next =
+        searchParams.get("next") ||
+        (searchParams.get("plano")
+          ? `${rotas.planos}?plano=${encodeURIComponent(searchParams.get("plano")!)}`
+          : null)
+      router.replace(destinoSeguroAposLogin(next, lacksPlan))
       return
     }
 
-    if (user && !isPublic && !onForcePassword && !canAccessPath(pathname, user.role)) {
-      router.replace("/")
+    if (needsPlan) {
+      router.replace(rotas.planos)
+      return
+    }
+
+    if (
+      user &&
+      !isPublic &&
+      !isMarketing &&
+      !onForcePassword &&
+      !canAccessPath(pathname, user.role)
+    ) {
+      router.replace(rotas.painel)
     }
   }, [
     user,
     loading,
     isPublic,
+    isMarketing,
     pathname,
     router,
     needsPasswordChange,
     onForcePassword,
+    needsPlan,
+    lacksPlan,
+    searchParams,
   ])
 
   if (loading) {
@@ -69,7 +121,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!user && !isPublic) {
+  if (!user && !isPublic && !isMarketing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Redirecionando para o login...</p>
@@ -89,6 +141,14 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Entrando...</p>
+      </div>
+    )
+  }
+
+  if (needsPlan) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Escolha um plano para continuar...</p>
       </div>
     )
   }

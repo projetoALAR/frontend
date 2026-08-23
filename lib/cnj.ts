@@ -16,6 +16,6 @@ export function validarDigitoCnj(numero: string): boolean {
   const sequencial = digits.slice(0, 7)
   const dv = digits.slice(7, 9)
   const resto = digits.slice(9)
-  const esperado = String(98n - (BigInt(sequencial + resto) % 97n)).padStart(2, "0")
+  const esperado = String(BigInt(98) - (BigInt(sequencial + resto) % BigInt(97))).padStart(2, "0")
   return dv === esperado
 }

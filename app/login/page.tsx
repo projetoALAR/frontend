@@ -1,8 +1,8 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useMemo, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { AlarLogo } from "@/components/brand/alar-logo"
+import { rotas } from "@/lib/app-routes"
 
 const ALLOW_PUBLIC_REGISTER =
   process.env.NEXT_PUBLIC_ALLOW_REGISTER === "true" ||
@@ -26,6 +27,7 @@ const ALLOW_PUBLIC_REGISTER =
 export default function LoginPage() {
   const { login, register, completeTwoFactor } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [mode, setMode] = useState<"login" | "register">("login")
   const [nome, setNome] = useState("")
@@ -39,12 +41,20 @@ export default function LoginPage() {
 
   const isRegister = ALLOW_PUBLIC_REGISTER && mode === "register"
 
+  const destinoPosLogin = useMemo(() => {
+    const next = searchParams.get("next")
+    if (next && next.startsWith("/") && !next.startsWith("//")) return next
+    const plano = searchParams.get("plano")
+    if (plano) return `${rotas.planos}?plano=${encodeURIComponent(plano)}`
+    return rotas.painel
+  }, [searchParams])
+
   const finishLogin = () => {
     toast({
       title: isRegister ? "Conta criada" : "Bem-vindo!",
       description: "Sessão iniciada com sucesso",
     })
-    router.replace("/")
+    router.replace(destinoPosLogin)
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -254,6 +264,14 @@ export default function LoginPage() {
               Contas são criadas por um administrador.
             </p>
           ))}
+
+        {!preAuthToken ? (
+          <p className="text-center text-xs">
+            <Link href={rotas.planos} className="text-muted-foreground underline hover:text-foreground">
+              Ver planos e preços
+            </Link>
+          </p>
+        ) : null}
       </Card>
     </div>
   )

@@ -33,11 +33,11 @@ export function ChatCitations({
         Fontes consultadas
       </p>
       <ul className="space-y-2">
-        {fontes.map((fonte) => {
+        {fontes.map((fonte, index) => {
           const Icon = iconFor(fonte.tipo)
           const clicavel = !!onOpenDocumento
           return (
-            <li key={fonte.documentoId} className="text-xs">
+            <li key={`${fonte.documentoId}-${index}`} className="text-xs">
               <div className="flex items-start gap-1.5">
                 <Icon className="w-3.5 h-3.5 shrink-0 mt-0.5 text-muted-foreground" />
                 <div className="min-w-0">

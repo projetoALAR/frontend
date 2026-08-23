@@ -41,7 +41,7 @@ import type { CaseView } from "@/lib/processo-mapper"
 import { mapProcessoToCase } from "@/lib/processo-mapper"
 import { processosApi } from "@/lib/processos-api"
 import { downloadBlob } from "@/lib/download"
-import { documentosApi, type DocumentoApi } from "@/lib/documentos-api"
+import { documentosApi, abrirDocumentoEmNovaAba, type DocumentoApi } from "@/lib/documentos-api"
 import { chatApi, type MensagemApi } from "@/lib/chat-api"
 import { formatBytes, formatDatePt } from "@/lib/format"
 import { formatCnj, formatDocumentoCliente, formatPhone, maskProcessoNumero } from "@/lib/masks"
@@ -162,23 +162,36 @@ export function CasePanel({
     setLoadingDocs(true)
     try {
       setDocuments(await documentosApi.listarPorProcesso(processoId))
-    } catch {
+    } catch (error) {
       setDocuments([])
+      toast({
+        title: "Documentos indisponíveis",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os anexos do caso.",
+        variant: "destructive",
+      })
     } finally {
       setLoadingDocs(false)
     }
-  }, [])
+  }, [toast])
 
   const loadChat = useCallback(async (processoId: string) => {
     try {
       const conversa = await chatApi.porProcesso(processoId)
       setConversacaoId(conversa.id)
       setMessages(conversa.mensagens ?? [])
-    } catch {
+    } catch (error) {
       setConversacaoId(null)
       setMessages([])
+      toast({
+        title: "Chat do caso indisponível",
+        description: error instanceof Error ? error.message : "Não foi possível carregar a conversa.",
+        variant: "destructive",
+      })
     }
-  }, [])
+  }, [toast])
 
   const handleSaveCnj = async () => {
     if (!localCase) return
@@ -251,7 +264,7 @@ export function CasePanel({
     descricao?: string | null
     numero?: string
   }) => {
-    if (!localCase) return
+    if (!localCase) return false
     try {
       const updated = await processosApi.atualizar(localCase.id, partial)
       const mapped = mapProcessoToCase(updated)
@@ -259,12 +272,14 @@ export function CasePanel({
       onUpdated?.(mapped)
       invalidateDashboardCache()
       toast({ title: "Salvo", description: "Caso atualizado com sucesso" })
+      return true
     } catch (error) {
       toast({
         title: "Erro ao salvar",
         description: error instanceof Error ? error.message : "Falha na API",
         variant: "destructive",
       })
+      return false
     }
   }
 
@@ -331,12 +346,7 @@ export function CasePanel({
 
   const abrirFonteDocumento = async (documentoId: string, nome: string) => {
     try {
-      const local = documents.find((d) => d.id === documentoId)
-      const url =
-        local?.urlArquivo ||
-        (await documentosApi.obter(documentoId)).urlArquivo
-      if (!url) throw new Error("URL do documento indisponível")
-      window.open(url, "_blank", "noopener,noreferrer")
+      await abrirDocumentoEmNovaAba(documentoId)
     } catch (error) {
       toast({
         title: `Não abriu ${nome}`,
@@ -468,7 +478,9 @@ export function CasePanel({
                       prioridade: headerData.priority,
                       prazo: headerData.dueDate ? new Date(`${headerData.dueDate}T12:00:00`).toISOString() : null,
                       concluido: isProcessoStatusConcluido(headerData.project) || localCase.completed,
-                    }).then(() => setEditingHeader(false))
+                    }).then((ok) => {
+                      if (ok) setEditingHeader(false)
+                    })
                   }}
                 >
                   <Check className="w-4 h-4" />
@@ -580,7 +592,9 @@ export function CasePanel({
                           prioridade: infoData.priority,
                           prazo: infoData.dueDate ? new Date(`${infoData.dueDate}T12:00:00`).toISOString() : null,
                           concluido: infoData.completed,
-                        }).then(() => setEditingInfo(false))
+                        }).then((ok) => {
+                          if (ok) setEditingInfo(false)
+                        })
                       }}
                     >
                       <Check className="w-3.5 h-3.5" />
@@ -730,7 +744,9 @@ export function CasePanel({
                       onClick={() => {
                         void persistCase({
                           descricao: descricaoDraft.trim() || null,
-                        }).then(() => setEditingDescricao(false))
+                        }).then((ok) => {
+                          if (ok) setEditingDescricao(false)
+                        })
                       }}
                     >
                       <Check className="w-3.5 h-3.5" />
@@ -770,7 +786,9 @@ export function CasePanel({
                   <Button
                     size="sm"
                     onClick={() => {
-                      void persistCase({ tags }).then(() => setEditingTags(false))
+                      void persistCase({ tags }).then((ok) => {
+                        if (ok) setEditingTags(false)
+                      })
                     }}
                   >
                     Salvar
@@ -933,7 +951,11 @@ export function CasePanel({
                       </p>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => window.open(doc.urlArquivo, "_blank")}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => void abrirFonteDocumento(doc.id, doc.nome)}
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
                       {canDeleteDocs && (
@@ -962,7 +984,9 @@ export function CasePanel({
               active={activeTab === "prazos"}
               canWritePrazo={canWrite}
               canRegistrar={canCreateAndamentos}
-              onPrazoChange={(iso) => persistCase({ prazo: iso })}
+              onPrazoChange={(iso) => {
+                void persistCase({ prazo: iso })
+              }}
             />
           </TabsContent>
 
@@ -1054,7 +1078,11 @@ export function CasePanel({
                   className="min-h-[44px] max-h-28 resize-none"
                   rows={2}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (
+                      e.key === "Enter" &&
+                      !e.shiftKey &&
+                      !e.nativeEvent.isComposing
+                    ) {
                       e.preventDefault()
                       void handleSendMessage()
                     }

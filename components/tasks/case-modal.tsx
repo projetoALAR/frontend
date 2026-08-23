@@ -25,8 +25,10 @@ import { maskProcessoNumero } from "@/lib/masks"
 import { validarDigitoCnj } from "@/lib/cnj"
 import {
   PROCESSO_STATUS_DEFAULT,
+  PROCESSO_STATUS_OPTIONS,
   isProcessoStatusConcluido,
   processoStatusOptionsFor,
+  type ProcessoStatus,
 } from "@/lib/processo-status"
 
 interface CaseModalProps {
@@ -37,13 +39,19 @@ interface CaseModalProps {
   isEditing?: boolean
 }
 
+function asProcessoStatus(value: string): ProcessoStatus {
+  return (PROCESSO_STATUS_OPTIONS as readonly string[]).includes(value)
+    ? (value as ProcessoStatus)
+    : PROCESSO_STATUS_DEFAULT
+}
+
 export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: CaseModalProps) {
   const { toast } = useToast()
   const { user } = useAuth()
   const [title, setTitle] = useState("")
   const [descricao, setDescricao] = useState("")
   const [numero, setNumero] = useState("")
-  const [status, setStatus] = useState(PROCESSO_STATUS_DEFAULT)
+  const [status, setStatus] = useState<ProcessoStatus>(PROCESSO_STATUS_DEFAULT)
   const [priority, setPriority] = useState("Média")
   const [dueDate, setDueDate] = useState("")
   const [clienteId, setClienteId] = useState("")
@@ -65,7 +73,7 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
       setTitle(caseData.title || "")
       setDescricao(caseData.descricao || "")
       setNumero(caseData.numero || "")
-      setStatus(caseData.status || PROCESSO_STATUS_DEFAULT)
+      setStatus(asProcessoStatus(caseData.status || PROCESSO_STATUS_DEFAULT))
       setPriority(caseData.priority || "Média")
       setDueDate(caseData.dueDateIso ? caseData.dueDateIso.slice(0, 10) : "")
       setClienteId(caseData.clienteId || "")
@@ -294,7 +302,11 @@ export function CaseModal({ isOpen, onClose, onSave, caseData, isEditing }: Case
           </div>
           <div>
             <Label htmlFor="case-status">Status *</Label>
-            <Select value={status} onValueChange={setStatus} disabled={isSaving}>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(asProcessoStatus(v))}
+              disabled={isSaving}
+            >
               <SelectTrigger
                 id="case-status"
                 className={`mt-1 w-full ${errors.status ? "border-destructive" : ""}`}

@@ -15,6 +15,12 @@ import {
   type AuthUser,
   type LoginResult,
 } from "@/lib/auth-api"
+import { billingApi } from "@/lib/billing-api"
+import {
+  billingEnforceAtivo,
+  limparAssinaturaLocal,
+  sincronizarAssinaturaLocal,
+} from "@/lib/planos"
 
 type AuthContextValue = {
   user: AuthUser | null
@@ -33,6 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const syncBilling = useCallback(async (userId: string) => {
+    if (!billingEnforceAtivo()) return
+    try {
+      const data = await billingApi.minha()
+      sincronizarAssinaturaLocal(userId, data)
+    } catch {
+      // ignore — gate usa cache local se houver
+    }
+  }, [])
+
   const refresh = useCallback(async () => {
     clearLegacyAuthToken()
     try {
@@ -46,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const me = await authApi.me()
+      await syncBilling(me.id)
       setUser(me)
     } catch (error) {
       setUser(null)
@@ -64,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [syncBilling])
 
   useEffect(() => {
     void refresh()
@@ -73,35 +90,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, senha: string) => {
     clearLegacyAuthToken()
     const result = await authApi.login(email, senha)
-    if ("requires2fa" in result && result.requires2fa) {
+    if ("requires2fa" in result) {
       return result
     }
+    await syncBilling(result.user.id)
     setUser(result.user)
     return result
-  }, [])
+  }, [syncBilling])
 
   const completeTwoFactor = useCallback(
     async (preAuthToken: string, code: string) => {
       clearLegacyAuthToken()
       const result = await authApi.verifyTwoFactor(preAuthToken, code)
+      await syncBilling(result.user.id)
       setUser(result.user)
     },
-    [],
+    [syncBilling],
   )
 
   const register = useCallback(async (nome: string, email: string, senha: string) => {
     clearLegacyAuthToken()
     const result = await authApi.register(nome, email, senha)
+    await syncBilling(result.user.id)
     setUser(result.user)
-  }, [])
+  }, [syncBilling])
 
   const logout = useCallback(async () => {
+    const uid = user?.id
     try {
       await authApi.logout()
     } finally {
+      if (uid) limparAssinaturaLocal(uid)
       setUser(null)
     }
-  }, [])
+  }, [user?.id])
 
   const value = useMemo(
     () => ({

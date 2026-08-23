@@ -11,7 +11,8 @@ function handleUnauthorized() {
   const publicAuth =
     path.startsWith("/login") ||
     path.startsWith("/esqueci-senha") ||
-    path.startsWith("/redefinir-senha")
+    path.startsWith("/redefinir-senha") ||
+    path.startsWith("/planos")
   if (!publicAuth) {
     // Fora do ciclo de renderização do React (helper de fetch puro): um reload
     // completo é intencional aqui para limpar todo o estado do app/cache.
@@ -20,15 +21,44 @@ function handleUnauthorized() {
   }
 }
 
+function handleMustChangePassword() {
+  if (typeof window === "undefined") return
+  if (window.location.pathname.startsWith("/trocar-senha")) return
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.href = "/trocar-senha"
+}
+
+function handleSubscriptionRequired() {
+  if (typeof window === "undefined") return
+  if (window.location.pathname.startsWith("/planos")) return
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.href = "/planos"
+}
+
 async function parseError(response: Response): Promise<string> {
   const fallback = `Erro na API (${response.status})`
   try {
     const text = await response.text()
     if (!text) return fallback
     try {
-      const json = JSON.parse(text) as { message?: string | string[] }
+      const json = JSON.parse(text) as {
+        message?: string | string[] | { message?: string; code?: string }
+        code?: string
+      }
+      const nested =
+        json.message && typeof json.message === "object" && !Array.isArray(json.message)
+          ? json.message
+          : null
+      const code = json.code || nested?.code
+      if (code === "MUST_CHANGE_PASSWORD") {
+        handleMustChangePassword()
+      }
+      if (code === "SUBSCRIPTION_REQUIRED") {
+        handleSubscriptionRequired()
+      }
       if (Array.isArray(json.message)) return json.message.join(", ")
       if (typeof json.message === "string" && json.message.trim()) return json.message
+      if (nested?.message?.trim()) return nested.message
     } catch {
       return text
     }
@@ -83,7 +113,7 @@ function filenameFromDisposition(header: string | null): string | null {
   return plain?.[1]?.trim() ?? null
 }
 
-async function getBlob(path: string): Promise<{ blob: Blob; filename: string | null }> {
+async function getBlob(path: string): Promise<{ blob: Blob; filename?: string }> {
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: "same-origin",
   })
@@ -99,14 +129,14 @@ async function getBlob(path: string): Promise<{ blob: Blob; filename: string | n
 
   return {
     blob: await response.blob(),
-    filename: filenameFromDisposition(response.headers.get("content-disposition")),
+    filename: filenameFromDisposition(response.headers.get("content-disposition")) ?? undefined,
   }
 }
 
 async function postBlob(
   path: string,
   body?: unknown,
-): Promise<{ blob: Blob; filename: string | null }> {
+): Promise<{ blob: Blob; filename?: string }> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     credentials: "same-origin",
@@ -125,7 +155,7 @@ async function postBlob(
 
   return {
     blob: await response.blob(),
-    filename: filenameFromDisposition(response.headers.get("content-disposition")),
+    filename: filenameFromDisposition(response.headers.get("content-disposition")) ?? undefined,
   }
 }
 

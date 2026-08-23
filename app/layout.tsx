@@ -1,5 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -57,7 +58,15 @@ export default function RootLayout({
         >
           <AuthProvider>
             <SkipLink />
-            <AuthGuard>{children}</AuthGuard>
+            <Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                  <p className="text-sm text-muted-foreground">Carregando sessão...</p>
+                </div>
+              }
+            >
+              <AuthGuard>{children}</AuthGuard>
+            </Suspense>
             <OnboardingTour />
           </AuthProvider>
           <Toaster />

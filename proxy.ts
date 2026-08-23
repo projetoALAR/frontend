@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { AUTH_COOKIE } from "@/lib/auth-session"
-
-const PUBLIC_PATHS = [
-  "/login",
-  "/sentry-test",
-  "/esqueci-senha",
-  "/redefinir-senha",
-]
+import { MARKETING_PATHS, PUBLIC_AUTH_PATHS, pathMatches } from "@/lib/public-paths"
 
 /**
  * Proxy (Next.js 16): checagem otimista de sessão.
@@ -15,9 +9,9 @@ const PUBLIC_PATHS = [
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hasSession = Boolean(request.cookies.get(AUTH_COOKIE)?.value)
-  const isPublic = PUBLIC_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  )
+  const isPublic =
+    pathMatches(pathname, PUBLIC_AUTH_PATHS) ||
+    pathMatches(pathname, MARKETING_PATHS)
 
   if (!hasSession && !isPublic) {
     const loginUrl = new URL("/login", request.url)

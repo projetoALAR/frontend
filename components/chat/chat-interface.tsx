@@ -7,7 +7,7 @@ import { ChatMessage } from "./chat-message"
 import { AiDisclaimer } from "@/components/ai-disclaimer"
 import { Send } from "lucide-react"
 import { ChatExportButton } from "./chat-export-button"
-import { documentosApi } from "@/lib/documentos-api"
+import { abrirDocumentoEmNovaAba } from "@/lib/documentos-api"
 import { useToast } from "@/hooks/use-toast"
 
 interface Message {
@@ -52,18 +52,18 @@ export function ChatInterface({
 
   const abrirDocumento =
     onOpenDocumento ??
-    (async (documentoId: string, nome: string) => {
-      try {
-        const doc = await documentosApi.obter(documentoId)
-        if (!doc.urlArquivo) throw new Error("URL indisponível")
-        window.open(doc.urlArquivo, "_blank", "noopener,noreferrer")
-      } catch (error) {
-        toast({
-          title: `Não abriu ${nome}`,
-          description: error instanceof Error ? error.message : "Falha na API",
-          variant: "destructive",
-        })
-      }
+    ((documentoId: string, nome: string) => {
+      void (async () => {
+        try {
+          await abrirDocumentoEmNovaAba(documentoId)
+        } catch (error) {
+          toast({
+            title: `Não abriu ${nome}`,
+            description: error instanceof Error ? error.message : "Falha na API",
+            variant: "destructive",
+          })
+        }
+      })()
     })
 
   const scrollToBottom = (behavior: ScrollBehavior = "auto") => {

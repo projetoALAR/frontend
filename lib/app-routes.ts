@@ -13,6 +13,7 @@ export const rotas = {
   mensagens: "/mensagens",
   login: "/login",
   logout: "/logout",
+  planos: "/planos",
 } as const
 
 export function casoHref(id: string) {
