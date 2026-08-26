@@ -88,7 +88,7 @@ const faqs = [
   {
     question: "Como ativar o envio de e-mails (convite e reset)?",
     answer:
-      "No backend, rode npm run smtp:ethereal (grátis), cole SMTP_* e APP_URL no .env e reinicie a API. Em Configurações, o admin vê o status e pode Enviar e-mail de teste — com Ethereal aparece um link de preview. Sem SMTP, as mensagens ficam no inbox; em desenvolvimento o link de reset também aparece na tela.",
+      "No backend, rode npm run smtp:ethereal (grátis), cole SMTP_* e APP_URL no .env e reinicie a API. Em produção use Resend (smtp.resend.com) — veja DEPLOY.md. Em Configurações, o admin vê o status, o alinhamento do paywall e pode Enviar e-mail de teste. Sem SMTP, as mensagens ficam no inbox; em desenvolvimento o link de reset também aparece na tela.",
   },
   {
     question: "Como usar o filtro de datas nos casos?",

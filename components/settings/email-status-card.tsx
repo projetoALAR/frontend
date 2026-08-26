@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { ExternalLink, Loader2, Mail, MailX } from "lucide-react"
+import { billingEnforceAtivo } from "@/lib/planos"
+import Link from "next/link"
+import { rotas } from "@/lib/app-routes"
 
 type EmailStatus = {
   smtpConfigured: boolean
   smtpHost: string | null
   appUrl: string
   environment: string
+  requireSubscription: boolean
   dicaLocal: string
 }
 
@@ -29,6 +33,7 @@ export function EmailStatusCard() {
   const [error, setError] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
   const [ultimoTeste, setUltimoTeste] = useState<EmailTesteResultado | null>(null)
+  const frontPaywall = billingEnforceAtivo()
 
   const carregar = useCallback(() => {
     setError(null)
@@ -60,7 +65,10 @@ export function EmailStatusCard() {
       } else if (resultado.queuedInboxOnly) {
         toast({
           title: "SMTP ainda não configurado",
-          description: "Rode npm run smtp:ethereal no backend e cole no .env.",
+          description:
+            status?.environment === "production"
+              ? "No Railway: SMTP do Resend (smtp.resend.com). Ver DEPLOY.md."
+              : "Local: npm run smtp:ethereal no backend e cole no .env.",
           variant: "destructive",
         })
       } else {
@@ -82,13 +90,16 @@ export function EmailStatusCard() {
     }
   }
 
+  const paywallAlinhado =
+    status != null && status.requireSubscription === frontPaywall
+
   return (
     <Card className="p-6 space-y-4">
       <div>
-        <h3 className="font-semibold text-lg mb-2">E-mail transacional</h3>
+        <h3 className="font-semibold text-lg mb-2">E-mail e modo comercial</h3>
         <p className="text-sm text-muted-foreground">
-          Convites, reset de senha e lembretes de prazo. Em local você pode usar Ethereal
-          (grátis) sem cartão.
+          Convites, reset de senha e lembretes. Em produção use{" "}
+          <strong>Resend</strong> (SMTP). Piloto: paywall desligado nos dois lados.
         </p>
       </div>
 
@@ -125,8 +136,28 @@ export function EmailStatusCard() {
             APP_URL: <code className="text-foreground">{status.appUrl}</code>
           </li>
           <li className="text-muted-foreground">Ambiente: {status.environment}</li>
+          <li>
+            Paywall API (REQUIRE_SUBSCRIPTION):{" "}
+            <strong>{status.requireSubscription ? "ligado" : "desligado"}</strong>
+            {" · "}
+            Front: <strong>{frontPaywall ? "ligado" : "desligado"}</strong>
+            {!paywallAlinhado ? (
+              <span className="text-amber-700 dark:text-amber-400">
+                {" "}
+                — desalinhado: iguale as vars no Railway e na Vercel
+              </span>
+            ) : (
+              <span className="text-muted-foreground"> — alinhado</span>
+            )}
+          </li>
           <li className="text-muted-foreground text-xs leading-relaxed pt-1">
             {status.dicaLocal}
+          </li>
+          <li className="text-xs text-muted-foreground">
+            Planos / Asaas:{" "}
+            <Link href={rotas.planos} className="text-primary underline-offset-2 hover:underline">
+              /planos
+            </Link>
           </li>
         </ul>
       ) : null}
