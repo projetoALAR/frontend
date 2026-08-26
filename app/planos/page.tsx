@@ -38,6 +38,12 @@ export default function PlanosPage() {
   const [ciclo, setCiclo] = useState<"mensal" | "anual">("mensal")
   const [asaasOk, setAsaasOk] = useState(false)
   const [assinaturaTick, setAssinaturaTick] = useState(0)
+  const [podeCheckout, setPodeCheckout] = useState(false)
+  const [compartilhada, setCompartilhada] = useState(false)
+  const [uso, setUso] = useState<{
+    usuarios: number
+    limiteUsuarios: number | null
+  } | null>(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [checkoutPlano, setCheckoutPlano] = useState<PlanoId | null>(null)
   const [checkoutMode, setCheckoutMode] = useState<CheckoutMode>("trial")
@@ -50,6 +56,16 @@ export default function PlanosPage() {
     try {
       const data = await billingApi.minha()
       setAsaasOk(data.asaasConfigurado)
+      setPodeCheckout(Boolean(data.podeCheckout))
+      setCompartilhada(Boolean(data.compartilhada))
+      setUso(
+        data.uso
+          ? {
+              usuarios: data.uso.usuarios,
+              limiteUsuarios: data.uso.limiteUsuarios,
+            }
+          : null,
+      )
       sincronizarAssinaturaLocal(user.id, data)
       setAssinaturaTick((n) => n + 1)
     } catch {
@@ -69,6 +85,14 @@ export default function PlanosPage() {
   const abrirCheckout = (planoId: PlanoId, mode: CheckoutMode) => {
     if (!user) {
       router.push(`${rotas.login}?plano=${planoId}`)
+      return
+    }
+    if (!podeCheckout) {
+      toast({
+        title: "Somente o administrador",
+        description:
+          "Peça ao admin do escritório para assinar ou iniciar a avaliação. Seu acesso acompanha o plano dele.",
+      })
       return
     }
     if (planoId === "escritorio") {
@@ -206,6 +230,13 @@ export default function PlanosPage() {
               {" · "}
               {assinatura.status === "trial" ? "avaliação" : assinatura.status} até{" "}
               {new Date(assinatura.ate).toLocaleDateString("pt-BR")}
+              {compartilhada ? " · plano do escritório" : null}
+              {uso?.limiteUsuarios != null ? (
+                <>
+                  {" · "}
+                  {uso.usuarios}/{uso.limiteUsuarios} usuários
+                </>
+              ) : null}
               {assinatura.invoiceUrl ? (
                 <>
                   {" · "}
@@ -219,6 +250,14 @@ export default function PlanosPage() {
                   </a>
                 </>
               ) : null}
+            </p>
+          ) : null}
+
+          {user && !podeCheckout ? (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Você está logado como membro. Assinatura e trial são feitos pelo{" "}
+              <span className="font-medium text-foreground">administrador</span> do
+              escritório.
             </p>
           ) : null}
 

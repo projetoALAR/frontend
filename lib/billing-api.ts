@@ -16,7 +16,17 @@ export type AssinaturaApi = {
 export type MinhaAssinaturaResponse = {
   asaasConfigurado: boolean
   temAcesso: boolean
+  ePagador?: boolean
+  compartilhada?: boolean
+  podeCheckout?: boolean
   assinatura: AssinaturaApi | null
+  uso?: {
+    usuarios: number
+    limiteUsuarios: number | null
+    gbDocumentos: number
+    limiteGbDocumentos: number | null
+    tokensDia: number | null
+  }
 }
 
 export type CheckoutResponse = MinhaAssinaturaResponse & {
