@@ -1,6 +1,10 @@
 import { api } from "@/lib/api"
 import type { components, Role } from "@/lib/openapi"
 import type { PreviewImportacao } from "@/lib/clientes-api"
+import {
+  normalizarListaPaginada,
+  type ListaPaginada,
+} from "@/lib/lista-paginada"
 
 export type { Role }
 export type { PreviewImportacao }
@@ -27,12 +31,7 @@ export type ResultadoImportacaoProcessos = {
   resultados: ResultadoLinhaImportacaoProcesso[]
 }
 
-export type ListaPaginadaProcessos = {
-  items: ProcessoApi[]
-  total: number
-  page: number
-  limit: number
-}
+export type ListaPaginadaProcessos = ListaPaginada<ProcessoApi>
 
 export type ListarProcessosFiltro = {
   page: number
@@ -49,10 +48,11 @@ export const processosApi = {
   /** Lista completa (relatórios). */
   listar: () => api.get<ProcessoApi[]>("/processos"),
   /** Lista paginada com busca/filtros no servidor. */
-  listarPagina: (filtro: ListarProcessosFiltro) => {
+  listarPagina: async (filtro: ListarProcessosFiltro) => {
+    const limit = filtro.limit ?? 12
     const params = new URLSearchParams()
     params.set("page", String(filtro.page))
-    params.set("limit", String(filtro.limit ?? 12))
+    params.set("limit", String(limit))
     if (filtro.q?.trim()) params.set("q", filtro.q.trim())
     if (filtro.situacao) params.set("situacao", filtro.situacao)
     if (filtro.status?.length) params.set("status", filtro.status.join(","))
@@ -61,7 +61,8 @@ export const processosApi = {
     }
     if (filtro.prazoDe) params.set("prazoDe", filtro.prazoDe)
     if (filtro.prazoAte) params.set("prazoAte", filtro.prazoAte)
-    return api.get<ListaPaginadaProcessos>(`/processos?${params}`)
+    const data = await api.get<unknown>(`/processos?${params}`)
+    return normalizarListaPaginada<ProcessoApi>(data, filtro.page, limit)
   },
   obter: (id: string) => api.get<ProcessoApi>(`/processos/${id}`),
   listarPorCliente: (clienteId: string) =>

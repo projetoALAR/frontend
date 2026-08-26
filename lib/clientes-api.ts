@@ -1,5 +1,11 @@
 import { api } from "@/lib/api"
 import type { components } from "@/lib/openapi"
+import {
+  normalizarListaPaginada,
+  type ListaPaginada,
+} from "@/lib/lista-paginada"
+
+export type { ListaPaginada }
 
 export type ClienteApi = components["schemas"]["ClienteRespostaDto"]
 export type ClienteFormData = components["schemas"]["CreateClienteDto"]
@@ -51,13 +57,6 @@ export function isClienteAnonimizado(client: Pick<ClienteCard, "name" | "cpf">) 
   )
 }
 
-export type ListaPaginada<T> = {
-  items: T[]
-  total: number
-  page: number
-  limit: number
-}
-
 export type ListarClientesFiltro = {
   page: number
   limit?: number
@@ -68,12 +67,14 @@ export const clientesApi = {
   /** Lista completa (modais / selects). */
   listar: () => api.get<ClienteApi[]>("/clientes"),
   /** Lista paginada com busca no servidor. */
-  listarPagina: (filtro: ListarClientesFiltro) => {
+  listarPagina: async (filtro: ListarClientesFiltro) => {
+    const limit = filtro.limit ?? 12
     const params = new URLSearchParams()
     params.set("page", String(filtro.page))
-    params.set("limit", String(filtro.limit ?? 12))
+    params.set("limit", String(limit))
     if (filtro.q?.trim()) params.set("q", filtro.q.trim())
-    return api.get<ListaPaginada<ClienteApi>>(`/clientes?${params}`)
+    const data = await api.get<unknown>(`/clientes?${params}`)
+    return normalizarListaPaginada<ClienteApi>(data, filtro.page, limit)
   },
   obter: (id: string) => api.get<ClienteApi>(`/clientes/${id}`),
   criar: (dados: ClienteFormData) => api.post<ClienteApi>("/clientes", dados),
