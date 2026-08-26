@@ -19,9 +19,12 @@ import { useDashboardResumo } from "@/hooks/use-dashboard-resumo"
 import { formatDatePt } from "@/lib/format"
 import { casoHref, rotas } from "@/lib/app-routes"
 import { useAuth } from "@/components/auth/auth-provider"
+import {
+  getInboxUnreadCount,
+  getNotificacoesLidas,
+  setNotificacoesLidasCache,
+} from "@/lib/header-notificacoes-cache"
 import { preferenciasApi } from "@/lib/preferencias-api"
-import { inboxApi } from "@/lib/inbox-api"
-import { usePushNotifications } from "@/hooks/use-push-notifications"
 import type { ReactNode } from "react"
 import { ROLE_LABELS } from "@/lib/roles"
 
@@ -37,21 +40,18 @@ export function Header({ title, description, actions }: HeaderProps) {
   const { data } = useDashboardResumo()
   const [lidas, setLidas] = useState<string[]>([])
   const [inboxUnread, setInboxUnread] = useState(0)
-  usePushNotifications()
 
   useEffect(() => {
-    void preferenciasApi
-      .obter()
-      .then((prefs) => {
-        const list = Array.isArray(prefs.notificacoesLidas) ? prefs.notificacoesLidas : []
-        setLidas(list)
-      })
-      .catch(() => {})
-
-    void inboxApi
-      .listar(true)
-      .then((items) => setInboxUnread(items.length))
-      .catch(() => {})
+    let cancelled = false
+    void getNotificacoesLidas().then((list) => {
+      if (!cancelled) setLidas(list)
+    })
+    void getInboxUnreadCount().then((n) => {
+      if (!cancelled) setInboxUnread(n)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const deadlines = useMemo(
@@ -82,6 +82,7 @@ export function Header({ title, description, actions }: HeaderProps) {
   const marcarComoLidas = useCallback(async () => {
     const ids = Array.from(new Set([...lidas, ...deadlines.map((d) => d.id)]))
     setLidas(ids)
+    setNotificacoesLidasCache(ids)
     try {
       await preferenciasApi.atualizar({ notificacoesLidas: ids })
     } catch {

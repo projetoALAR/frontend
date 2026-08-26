@@ -5,6 +5,7 @@ import {
   normalizarListaPaginada,
   type ListaPaginada,
 } from "@/lib/lista-paginada"
+import { fetchWithListaCache, invalidateListaCache } from "@/lib/lista-cache"
 
 export type { Role }
 export type { PreviewImportacao }
@@ -48,7 +49,7 @@ export const processosApi = {
   /** Lista completa (relatórios). */
   listar: () => api.get<ProcessoApi[]>("/processos"),
   /** Lista paginada com busca/filtros no servidor. */
-  listarPagina: async (filtro: ListarProcessosFiltro) => {
+  listarPagina: async (filtro: ListarProcessosFiltro, opts?: { force?: boolean }) => {
     const limit = filtro.limit ?? 12
     const params = new URLSearchParams()
     params.set("page", String(filtro.page))
@@ -61,16 +62,34 @@ export const processosApi = {
     }
     if (filtro.prazoDe) params.set("prazoDe", filtro.prazoDe)
     if (filtro.prazoAte) params.set("prazoAte", filtro.prazoAte)
-    const data = await api.get<unknown>(`/processos?${params}`)
-    return normalizarListaPaginada<ProcessoApi>(data, filtro.page, limit)
+    const key = `processos:${params}`
+    return fetchWithListaCache(
+      key,
+      async () => {
+        const data = await api.get<unknown>(`/processos?${params}`)
+        return normalizarListaPaginada<ProcessoApi>(data, filtro.page, limit)
+      },
+      { force: opts?.force },
+    )
   },
   obter: (id: string) => api.get<ProcessoApi>(`/processos/${id}`),
   listarPorCliente: (clienteId: string) =>
     api.get<ProcessoApi[]>(`/processos/cliente/${clienteId}`),
-  criar: (dados: ProcessoFormData) => api.post<ProcessoApi>("/processos", dados),
-  atualizar: (id: string, dados: Partial<ProcessoFormData>) =>
-    api.put<ProcessoApi>(`/processos/${id}`, dados),
-  remover: (id: string) => api.delete<ProcessoApi>(`/processos/${id}`),
+  criar: async (dados: ProcessoFormData) => {
+    const created = await api.post<ProcessoApi>("/processos", dados)
+    invalidateListaCache("processos:")
+    return created
+  },
+  atualizar: async (id: string, dados: Partial<ProcessoFormData>) => {
+    const updated = await api.put<ProcessoApi>(`/processos/${id}`, dados)
+    invalidateListaCache("processos:")
+    return updated
+  },
+  remover: async (id: string) => {
+    const removed = await api.delete<ProcessoApi>(`/processos/${id}`)
+    invalidateListaCache("processos:")
+    return removed
+  },
   baixarCapa: (id: string) => api.getBlob(`/processos/${id}/capa`),
   baixarRelatorioPdf: (payload: {
     filtrosResumo?: string

@@ -4,6 +4,7 @@ import {
   normalizarListaPaginada,
   type ListaPaginada,
 } from "@/lib/lista-paginada"
+import { fetchWithListaCache, invalidateListaCache } from "@/lib/lista-cache"
 
 export type { ListaPaginada }
 
@@ -67,20 +68,38 @@ export const clientesApi = {
   /** Lista completa (modais / selects). */
   listar: () => api.get<ClienteApi[]>("/clientes"),
   /** Lista paginada com busca no servidor. */
-  listarPagina: async (filtro: ListarClientesFiltro) => {
+  listarPagina: async (filtro: ListarClientesFiltro, opts?: { force?: boolean }) => {
     const limit = filtro.limit ?? 12
     const params = new URLSearchParams()
     params.set("page", String(filtro.page))
     params.set("limit", String(limit))
     if (filtro.q?.trim()) params.set("q", filtro.q.trim())
-    const data = await api.get<unknown>(`/clientes?${params}`)
-    return normalizarListaPaginada<ClienteApi>(data, filtro.page, limit)
+    const key = `clientes:${params}`
+    return fetchWithListaCache(
+      key,
+      async () => {
+        const data = await api.get<unknown>(`/clientes?${params}`)
+        return normalizarListaPaginada<ClienteApi>(data, filtro.page, limit)
+      },
+      { force: opts?.force },
+    )
   },
   obter: (id: string) => api.get<ClienteApi>(`/clientes/${id}`),
-  criar: (dados: ClienteFormData) => api.post<ClienteApi>("/clientes", dados),
-  atualizar: (id: string, dados: ClienteFormData) =>
-    api.put<ClienteApi>(`/clientes/${id}`, dados),
-  remover: (id: string) => api.delete<ClienteApi>(`/clientes/${id}`),
+  criar: async (dados: ClienteFormData) => {
+    const created = await api.post<ClienteApi>("/clientes", dados)
+    invalidateListaCache("clientes:")
+    return created
+  },
+  atualizar: async (id: string, dados: ClienteFormData) => {
+    const updated = await api.put<ClienteApi>(`/clientes/${id}`, dados)
+    invalidateListaCache("clientes:")
+    return updated
+  },
+  remover: async (id: string) => {
+    const removed = await api.delete<ClienteApi>(`/clientes/${id}`)
+    invalidateListaCache("clientes:")
+    return removed
+  },
   exportar: (id: string) =>
     api.get<{
       exportadoEm: string

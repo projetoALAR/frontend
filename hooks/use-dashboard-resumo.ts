@@ -4,16 +4,23 @@ import { useCallback, useEffect, useState } from "react"
 import { dashboardApi, type DashboardResumo } from "@/lib/dashboard-api"
 
 let cache: DashboardResumo | null = null
+let cacheAt = 0
 let inflight: Promise<DashboardResumo> | null = null
 const listeners = new Set<() => void>()
+const TTL_MS = 45_000
+
+function cacheFresh() {
+  return cache != null && Date.now() - cacheAt < TTL_MS
+}
 
 async function fetchResumo(force = false) {
-  if (!force && cache) return cache
+  if (!force && cacheFresh() && cache) return cache
   if (!force && inflight) return inflight
   inflight = dashboardApi
     .resumo()
     .then((data) => {
       cache = data
+      cacheAt = Date.now()
       return data
     })
     .finally(() => {
@@ -28,7 +35,8 @@ export function useDashboardResumo() {
   const [error, setError] = useState<string | null>(null)
 
   const reload = useCallback(async (force = false) => {
-    setLoading(true)
+    const showSpinner = force || !cache
+    if (showSpinner) setLoading(true)
     setError(null)
     try {
       const resumo = await fetchResumo(force)
@@ -36,7 +44,7 @@ export function useDashboardResumo() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao carregar dashboard")
     } finally {
-      setLoading(false)
+      if (showSpinner) setLoading(false)
     }
   }, [])
 
@@ -57,6 +65,7 @@ export function useDashboardResumo() {
 /** Limpa o cache e avisa todos os consumidores para recarregar. */
 export function invalidateDashboardCache() {
   cache = null
+  cacheAt = 0
   inflight = null
   listeners.forEach((listener) => listener())
 }

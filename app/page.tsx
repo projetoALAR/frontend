@@ -1,9 +1,9 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { AppShell } from "@/components/layout/app-shell"
 import { Header } from "@/components/dashboard/header"
 import { StatsCards } from "@/components/dashboard/stats-cards"
-import { ProjectAnalytics } from "@/components/dashboard/project-analytics"
 import { Reminders } from "@/components/dashboard/reminders"
 import { ProjectList } from "@/components/dashboard/project-list"
 import { ProjectProgress } from "@/components/dashboard/project-progress"
@@ -14,6 +14,19 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canWriteClientesProcessos, getHomeCopy } from "@/lib/roles"
 import { clientesListaHref, casosListaHref } from "@/lib/app-routes"
+
+const ProjectAnalytics = dynamic(
+  () =>
+    import("@/components/dashboard/project-analytics").then(
+      (m) => m.ProjectAnalytics,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-muted/40" aria-hidden />
+    ),
+  },
+)
 
 export default function DashboardPage() {
   const router = useRouter()

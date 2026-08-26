@@ -45,6 +45,14 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
     responseHeaders.set("content-disposition", disposition)
   }
 
+  // Stream quando possível — evita buffer completo na Vercel.
+  if (upstream.body) {
+    return new NextResponse(upstream.body, {
+      status: upstream.status,
+      headers: responseHeaders,
+    })
+  }
+
   const buffer = await upstream.arrayBuffer()
   return new NextResponse(buffer, {
     status: upstream.status,

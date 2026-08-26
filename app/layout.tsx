@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth/auth-provider"
 import { AuthGuard } from "@/components/auth/auth-guard"
+import { AuthenticatedShell } from "@/components/layout/authenticated-shell"
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour"
 import { SkipLink } from "@/components/accessibility/skip-link"
 import { Toaster } from "@/components/ui/toaster"
@@ -65,7 +66,9 @@ export default function RootLayout({
                 </div>
               }
             >
-              <AuthGuard>{children}</AuthGuard>
+              <AuthGuard>
+                <AuthenticatedShell>{children}</AuthenticatedShell>
+              </AuthGuard>
             </Suspense>
             <OnboardingTour />
           </AuthProvider>

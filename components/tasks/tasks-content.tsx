@@ -7,8 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Search, Filter, Tag, Eye, Trash2, Pencil, X, Calendar, Briefcase, FileSpreadsheet } from "lucide-react"
 import { useState, useEffect, useCallback, forwardRef, useMemo } from "react"
 import Link from "next/link"
-import { CaseModal } from "./case-modal"
-import { CasesImportDialog } from "./cases-import-dialog"
+import dynamic from "next/dynamic"
 import { FilterModal, countActiveFilters, EMPTY_FILTERS, type FilterOptions } from "./filter-modal"
 import { processosApi, type ProcessoFormData } from "@/lib/processos-api"
 import { mapProcessoToCase, type CaseView } from "@/lib/processo-mapper"
@@ -22,6 +21,13 @@ import { formatCnj } from "@/lib/masks"
 import { ListEmptyState } from "@/components/shared/list-empty-state"
 import { ListSkeleton } from "@/components/shared/list-skeleton"
 import { cn } from "@/lib/utils"
+
+const CaseModal = dynamic(() =>
+  import("./case-modal").then((m) => m.CaseModal),
+)
+const CasesImportDialog = dynamic(() =>
+  import("./cases-import-dialog").then((m) => m.CasesImportDialog),
+)
 
 const priorityVariant: Record<string, "destructive" | "default" | "secondary"> = {
   Alta: "destructive",
@@ -62,7 +68,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     return () => window.clearTimeout(t)
   }, [searchTerm])
 
-  const loadTasks = useCallback(async () => {
+  const loadTasks = useCallback(async (force = false) => {
     setIsLoading(true)
     try {
       const situacao =
@@ -71,17 +77,20 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
           : filter === "ativas"
             ? "ativos"
             : undefined
-      const data = await processosApi.listarPagina({
-        page,
-        limit: PAGE_SIZE,
-        q: debouncedQ || undefined,
-        situacao,
-        status: filters.statuses.length > 0 ? filters.statuses : undefined,
-        prioridade:
-          filters.priorities.length > 0 ? filters.priorities : undefined,
-        prazoDe: filters.dateRange?.from || undefined,
-        prazoAte: filters.dateRange?.to || undefined,
-      })
+      const data = await processosApi.listarPagina(
+        {
+          page,
+          limit: PAGE_SIZE,
+          q: debouncedQ || undefined,
+          situacao,
+          status: filters.statuses.length > 0 ? filters.statuses : undefined,
+          prioridade:
+            filters.priorities.length > 0 ? filters.priorities : undefined,
+          prazoDe: filters.dateRange?.from || undefined,
+          prazoAte: filters.dateRange?.to || undefined,
+        },
+        { force },
+      )
       setAllTasks(data.items.map(mapProcessoToCase))
       setTotal(data.total)
     } catch (error) {
@@ -151,7 +160,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
     }
     invalidateDashboardCache()
     setSelectedCase(null)
-    await loadTasks()
+    await loadTasks(true)
   }
 
   const handleDeleteChecked = async () => {
@@ -161,7 +170,7 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
       setCheckedCases([])
       invalidateDashboardCache()
       toast({ title: "Casos removidos", description: "Seleção excluída com sucesso" })
-      await loadTasks()
+      await loadTasks(true)
     } catch (error) {
       toast({
         title: "Erro ao excluir",
@@ -312,10 +321,10 @@ export const TasksContent = forwardRef<HTMLDivElement, TasksContentProps>(functi
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading && allTasks.length === 0 ? (
         <ListSkeleton variant="rows" count={5} />
       ) : (
-        <div className="space-y-2">
+        <div className={cn("space-y-2", isLoading && "opacity-60 pointer-events-none")}>
           {filteredTasks.map((task) => (
             <div
               key={task.id}

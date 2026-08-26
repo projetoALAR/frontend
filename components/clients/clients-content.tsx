@@ -9,8 +9,7 @@ import { Mail, Phone, Trash2, Pencil, Search, Loader2, Download, UserX, Users, F
 import { useCallback, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ClientModal } from "./client-modal"
-import { ClientsImportDialog } from "./clients-import-dialog"
+import dynamic from "next/dynamic"
 import { ContactDialog } from "@/components/shared/contact-dialog"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -20,6 +19,13 @@ import {
   type ClienteCard,
   type ClienteFormData,
 } from "@/lib/clientes-api"
+
+const ClientModal = dynamic(() =>
+  import("./client-modal").then((m) => m.ClientModal),
+)
+const ClientsImportDialog = dynamic(() =>
+  import("./clients-import-dialog").then((m) => m.ClientsImportDialog),
+)
 import { formatDocumentoCliente, formatPhone } from "@/lib/masks"
 import { useAuth } from "@/components/auth/auth-provider"
 import { canAnonimizarCliente, canExportarCliente, canWriteClientesProcessos } from "@/lib/roles"
@@ -72,14 +78,17 @@ export function ClientsContent() {
     return () => window.clearTimeout(t)
   }, [searchTerm])
 
-  const loadClients = useCallback(async () => {
+  const loadClients = useCallback(async (force = false) => {
     setIsLoading(true)
     try {
-      const data = await clientesApi.listarPagina({
-        page,
-        limit: PAGE_SIZE,
-        q: debouncedQ || undefined,
-      })
+      const data = await clientesApi.listarPagina(
+        {
+          page,
+          limit: PAGE_SIZE,
+          q: debouncedQ || undefined,
+        },
+        { force },
+      )
       setClients(data.items.map(mapClienteToCard))
       setTotal(data.total)
     } catch (error) {
@@ -140,7 +149,7 @@ export function ClientsContent() {
     }
     invalidateDashboardCache()
     setSelectedClient(null)
-    await loadClients()
+    await loadClients(true)
   }
 
   const handleExportClient = async (client: ClienteCard) => {
@@ -184,7 +193,7 @@ export function ClientsContent() {
           title: "Cliente removido",
           description: "O cliente e os casos vinculados foram excluídos.",
         })
-        await loadClients()
+        await loadClients(true)
       } catch (error) {
         toast({
           title: "Erro ao remover",
@@ -205,7 +214,7 @@ export function ClientsContent() {
         title: "Cliente anonimizado",
         description: "Dados pessoais removidos. Casos foram mantidos sem identificação.",
       })
-      await loadClients()
+      await loadClients(true)
     } catch (error) {
       toast({
         title: "Erro ao anonimizar",
@@ -269,10 +278,16 @@ export function ClientsContent() {
         )}
       </div>
 
-      {isLoading ? (
+      {isLoading && clients.length === 0 ? (
         <ListSkeleton variant="cards" count={6} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          className={
+            isLoading
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-60 pointer-events-none"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          }
+        >
           {clients.map((client) => (
             <Card
               key={client.id}
@@ -489,7 +504,7 @@ export function ClientsContent() {
         onOpenChange={setImportOpen}
         onImported={() => {
           invalidateDashboardCache()
-          void loadClients()
+          void loadClients(true)
         }}
       />
 
