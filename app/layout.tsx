@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
@@ -31,11 +31,14 @@ export const metadata: Metadata = {
     title: "Alar",
     statusBarStyle: "default",
   },
-  themeColor: "#0f172a",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/logo-mark.svg", type: "image/svg+xml" }],
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#0f172a",
 }
 
 export default function RootLayout({

@@ -55,6 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sessionRes = await fetch("/api/auth/session", {
         credentials: "same-origin",
       })
+      if (!sessionRes.ok) {
+        setUser(null)
+        return
+      }
       const session = (await sessionRes.json()) as { authenticated?: boolean }
       if (!session.authenticated) {
         setUser(null)

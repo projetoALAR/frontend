@@ -2,9 +2,12 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone só para Docker/self-host. Na Vercel (VERCEL=1) quebra o build
-  // no Next 16.3+ (ENOENT .next/next-server.js.nft.json).
-  ...(process.env.VERCEL ? {} : { output: 'standalone' }),
+  // Standalone só no build Docker/local (não em `next dev` — quebra rotas /api com Turbopack).
+  ...(process.env.VERCEL
+    ? {}
+    : process.env.npm_lifecycle_event === 'build'
+      ? { output: 'standalone' }
+      : {}),
   // Pendente: erros de tipo em components/auth/auth-provider.tsx,
   // components/tasks/case-modal.tsx, lib/chat-api.ts e lib/processo-mapper.ts.
   // Ver auditoria (Passo 4) para a lista completa antes de remover esta flag.
